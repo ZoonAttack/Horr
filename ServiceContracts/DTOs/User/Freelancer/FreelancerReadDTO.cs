@@ -1,35 +1,25 @@
-﻿using Entities;
-using System;
-using System.Collections.Generic;
+﻿using Entities.Enums;
 
 namespace ServiceContracts.DTOs.User.Freelancer
 {
-    /// <summary>
-    /// DTO for reading/displaying Freelancer profile information,
-    /// including linked User info as needed.
-    /// </summary>
     public class FreelancerReadDTO
     {
-        public long UserId { get; set; }
-
+        // --- Core User Properties (Read) ---
+        public long Id { get; set; }
+        public UserRole Role { get; set; }
         public string FullName { get; set; }
-
         public string Email { get; set; }
-
         public string Phone { get; set; }
-
-        public string Bio { get; set; }
-
-        public decimal? HourlyRate { get; set; }
-
-        public string Availability { get; set; }
-
-        public int? YearsOfExperience { get; set; }
-
-        public string PortfolioUrl { get; set; }
-
+        public bool IsVerified { get; set; }
+        public decimal TrustScore { get; set; }
         public DateTime CreatedAt { get; set; }
-
         public DateTime UpdatedAt { get; set; }
+
+        // --- Freelancer Profile Properties ---
+        public string Bio { get; set; }
+        public decimal? HourlyRate { get; set; }
+        public string Availability { get; set; }
+        public int? YearsOfExperience { get; set; }
+        public string PortfolioUrl { get; set; }
     }
 }

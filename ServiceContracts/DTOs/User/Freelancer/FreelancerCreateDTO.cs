@@ -1,26 +1,22 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using Entities.User;
+using Entities.Enums;
 
 namespace ServiceContracts.DTOs.User.Freelancer
 {
-    /// <summary>
-    /// DTO for creating a new Freelancer profile linked to a User.
-    /// Contains Freelancer-specific properties only.
-    /// </summary>
     public class FreelancerCreateDTO
     {
-        [MaxLength(1000)]
+        // --- Core User Properties (Write) ---
+        public string FullName { get; set; }
+        public string Email { get; set; }
+        public string Phone { get; set; }
+        public string Password { get; set; }
+
+        // --- Freelancer Profile Properties ---
         public string Bio { get; set; }
-
-        [Range(0, double.MaxValue)]
         public decimal? HourlyRate { get; set; }
-
-        [MaxLength(50)]
         public string Availability { get; set; }
-
         public int? YearsOfExperience { get; set; }
-
-        [MaxLength(255)]
-        [Url]
         public string PortfolioUrl { get; set; }
     }
 }

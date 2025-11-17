@@ -1,25 +1,17 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace ServiceContracts.DTOs.User.Freelancer
+﻿namespace ServiceContracts.DTOs.User.Freelancer
 {
-    /// <summary>
-    /// DTO for updating an existing Freelancer profile.
-    /// </summary>
     public class FreelancerUpdateDTO
     {
-        [MaxLength(1000)]
+        // --- Core User Properties (Write) ---
+        public string FullName { get; set; }
+        public string Email { get; set; }
+        public string Phone { get; set; }
+
+        // --- Freelancer Profile Properties ---
         public string Bio { get; set; }
-
-        [Range(0, double.MaxValue)]
         public decimal? HourlyRate { get; set; }
-
-        [MaxLength(50)]
         public string Availability { get; set; }
-
         public int? YearsOfExperience { get; set; }
-
-        [MaxLength(255)]
-        [Url]
         public string PortfolioUrl { get; set; }
     }
 }
