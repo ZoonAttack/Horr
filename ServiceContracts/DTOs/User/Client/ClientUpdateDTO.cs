@@ -14,7 +14,7 @@ namespace ServiceContracts.DTOs.User.Client
         /// Applies updates to the Client entity
         /// </summary>
         /// <param name="client"></param>
-        public void ClinetUpdate_To_Client(Entities.User.Client client)
+        public void ClientUpdate_To_Client(Entities.User.Client client)
         {
             if (this.Bio != null)
                 client.Bio = this.Bio;

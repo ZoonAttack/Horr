@@ -18,25 +18,5 @@
         public DateTime CreatedAt { get; set; }
 
         public DateTime UpdatedAt { get; set; }
-
-        /// <summary>
-        /// Converts from Client entity and linked User entity to DTO
-        /// </summary>
-        /// <param name="client"></param>
-        /// <param name="user"></param>
-        /// <returns></returns>
-        public static ClientReadDTO Client_To_ClientRead(Entities.User.Client client, Entities.User.User user)
-        {
-            return new ClientReadDTO
-            {
-                UserId = client.UserId,
-                FullName = user.FullName,
-                Email = user.Email,
-                Phone = user.Phone,
-                Bio = client.Bio,
-                CreatedAt = client.CreatedAt,
-                UpdatedAt = client.UpdatedAt
-            };
-        }
     }
 }
