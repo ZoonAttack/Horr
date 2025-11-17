@@ -1,23 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
 
 namespace ServiceContracts.DTOs.User.Client
 {
-    /// <summary>
-    /// DTO for updating an existing Client profile.
-    /// </summary>
     public class ClientUpdateDTO
     {
-        [MaxLength(1000)]
+        public string FullName { get; set; }
+        public string Email { get; set; }
+        public string Phone { get; set; }
         public string Bio { get; set; }
-
-        /// <summary>
-        /// Applies updates to the Client entity
-        /// </summary>
-        /// <param name="client"></param>
-        public void ClientUpdate_To_Client(Entities.User.Client client)
-        {
-            if (this.Bio != null)
-                client.Bio = this.Bio;
-        }
     }
 }
