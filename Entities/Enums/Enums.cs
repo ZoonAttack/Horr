@@ -31,6 +31,14 @@ namespace Entities.Enums
         Cancelled,
         Disputed
     }
+    /// <summary>
+    /// Represents the status of a Freelancer service.
+    /// </summary>
+    public enum ServiceStatus
+    {
+        ACTIVE,
+        INACTIVE
+    }
 
     /// <summary>
     /// Represents the status of a freelancer proposal.
@@ -165,5 +173,18 @@ namespace Entities.Enums
         Payee,
         Platform,
         Escrow
+    }
+
+    /// <summary>
+    /// Message to server action types.
+    /// </summary>
+    public enum ActionType : short
+    {
+        MESSAGE = 0,
+        USERNAME,
+        UPDATELIST,
+        USERCONNECTED,
+        USERDISCONNECTED,
+        SERVERDISCONNECTED
     }
 }
