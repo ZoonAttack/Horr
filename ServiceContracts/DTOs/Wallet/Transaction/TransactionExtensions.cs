@@ -18,8 +18,8 @@ namespace Horr.DTOs.Wallet.Transactions
                 SenderWalletId = transaction.SenderWalletId,
                 ReceiverWalletId = transaction.ReceiverWalletId,
                 Amount = transaction.Amount,
-                TransactionType = transaction.TransactionType,
-                Status = transaction.Status,
+                TransactionType = Enum.Parse<TransactionType>(transaction.TransactionType),
+                Status = Enum.Parse<TransactionStatus>(transaction.Status),
                 Description = transaction.Description,
                 CreatedAt = transaction.CreatedAt,
                 CompletedAt = transaction.CompletedAt
@@ -38,7 +38,7 @@ namespace Horr.DTOs.Wallet.Transactions
                 SenderWalletId = createDto.SenderWalletId,
                 ReceiverWalletId = createDto.ReceiverWalletId,
                 Amount = createDto.Amount,
-                TransactionType = createDto.TransactionType,
+                TransactionType = createDto.TransactionType.ToString(),
                 Description = createDto.Description,
             };
         }
@@ -51,9 +51,9 @@ namespace Horr.DTOs.Wallet.Transactions
             }
 
             // Only update the Status and set CompletedAt if the transaction is moving from Pending/Processing to Finalized
-            if (transaction.Status != updateDto.Status)
+            if (transaction.Status.ToString() != updateDto.Status.ToString())
             {
-                transaction.Status = updateDto.Status;
+                transaction.Status = updateDto.Status.ToString();
 
                 if (updateDto.Status == TransactionStatus.Completed || updateDto.Status == TransactionStatus.Failed)
                 {

@@ -86,13 +86,14 @@ namespace Entities.Enums
     /// <summary>
     /// Represents the status of a payment.
     /// </summary>
-    public enum PaymentStatus
+    public enum RequestStatus
     {
         Pending,
         Held,
         Released,
         Refunded,
-        Failed
+        Failed,
+        Completed
     }
 
     /// <summary>
@@ -173,6 +174,13 @@ namespace Entities.Enums
         Payee,
         Platform,
         Escrow
+    }
+
+    public enum PaymentMethodTypes
+    {
+        InstaPay,
+        eWallet
+        //BankTransfer
     }
 
     /// <summary>
