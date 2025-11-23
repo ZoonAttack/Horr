@@ -1,7 +1,7 @@
 ﻿using Entities.Payment;
 using Entities.Enums;
 
-namespace Application.DTOs.Payment
+namespace Horr.DTOs.Wallet.Transactions
 {
     public static class TransactionExtensions
     {
