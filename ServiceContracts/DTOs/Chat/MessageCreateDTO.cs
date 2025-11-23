@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ServiceContracts.DTOs.Chat
 {
-    internal class MessageDTO
+    internal class MessageCreateDTO
     {
 
         public string Sender { get; set; }
