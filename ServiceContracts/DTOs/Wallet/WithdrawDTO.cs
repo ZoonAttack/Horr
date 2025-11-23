@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ServiceContracts.DTOs.Wallet
 {
-    internal class WithdrawDTO
+    public class WithdrawDTO
     {
     }
 }

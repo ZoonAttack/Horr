@@ -38,14 +38,12 @@
                 return null;
             }
 
-            // Note: PasswordHash and Role should be set by the service layer.
             return new Entities.User.User
             {
                 FullName = createDto.FullName,
                 Email = createDto.Email,
                 Phone = createDto.Phone,
 
-                // Initialize the Freelancer navigation property with the specific data
                 Freelancer = new Entities.User.Freelancer
                 {
                     Bio = createDto.Bio,
