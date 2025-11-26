@@ -1,24 +1,24 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace ServiceContracts.DTOs.Chat
 {
     /// <summary>
-    /// DTO for creating a new Message.
+    /// DTO for reading or displaying message information.
     /// </summary>
-    public class MessageCreateDTO
+    public class MessageReadDTO
     {
-        [Required]
+        public long Id { get; set; }
+
         public long ChatId { get; set; }
 
-        [Required]
         public long SenderId { get; set; }
 
         public string Content { get; set; }
 
-        [MaxLength(255)]
         public string AttachmentUrl { get; set; }
 
-        [MaxLength(50)]
         public string AttachmentType { get; set; }
+
+        public bool IsRead { get; set; }
+
+        public DateTime SentAt { get; set; }
     }
 }
