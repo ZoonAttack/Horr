@@ -31,9 +31,9 @@ namespace Entities.Payment
         public decimal Amount { get; set; }
 
         [Required]
-        public TransactionType TransactionType { get; set; }
+        public string? TransactionType { get; set; }
 
-        public TransactionStatus Status { get; set; } = TransactionStatus.Pending;
+        public string? Status { get; set; } = TransactionStatus.Pending.ToString();
 
         [Column(TypeName = "text")]
         public string Description { get; set; }
