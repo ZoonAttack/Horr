@@ -1,4 +1,6 @@
-﻿namespace ServiceContracts
+﻿using Entities.Enums;
+
+namespace ServiceContracts
 {
     public class RegisterRequestDto
     {
@@ -7,5 +9,7 @@
 
         public string PhoneNumber { get; set; }
         public string Password { get; set; }
+
+        public UserRole Role { get; set; }
     }
 }
