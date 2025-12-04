@@ -1,35 +1,70 @@
-﻿using ServiceContracts;
+﻿using Entities.User;
+using Microsoft.AspNetCore.Identity;
+using ServiceContracts;
 using ServiceContracts.DTOs.Responses;
 using ServiceContracts.DTOs.User;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace Services.Implementations
 {
+
     public class AuthService : IAuthService
     {
-        public Task<Result<AuthResponse>> LoginAsync(LoginRequestDTO loginRequestDTO)
+        private readonly UserManager<User> _userManager;
+        public AuthService(UserManager<User> userManager)
+        {
+            _userManager = userManager;
+        }
+        public async Task<Result<AuthResponse>> LoginAsync(LoginRequestDTO loginRequestDTO)
         {
             // Validate user credentials using UserManager
-
+            var user = await _userManager.FindByEmailAsync(loginRequestDTO.Email);
+            
             // If valid, generate JWT and Refresh Token
 
             // Return AuthResponse DTO with Success Result
             throw new NotImplementedException();
         }
 
-        public Task<Result<AuthResponse>> RegisterAsync(RegisterRequestDto registerRequestDto)
+        public async Task<Result<AuthResponse>> RegisterAsync(RegisterRequestDto dto)
         {
-            // Map DTO to Entity
+            var user = new User
+            {
+                UserName = dto.Email,
+                Email = dto.Email,
+                FullName = dto.FullName
+            };
 
-            // Create user using UserManager (Give corresponding role)
+            // 1. Create User
+            var result = await _userManager.CreateAsync(user, dto.Password);
 
-            // Return AuthResponse DTO with Success Result
+            // 2. CHECK FOR FAILURE (Fixing the bug in your snippet)
+            if (!result.Succeeded)
+            {
+                return new Result<AuthResponse>
+                {
+                    Succeeded = false,
+                    Message = "Registration failed",
+                    Errors = result.Errors.Select(e => e.Description).ToList()
+                };
+            }
 
-            throw new NotImplementedException();
+            // 3. Add Role
+            // Ensure the role exists before adding, or this might throw an error.
+            await _userManager.AddToRoleAsync(user, dto.Role.ToString());
+
+            // 4. Return Success Data
+            //Cookie is sent through the controller to the browser
+            return new Result<AuthResponse>
+            {
+                Succeeded = true,
+                Data = new AuthResponse
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                },
+                Message = "User registered successfully"
+            };
         }
     }
 }
