@@ -3,6 +3,7 @@ using Entities.User;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using ServiceContracts;
+using ServiceContracts.DTOs.User;
 using Services.Implementations;
 using System.Data;
 using System.Linq;
@@ -30,26 +31,29 @@ namespace Horr.Controllers
         [Route("register")]
         public async Task<IActionResult> Register(RegisterRequestDto dto)
         {
-            //Call service to add user to db
-            var result = await _authService.RegisterAsync(dto);
-            if (!result.Succeeded)
-            {
-                foreach (var error in result.Errors)
-                {
-                    ModelState.AddModelError("", error);
-                }
-                return View(dto);
-            }
-            // On successful registration, sign in the user
-            var user = await _userManager.FindByIdAsync(result.Data.Id);
-            //This creates the authentication cookie
-            await _signInManager.SignInAsync(user, isPersistent: false);
+            //Call the AuthService to register the user
 
-            //Redirect user to corresponding dashboard based on role
+            //Receive the result from AuthService
 
-            return await RedirectToRoleDashboard(user);
+            //Check if registration was successful
+
+            //If successful. return Ok response with data(AuthResponse)
+
+            //If failed, return BadRequest response with errors
         }
 
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequestDTO dto)
+        {
+            var result = await _authService.LoginAsync(dto);
+
+            if (!result.Succeeded)
+                return BadRequest(result);
+
+            // React will receive: { succeeded: true, data: { accessToken: "...", ... } }
+            return Ok(result);
+        }
 
         #region Helper
         private async Task<IActionResult> RedirectToRoleDashboard(User user)
