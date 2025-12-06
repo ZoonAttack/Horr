@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Services.Implementations
 {
-    internal class TokenService : ITokenService
+    public class TokenService : ITokenService
     {
         private readonly IConfiguration _config;
 

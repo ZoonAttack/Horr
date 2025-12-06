@@ -27,19 +27,21 @@ namespace Horr.Controllers
             return View();
         }
 
-        [HttpPost]
-        [Route("register")]
-        public async Task<IActionResult> Register(RegisterRequestDto dto)
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterRequestDto dto)
         {
-            //Call the AuthService to register the user
+            // 1. Service Call
+            var result = await _authService.RegisterAsync(dto);
 
-            //Receive the result from AuthService
+            // 2. Handle Failure
+            if (!result.Succeeded)
+            {
+                return BadRequest(result); // Returns 400 with error messages
+            }
 
-            //Check if registration was successful
-
-            //If successful. return Ok response with data(AuthResponse)
-
-            //If failed, return BadRequest response with errors
+            // 3. Handle Success
+            // React will receive the Token immediately and can save it to LocalStorage
+            return Ok(result);
         }
 
 
