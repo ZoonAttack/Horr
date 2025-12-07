@@ -108,6 +108,19 @@ namespace Entities.Enums
     }
 
     /// <summary>
+    /// Represents the status of a payment.
+    /// </summary>
+    public enum PaymentStatus
+    {
+        Pending,
+        Held,
+        Released,
+        Refunded,
+        Failed,
+        Completed
+    }
+
+    /// <summary>
     /// Represents the status of a transaction.
     /// </summary>
     public enum TransactionStatus
