@@ -1,3 +1,13 @@
+using Entities.User;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using ServiceContracts;
+using Services;
+using Services.Implementations;
+using System.Text;
+
 namespace Horr
 {
     public class Program
@@ -5,9 +15,90 @@ namespace Horr
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            // ==========================================
+            // 1. DATABASE & IDENTITY SETUP
+            // ==========================================
+            builder.Services.AddDbContext<AppDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            builder.Services.AddIdentity<User, IdentityRole>()
+                .AddEntityFrameworkStores<AppDbContext>()
+                .AddDefaultTokenProviders();
+
+            // ==========================================
+            // 2. REGISTER YOUR CUSTOM SERVICES (DI)
+            // ==========================================
+            // This tells ASP.NET: "When a controller asks for IAuthService, give them AuthService"
+            builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<ITokenService, TokenService>();
+
+            // ==========================================
+            // 3. JWT AUTHENTICATION SETUP
+            // ==========================================
+            // This tells ASP.NET how to read the token coming from React
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.SaveToken = true;
+                options.RequireHttpsMetadata = false; // Set to true in production
+                options.TokenValidationParameters = new TokenValidationParameters()
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+                    ValidAudience = builder.Configuration["JwtSettings:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"]))
+                };
+            });
+
+            // ==========================================
+            // 4. CORS SETUP (Crucial for React)
+            // ==========================================
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowReactApp",
+                    b => b.WithOrigins("http://localhost:3000") // Your React URL
+                          .AllowAnyMethod()
+                          .AllowAnyHeader());
+            });
+
+            builder.Services.AddControllers();
+            builder.Services.AddEndpointsApiExplorer();
+            //builder.Services.AddSwaggerGen();
+
             var app = builder.Build();
 
-            app.MapGet("/", () => "Hello World!");
+            // ==========================================
+            // 5. THE MIDDLEWARE PIPELINE (Order Matters!)
+            // ==========================================
+
+            if (app.Environment.IsDevelopment())
+            {
+                //app.UseSwagger();
+               // app.UseSwaggerUI();
+            }
+
+            app.UseHttpsRedirection();
+
+            // A. Use CORS before Auth
+            app.UseCors("AllowReactApp");
+
+            // B. Turn on Authentication (Check the token)
+            app.UseAuthentication();
+
+            // C. Turn on Authorization (Check the roles)
+            app.UseAuthorization();
+
+            app.MapControllers();
 
             app.Run();
         }
