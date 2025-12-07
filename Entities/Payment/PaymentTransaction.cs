@@ -29,7 +29,7 @@ namespace Entities.Payment
         public virtual Transaction Transaction { get; set; }
 
         [Required]
-        public PaymentTransactionRole Role { get; set; };
+        public PaymentTransactionRole Role { get; set; }
 
         [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         public DateTime CreatedAt { get; set; }

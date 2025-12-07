@@ -2,6 +2,7 @@ using Entities.Communication;
 using Entities.Enums;
 using Entities.Payment;
 using Entities.Review;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -12,36 +13,13 @@ namespace Entities.User
     /// Represents the main user account for all roles.
     /// </summary>
     [Table("users")]
-    [Index(nameof(Email), IsUnique = true)]
-    [Index(nameof(Phone), IsUnique = true)]
-    [Index(nameof(Role))]
     [Index(nameof(IsDeleted))]
-    public class User
+    public class User : IdentityUser
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public long Id { get; set; }
-
-        [Required]
-        public UserRole Role { get; set; }
 
         [Required]
         [MaxLength(150)]
         public string FullName { get; set; }
-
-        [Required]
-        [MaxLength(150)]
-        [EmailAddress]
-        public string Email { get; set; }
-
-        [Required]
-        [MaxLength(20)]
-        [Phone]
-        public string Phone { get; set; }
-
-        [Required]
-        [MaxLength(255)]
-        public string PasswordHash { get; set; }
 
         public bool IsVerified { get; set; } = false;
 

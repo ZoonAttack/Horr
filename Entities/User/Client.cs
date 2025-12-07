@@ -16,7 +16,6 @@ namespace Entities.User
         [Key]
         [ForeignKey("User")]
         public long UserId { get; set; }
-        public virtual Entities.User.User User { get; set; }
 
         [Column(TypeName = "text")]
         public string Bio { get; set; }
@@ -27,7 +26,9 @@ namespace Entities.User
         [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         public DateTime UpdatedAt { get; set; }
 
+
         // --- Navigation Properties ---
+        public virtual User User { get; set; }
         public virtual ICollection<ClientProject> ClientProjects { get; set; } = new List<ClientProject>();
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
         public virtual ICollection<Chat> Chats { get; set; } = new List<Chat>();

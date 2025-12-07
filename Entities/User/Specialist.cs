@@ -12,13 +12,10 @@ namespace Entities.User
         [Key]
         [ForeignKey("User")]
         public long UserId { get; set; }
-        public virtual Entities.User.User User { get; set; }
+        public virtual User User { get; set; }
 
         [MaxLength(100)]
         public string Specialization { get; set; }
-
-        [Column(TypeName = "decimal(10,2)")]
-        public decimal? ReviewFee { get; set; }
 
         [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         public DateTime CreatedAt { get; set; }
