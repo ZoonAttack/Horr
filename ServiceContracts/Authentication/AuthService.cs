@@ -1,11 +1,14 @@
 ﻿using Entities.User;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Configuration;
 using ServiceContracts;
 using ServiceContracts.DTOs.Responses;
 using ServiceContracts.DTOs.User;
+using Services.Interfaces;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-
+using System.Text;
 
 namespace Services.Implementations
 {
@@ -13,12 +16,16 @@ namespace Services.Implementations
     public class AuthService : IAuthService
     {
         private readonly UserManager<User> _userManager;
-        private readonly ITokenService _tokenService; // <--- Inject this
+        private readonly ITokenService _tokenService;
+        private readonly IEmailService _emailService;
+        private readonly IConfiguration _configuration;
 
-        public AuthService(UserManager<User> userManager, ITokenService tokenService)
+        public AuthService(UserManager<User> userManager, ITokenService tokenService, IEmailService emailService, IConfiguration configuration)
         {
             _userManager = userManager;
             _tokenService = tokenService;
+            _emailService = emailService;
+            _configuration = configuration;
         }
 
         public async Task<Result<AuthResponse>> LoginAsync(LoginRequestDTO dto)
@@ -26,7 +33,7 @@ namespace Services.Implementations
             var user = await _userManager.FindByEmailAsync(dto.Email);
 
             // ... Validate Password Logic ...
-            if(user is null || _userManager.CheckPasswordAsync(user, dto.Password).Result == false)
+            if (user is null || _userManager.CheckPasswordAsync(user, dto.Password).Result == false)
             {
                 return new Result<AuthResponse>
                 {
@@ -93,19 +100,63 @@ namespace Services.Implementations
                     Errors = roleResult.Errors.Select(e => e.Description).ToList()
                 };
             }
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
 
-            // 5. GENERATE TOKENS (Auto-Login)
-            var authResponse = await GenerateAuthResponseAsync(user);
+            var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
 
+            // 3. Build URL
+            var baseUrl = _configuration["AppURL"];
+            var confirmationLink = $"{baseUrl}/api/auth/confirm-email?userId={user.Id}&token={encodedToken}";
+
+            // 4. Send Email
+            var message = $"<h1>Welcome!</h1><p>Please <a href='{confirmationLink}'>click here</a> to confirm your email.</p>";
+            bool result = await _emailService.SendEmailAsync(user.Email, "Confirm your email", message);
+            if (result == false)
+            {
+                return new Result<AuthResponse>
+                {
+                    Succeeded = false,
+                    Message = "Failed to send confirmation email."
+                };
+            }
             return new Result<AuthResponse>
             {
                 Succeeded = true,
-                Data = authResponse,
-                Message = "User registered and logged in successfully"
+                Message = "Registration successful. Please check your email to confirm your account."
             };
         }
 
+        public async Task<Result<AuthResponse>> ConfirmEmailAsync(string userId, string token)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return new Result<AuthResponse>
+                {
+                    Succeeded = false,
+                    Message = "User not found."
+                };
+            }
+            var decodedTokenBytes = WebEncoders.Base64UrlDecode(token);
+            var decodedToken = Encoding.UTF8.GetString(decodedTokenBytes);
+            var result = await _userManager.ConfirmEmailAsync(user, decodedToken);
+            if (!result.Succeeded)
+            {
+                return new Result<AuthResponse>
+                {
+                    Succeeded = false,
+                    Message = "Email confirmation failed.",
+                    Errors = result.Errors.Select(e => e.Description).ToList()
+                };
+            }
 
+            var authResponse = await GenerateAuthResponseAsync(user);
+            return new Result<AuthResponse>
+            {
+                Succeeded = true,
+                Data = authResponse
+            };
+        }
         #region helper
 
         // Helper method to generate tokens and update the user in DB

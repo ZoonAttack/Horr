@@ -10,5 +10,7 @@ namespace ServiceContracts
         Task<Result<AuthResponse>> LoginAsync(LoginRequestDTO loginRequestDTO);
 
         Task<Result<AuthResponse>> RegisterAsync(RegisterRequestDto registerRequestDto);
+
+        Task<Result<AuthResponse>> ConfirmEmailAsync(string userId, string token);
     }
 }

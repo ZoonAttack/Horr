@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using ServiceContracts;
 using Services.Implementations;
+using Services.Interfaces;
 using System.Text;
 
 namespace Horr
@@ -32,7 +33,7 @@ namespace Horr
             // This tells ASP.NET: "When a controller asks for IAuthService, give them AuthService"
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<ITokenService, TokenService>();
-
+            builder.Services.AddTransient<IEmailService, EmailService>();
             // ==========================================
             // 3. JWT AUTHENTICATION SETUP
             // ==========================================
@@ -72,8 +73,7 @@ namespace Horr
             });
 
             builder.Services.AddControllers();
-            builder.Services.AddEndpointsApiExplorer();
-            //builder.Services.AddSwaggerGen();
+            builder.Services.AddOpenApiDocument();
 
             var app = builder.Build();
 
@@ -83,8 +83,8 @@ namespace Horr
 
             if (app.Environment.IsDevelopment())
             {
-                //app.UseSwagger();
-               // app.UseSwaggerUI();
+                app.UseOpenApi();
+                app.UseSwaggerUi();
             }
 
             app.UseHttpsRedirection();
