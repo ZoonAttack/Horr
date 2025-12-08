@@ -16,7 +16,7 @@ namespace ServiceContracts.DTOs.User.UserVerification
 
             return new UserVerificationReadDTO
             {
-                Id = userVerification.Id,
+                Id = userVerification.Id.ToString(),
                 UserId = userVerification.UserId,
                 NationalIdImage = userVerification.NationalIdImage,
                 SelfieImage = userVerification.SelfieImage,

@@ -1,5 +1,6 @@
 using Entities.Enums;
 using Entities.Marketplace;
+using ServiceContracts.DTOs.Order;
 
 namespace ServiceContracts.DTOs.Order
 {
@@ -8,14 +9,14 @@ namespace ServiceContracts.DTOs.Order
         /// <summary>
         /// Converts Order entity to ServiceOrderReadDTO
         /// </summary>
-        public static ServiceOrderReadDTO Order_To_ServiceOrderRead(this Entities.Marketplace.Order order)
+        public static OrderReadDTO Order_To_OrderRead(this Entities.Marketplace.Order order)
         {
             if (order == null)
             {
                 return null;
             }
 
-            return new ServiceOrderReadDTO
+            return new OrderReadDTO
             {
                 Id = order.Id,
                 ClientId = order.ClientId,

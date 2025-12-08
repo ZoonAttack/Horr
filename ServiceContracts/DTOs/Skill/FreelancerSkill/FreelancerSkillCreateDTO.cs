@@ -9,10 +9,10 @@ namespace ServiceContracts.DTOs.Skill.FreelancerSkill
     public class FreelancerSkillCreateDTO
     {
         [Required]
-        public long FreelancerId { get; set; }
+        public string FreelancerId { get; set; }
 
         [Required]
-        public long SkillId { get; set; }
+        public string SkillId { get; set; }
 
         [Required]
         public ProficiencyLevel ProficiencyLevel { get; set; }

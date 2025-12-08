@@ -5,9 +5,9 @@ namespace Horr.DTOs.Wallet.Transactions
 {
     public class TransactionReadDTO
     {
-        public long Id { get; set; }
-        public long? SenderWalletId { get; set; }
-        public long? ReceiverWalletId { get; set; }
+        public string Id { get; set; }
+        public string? SenderWalletId { get; set; }
+        public string? ReceiverWalletId { get; set; }
         public decimal Amount { get; set; }
         public TransactionType TransactionType { get; set; }
         public TransactionStatus Status { get; set; }

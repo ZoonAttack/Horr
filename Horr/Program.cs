@@ -1,10 +1,10 @@
+using Entities;
 using Entities.User;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using ServiceContracts;
-using Services;
 using Services.Implementations;
 using System.Text;
 

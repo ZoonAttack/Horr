@@ -7,9 +7,9 @@ namespace ServiceContracts.DTOs.User.UserVerification
     /// </summary>
     public class UserVerificationReadDTO
     {
-        public long Id { get; set; }
+        public string Id { get; set; }
 
-        public long UserId { get; set; }
+        public string UserId { get; set; }
 
         public string NationalIdImage { get; set; }
 

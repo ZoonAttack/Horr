@@ -4,7 +4,7 @@ namespace ServiceContracts.User
 {
     public interface IFreelancerService
     {
-        public Task<Guid> CreateFreelancerAsync(FreelancerCreateDTO freelancerCreationDTO);
+        public Task<FreelancerReadDTO> CreateFreelancerAsync(FreelancerCreateDTO freelancerCreationDTO);
 
         public Task<bool> UpdateFreelancerAsync(FreelancerUpdateDTO freelancerUpdateDTO);
 

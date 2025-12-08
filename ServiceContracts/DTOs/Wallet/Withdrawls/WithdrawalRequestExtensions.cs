@@ -11,26 +11,26 @@ namespace ServiceContracts.DTOs.Wallet.Withdrawls
 
             return new WithdrawalRequestReadDTO
             {
-                Id = request.Id,
+                Id = request.Id.ToString(),
                 UserId = request.UserId,
                 Amount = request.Amount,
                 Status = Enum.Parse<RequestStatus>(request.Status),
-                ApprovedByUserId = request.ApprovedByUserId,
+                ApprovedByUserId = request.ApprovedByUserId.HasValue ? request.ApprovedByUserId.Value.ToString() : null,
                 ProcessedAt = request.ProcessedAt,
-                PaymentMethodId = request.PaymentMethodId,
-                TransactionId = request.TransactionId,
+                PaymentMethodId = request.PaymentMethodId.ToString(),
+                TransactionId = request.TransactionId.HasValue ? request.TransactionId.Value.ToString() : null,
                 RequestedAt = request.RequestedAt
             };
         }
 
-        public static WithdrawalRequest ToWithdrawalRequest(this WithdrawalRequestCreateDTO createDto, long userId)
+        public static WithdrawalRequest ToWithdrawalRequest(this WithdrawalRequestCreateDTO createDto, string userId)
         {
             if (createDto == null) return null;
 
             return new WithdrawalRequest
             {
                 UserId = userId,
-                PaymentMethodId = createDto.PaymentMethodId,
+                PaymentMethodId = long.Parse(createDto.PaymentMethodId),
                 Amount = createDto.Amount
             };
         }

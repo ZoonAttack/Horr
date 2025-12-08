@@ -1,7 +1,7 @@
-﻿using System.Security.Claims;
-namespace Services
-{
+using System.Security.Claims;
 
+namespace ServiceContracts
+{
     public interface ITokenService
     {
         string GenerateAccessToken(IEnumerable<Claim> claims);

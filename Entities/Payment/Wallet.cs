@@ -17,7 +17,7 @@ namespace Entities.Payment
 
         [Required]
         [ForeignKey("User")]
-        public long UserId { get; set; }
+        public string UserId { get; set; }
         public virtual Entities.User.User User { get; set; }
 
         [Required]

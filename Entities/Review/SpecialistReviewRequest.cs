@@ -32,7 +32,7 @@ namespace Entities.Review
         public virtual ClientProject Project { get; set; }
 
         [ForeignKey("Specialist")]
-        public long? SpecialistId { get; set; }
+        public string? SpecialistId { get; set; }
         public virtual Entities.User.User Specialist { get; set; }
 
         [Required]

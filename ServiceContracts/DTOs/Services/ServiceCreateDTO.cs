@@ -7,16 +7,18 @@ using System.Threading.Tasks;
 
 namespace ServiceContracts.DTOs.Services
 {
-    internal class ServiceCreateDTO
+    public class ServiceCreateDTO
     {
-        public string Title { get; set; }
+        public long FreelancerId { get; set; }
 
-        public ServiceStatus Status { get; set; }
+        public string Title { get; set; }
 
         public string Description { get; set; }
 
-        public string Price { get; set; }
+        public decimal? Price { get; set; }
 
-        public string Delivery_Time { get; set; }
+        public string DeliveryTime { get; set; }
+
+        public ServiceStatus Status { get; set; }
     }
 }

@@ -17,10 +17,10 @@ namespace ServiceContracts.DTOs.Deliverables
 
             return new DeliverableReadDTO
             {
-                Id = delivery.Id,
-                ProjectId = delivery.ProjectId,
-                MessageId = delivery.MessageId,
-                ProposalId = delivery.ProposalId,
+                Id = delivery.Id.ToString(),
+                ProjectId = delivery.ProjectId.ToString(),
+                MessageId = delivery.MessageId.ToString(),
+                ProposalId = delivery.ProposalId.HasValue ? delivery.ProposalId.Value.ToString() : null,
                 FileUrl = delivery.FileUrl,
                 Status = delivery.Status,
                 DeliveredAt = delivery.DeliveredAt,
@@ -41,9 +41,9 @@ namespace ServiceContracts.DTOs.Deliverables
 
             return new Delivery
             {
-                ProjectId = createDto.ProjectId,
-                MessageId = createDto.MessageId,
-                ProposalId = createDto.ProposalId,
+                ProjectId = long.Parse(createDto.ProjectId),
+                MessageId = long.Parse(createDto.MessageId),
+                ProposalId = string.IsNullOrWhiteSpace(createDto.ProposalId) ? null : long.Parse(createDto.ProposalId),
                 FileUrl = createDto.FileUrl,
                 Status = DeliveryStatus.Pending
             };
@@ -64,8 +64,8 @@ namespace ServiceContracts.DTOs.Deliverables
             if (!string.IsNullOrEmpty(updateDto.ReviewNotes))
                 delivery.ReviewNotes = updateDto.ReviewNotes;
 
-            // Set ReviewedAt when delivery is reviewed
-            if ((updateDto.Status == DeliveryStatus.Accepted || updateDto.Status == DeliveryStatus.Rejected) 
+            // Set ReviewedAt when delivery is reviewed (approved or rejected)
+            if ((updateDto.Status == DeliveryStatus.Approved || updateDto.Status == DeliveryStatus.Rejected)
                 && delivery.ReviewedAt == null)
             {
                 delivery.ReviewedAt = DateTime.UtcNow;

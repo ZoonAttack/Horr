@@ -5,7 +5,7 @@ namespace ServiceContracts.DTOs.User.Client
 {
     public class ClientReadDTO
     {
-        public long Id { get; set; }
+        public string Id { get; set; }
         public UserRole Role { get; set; }
         public string FullName { get; set; }
         public string Email { get; set; }

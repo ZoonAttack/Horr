@@ -16,10 +16,10 @@ namespace ServiceContracts.DTOs.Chat
 
             return new ChatReadDTO
             {
-                Id = chat.Id,
-                ProjectId = chat.ProjectId,
-                ClientId = chat.ClientId,
-                FreelancerId = chat.FreelancerId,
+                Id = chat.Id.ToString(),
+                ProjectId = chat.ProjectId.ToString(),
+                ClientId = chat.ClientId.ToString(),
+                FreelancerId = chat.FreelancerId.ToString(),
                 CreatedAt = chat.CreatedAt
             };
         }
@@ -36,9 +36,9 @@ namespace ServiceContracts.DTOs.Chat
 
             return new Entities.Communication.Chat
             {
-                ProjectId = createDto.ProjectId,
-                ClientId = createDto.ClientId,
-                FreelancerId = createDto.FreelancerId
+                ProjectId = long.Parse(createDto.ProjectId),
+                ClientId = long.Parse(createDto.ClientId),
+                FreelancerId = long.Parse(createDto.FreelancerId)
             };
         }
 
@@ -54,8 +54,8 @@ namespace ServiceContracts.DTOs.Chat
 
             return new MessageReadDTO
             {
-                Id = message.Id,
-                ChatId = message.ChatId,
+                Id = message.Id.ToString(),
+                ChatId = message.ChatId.ToString(),
                 SenderId = message.SenderId,
                 Content = message.Content,
                 AttachmentUrl = message.AttachmentUrl,
@@ -77,7 +77,7 @@ namespace ServiceContracts.DTOs.Chat
 
             return new Message
             {
-                ChatId = createDto.ChatId,
+                ChatId = long.Parse(createDto.ChatId),
                 SenderId = createDto.SenderId,
                 Content = createDto.Content,
                 AttachmentUrl = createDto.AttachmentUrl,

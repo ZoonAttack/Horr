@@ -23,11 +23,11 @@ namespace Entities.Review
 
         [Required]
         [ForeignKey("Reviewer")]
-        public long ReviewerId { get; set; }
+        public string ReviewerId { get; set; }
 
         [Required]
         [ForeignKey("Reviewee")]
-        public long RevieweeId { get; set; }
+        public string RevieweeId { get; set; }
 
         [ForeignKey("Project")]
         public long? ProjectId { get; set; }

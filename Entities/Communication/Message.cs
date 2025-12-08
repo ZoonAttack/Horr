@@ -27,7 +27,7 @@ namespace Entities.Communication
 
         [Required]
         [ForeignKey("Sender")]
-        public long SenderId { get; set; }
+        public string SenderId { get; set; }
         public virtual Entities.User.User Sender { get; set; }
 
         [Column(TypeName = "text")]

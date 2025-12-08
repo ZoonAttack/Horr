@@ -8,7 +8,7 @@ namespace ServiceContracts.DTOs.User.UserVerification
     public class UserVerificationCreateDTO
     {
         [Required]
-        public long UserId { get; set; }
+        public string UserId { get; set; }
 
         [MaxLength(255)]
         public string NationalIdImage { get; set; }

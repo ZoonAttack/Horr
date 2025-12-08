@@ -8,12 +8,12 @@ namespace ServiceContracts.DTOs.Deliverables
     public class DeliverableCreateDTO
     {
         [Required]
-        public long ProjectId { get; set; }
+        public string ProjectId { get; set; }
 
         [Required]
-        public long MessageId { get; set; }
+        public string MessageId { get; set; }
 
-        public long? ProposalId { get; set; }
+        public string? ProposalId { get; set; }
 
         [Required]
         [MaxLength(255)]
