@@ -16,11 +16,12 @@ namespace Entities.User
     [Index(nameof(IsDeleted))]
     public class User : IdentityUser
     {
-
         [Required]
         [MaxLength(150)]
         public string FullName { get; set; }
 
+        public string Phone { get; set; }
+        public UserRole Role { get; set; }
         public bool IsVerified { get; set; } = false;
 
         [Column(TypeName = "decimal(5,2)")]

@@ -1,13 +1,28 @@
 ﻿using ServiceContracts.DTOs.User.Freelancer;
 using ServiceContracts.User;
-using Services.Helpers;
 using Entities.User;
+using ServiceImplementatio.Helpers;
 
-namespace ServiceImplementation.Implementations.User
+namespace ServiceImplementatio.User
 {
     public class FreelancerService : IFreelancerService
     {
-        public Task<Guid> CreateFreelancerAsync(FreelancerCreateDTO freelancerCreationDTO)
+        public FreelancerReadDTO freelancer_to_read(Freelancer freelancer)
+        {
+            return new FreelancerReadDTO
+            {
+                Id = freelancer.UserId.ToString(),
+                Bio = freelancer.Bio,
+                HourlyRate = freelancer.HourlyRate,
+                Availability = freelancer.Availability,
+                YearsOfExperience = freelancer.YearsOfExperience,
+                PortfolioUrl = freelancer.PortfolioUrl,
+                CreatedAt = freelancer.CreatedAt,
+                UpdatedAt = freelancer.UpdatedAt
+            };
+        }
+
+        public Task<FreelancerReadDTO> CreateFreelancerAsync(FreelancerCreateDTO freelancerCreationDTO)
         {
             if (freelancerCreationDTO == null)
             {
@@ -20,7 +35,7 @@ namespace ServiceImplementation.Implementations.User
 
             freelancer.UserId = Guid.NewGuid();
 
-            return Task.FromResult(freelancer.UserId);
+            return Task.FromResult(freelancer_to_read(freelancer));
         }
 
         public Task<bool> DeleteFreelancerAsync(Guid freelancerId)
