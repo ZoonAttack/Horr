@@ -9,7 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Entities", "Entities\Entiti
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services", "ServiceContracts\Services.csproj", "{40121B2C-556E-45BA-83FF-B779BC922776}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceImplementatio", "ServiceImplementatio\ServiceImplementatio.csproj", "{73936A67-199C-4750-8103-796EAA7E3792}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceImplementation", "ServiceImplementatio\ServiceImplementation.csproj", "{73936A67-199C-4750-8103-796EAA7E3792}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

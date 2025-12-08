@@ -5,13 +5,13 @@ namespace ServiceContracts.DTOs.Chat
     /// </summary>
     public class ChatReadDTO
     {
-        public long Id { get; set; }
+        public string Id { get; set; }
 
-        public long ProjectId { get; set; }
+        public string ProjectId { get; set; }
 
-        public long ClientId { get; set; }
+        public string ClientId { get; set; }
 
-        public long FreelancerId { get; set; }
+        public string FreelancerId { get; set; }
 
         public DateTime CreatedAt { get; set; }
     }

@@ -14,7 +14,7 @@ namespace ServiceContracts.DTOs.Skill.Skill
 
             return new SkillReadDTO
             {
-                Id = skill.Id,
+                Id = skill.Id.ToString(),
                 Name = skill.Name,
                 Category = skill.Category,
                 CreatedAt = skill.CreatedAt,

@@ -8,12 +8,12 @@ namespace ServiceContracts.DTOs.Chat
     public class ChatCreateDTO
     {
         [Required]
-        public long ProjectId { get; set; }
+        public string ProjectId { get; set; }
 
         [Required]
-        public long ClientId { get; set; }
+        public string ClientId { get; set; }
 
         [Required]
-        public long FreelancerId { get; set; }
+        public string FreelancerId { get; set; }
     }
 }

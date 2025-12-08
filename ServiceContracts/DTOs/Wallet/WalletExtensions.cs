@@ -16,7 +16,7 @@ namespace ServiceContracts.DTOs.Wallet
 
             return new WalletReadDTO
             {
-                Id = wallet.Id,
+                Id = wallet.Id.ToString(),
                 UserId = wallet.UserId,
                 Balance = wallet.Balance,
                 CreatedAt = wallet.CreatedAt,

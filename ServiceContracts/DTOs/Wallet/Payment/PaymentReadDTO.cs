@@ -9,8 +9,8 @@ namespace ServiceContracts.DTOs.Wallet.Payment
     public class PaymentCreateDTO
     {
         // Links to business context
-        public long ProjectId { get; set; }
-        public long? FreelancerId { get; set; }
+        public string ProjectId { get; set; }
+        public string? FreelancerId { get; set; }
 
         // Financial Details
         public decimal Amount { get; set; }
@@ -20,9 +20,9 @@ namespace ServiceContracts.DTOs.Wallet.Payment
 
     public class PaymentReadDTO
     {
-        public long Id { get; set; }
-        public long ProjectId { get; set; }
-        public long? FreelancerId { get; set; }
+        public string Id { get; set; }
+        public string ProjectId { get; set; }
+        public string? FreelancerId { get; set; }
         public decimal Amount { get; set; }
         public PaymentType PaymentType { get; set; }
         public PaymentStatus Status { get; set; }
@@ -51,9 +51,9 @@ namespace ServiceContracts.DTOs.Wallet.Payment
 
             return new PaymentReadDTO
             {
-                Id = payment.Id,
-                ProjectId = payment.ProjectId,
-                FreelancerId = payment.FreelancerId,
+                Id = payment.Id.ToString(),
+                ProjectId = payment.ProjectId.ToString(),
+                FreelancerId = payment.FreelancerId.HasValue ? payment.FreelancerId.Value.ToString() : null,
                 Amount = payment.Amount,
                 PaymentType = payment.PaymentType,
                 Status = payment.Status,
@@ -77,8 +77,8 @@ namespace ServiceContracts.DTOs.Wallet.Payment
 
             return new Entities.Payment.Payment
             {
-                ProjectId = createDto.ProjectId,
-                FreelancerId = createDto.FreelancerId,
+                ProjectId = long.Parse(createDto.ProjectId),
+                FreelancerId = string.IsNullOrWhiteSpace(createDto.FreelancerId) ? null : long.Parse(createDto.FreelancerId),
                 Amount = createDto.Amount,
                 PaymentType = createDto.PaymentType,
                 PlatformCommission = createDto.PlatformCommission,

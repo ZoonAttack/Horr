@@ -11,7 +11,7 @@
 
             return new PaymentTransactionReadDTO
             {
-                TransactionId = pt.TransactionId,
+                TransactionId = pt.TransactionId.ToString(),
                 Role = pt.Role,
                 CreatedAt = pt.CreatedAt
             };
@@ -26,8 +26,8 @@
 
             return new Entities.Payment.PaymentTransaction
             {
-                PaymentId = createDto.PaymentId,
-                TransactionId = createDto.TransactionId,
+                PaymentId = long.Parse(createDto.PaymentId),
+                TransactionId = long.Parse(createDto.TransactionId),
                 Role = createDto.Role
             };
         }

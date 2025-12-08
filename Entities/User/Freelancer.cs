@@ -15,7 +15,7 @@ namespace Entities.User
     {
         [Key]
         [ForeignKey("User")]
-        public Guid UserId { get; set; }
+        public string UserId { get; set; }
         public virtual User User { get; set; }
 
         [Column(TypeName = "text")]

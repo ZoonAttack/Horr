@@ -5,11 +5,11 @@ namespace ServiceContracts.DTOs.Chat
     /// </summary>
     public class MessageReadDTO
     {
-        public long Id { get; set; }
+        public string Id { get; set; }
 
-        public long ChatId { get; set; }
+        public string ChatId { get; set; }
 
-        public long SenderId { get; set; }
+        public string SenderId { get; set; }
 
         public string Content { get; set; }
 

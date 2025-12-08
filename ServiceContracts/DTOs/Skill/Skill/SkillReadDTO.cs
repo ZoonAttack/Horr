@@ -5,7 +5,7 @@ namespace ServiceContracts.DTOs.Skill.Skill
     /// </summary>
     public class SkillReadDTO
     {
-        public long Id { get; set; }
+        public string Id { get; set; }
 
         public string Name { get; set; }
 

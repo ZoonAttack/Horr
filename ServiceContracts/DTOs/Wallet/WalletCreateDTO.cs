@@ -8,6 +8,6 @@ namespace ServiceContracts.DTOs.Wallet
     public class WalletCreateDTO
     {
         [Required]
-        public long UserId { get; set; }
+        public string UserId { get; set; }
     }
 }

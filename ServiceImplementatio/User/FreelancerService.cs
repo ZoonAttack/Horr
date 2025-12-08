@@ -33,7 +33,7 @@ namespace ServiceImplementatio.User
 
             Freelancer freelancer = freelancerCreationDTO.FreelancerCreate_To_User().Freelancer;
 
-            freelancer.UserId = Guid.NewGuid();
+            freelancer.UserId = Guid.NewGuid().ToString();
 
             return Task.FromResult(freelancer_to_read(freelancer));
         }

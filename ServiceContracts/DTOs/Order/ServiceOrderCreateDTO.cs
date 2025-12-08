@@ -1,16 +1,25 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Entities.Enums;
 
 namespace ServiceContracts.DTOs.Order
 {
-    internal class ServiceOrderCreateDTO
+    public class ServiceOrderCreateDTO
     {
-        public string Service_Name { get; set; }
+        public long ClientId { get; set; }
 
-        public int MyProperty { get; set; }
+        public long FreelancerId { get; set; }
+
+        public long? ServiceId { get; set; }
+
+        public long? ProjectId { get; set; }
+
+        public OrderType OrderType { get; set; }
+
+        public decimal Amount { get; set; }
 
     }
 }

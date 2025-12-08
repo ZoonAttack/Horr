@@ -8,10 +8,10 @@ namespace ServiceContracts.DTOs.Chat
     public class MessageCreateDTO
     {
         [Required]
-        public long ChatId { get; set; }
+        public string ChatId { get; set; }
 
         [Required]
-        public long SenderId { get; set; }
+        public string SenderId { get; set; }
 
         public string Content { get; set; }
 

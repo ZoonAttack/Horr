@@ -8,8 +8,13 @@ using System.Threading.Tasks;
 
 namespace ServiceContracts.DTOs.Services
 {
-    internal class ServiceReadDTO
+    public class ServiceReadDTO
     {
+        public long Id { get; set; }
+
+        public long FreelancerId { get; set; }
+
+        // Optional display information
         public string Freelancer_Name { get; set; }
 
         public ServiceStatus Status { get; set; }
@@ -18,10 +23,14 @@ namespace ServiceContracts.DTOs.Services
 
         public string Description { get; set; }
 
-        public string Price { get; set; }
+        public decimal? Price { get; set; }
 
-        public string Delivery_Time { get; set; }
+        public string DeliveryTime { get; set; }
+
+        public bool IsActive { get; set; }
 
         public DateTime CreatedAt { get; set; }
+
+        public DateTime UpdatedAt { get; set; }
     }
 }

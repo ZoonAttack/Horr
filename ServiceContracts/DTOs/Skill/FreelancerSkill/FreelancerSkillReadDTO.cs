@@ -7,9 +7,9 @@ namespace ServiceContracts.DTOs.Skill.FreelancerSkill
     /// </summary>
     public class FreelancerSkillReadDTO
     {
-        public long FreelancerId { get; set; }
+        public string FreelancerId { get; set; }
 
-        public long SkillId { get; set; }
+        public string SkillId { get; set; }
 
         public string SkillName { get; set; }
 

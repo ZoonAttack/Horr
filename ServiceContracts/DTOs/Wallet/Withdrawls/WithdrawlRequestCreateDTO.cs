@@ -8,7 +8,7 @@ namespace ServiceContracts.DTOs.Wallet.Withdrawls
 {
     public class WithdrawalRequestCreateDTO
     {
-        public long PaymentMethodId { get; set; }
+        public string PaymentMethodId { get; set; }
         public decimal Amount { get; set; }
     }
 }

@@ -11,7 +11,7 @@ namespace Entities.User
     {
         [Key]
         [ForeignKey("User")]
-        public long UserId { get; set; }
+        public string UserId { get; set; }
         public virtual User User { get; set; }
 
         [MaxLength(100)]

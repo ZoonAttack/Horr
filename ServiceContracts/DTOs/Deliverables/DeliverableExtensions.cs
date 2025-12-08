@@ -17,10 +17,10 @@ namespace ServiceContracts.DTOs.Deliverables
 
             return new DeliverableReadDTO
             {
-                Id = delivery.Id,
-                ProjectId = delivery.ProjectId,
-                MessageId = delivery.MessageId,
-                ProposalId = delivery.ProposalId,
+                Id = delivery.Id.ToString(),
+                ProjectId = delivery.ProjectId.ToString(),
+                MessageId = delivery.MessageId.ToString(),
+                ProposalId = delivery.ProposalId.HasValue ? delivery.ProposalId.Value.ToString() : null,
                 FileUrl = delivery.FileUrl,
                 Status = delivery.Status,
                 DeliveredAt = delivery.DeliveredAt,
@@ -41,9 +41,9 @@ namespace ServiceContracts.DTOs.Deliverables
 
             return new Delivery
             {
-                ProjectId = createDto.ProjectId,
-                MessageId = createDto.MessageId,
-                ProposalId = createDto.ProposalId,
+                ProjectId = long.Parse(createDto.ProjectId),
+                MessageId = long.Parse(createDto.MessageId),
+                ProposalId = string.IsNullOrWhiteSpace(createDto.ProposalId) ? null : long.Parse(createDto.ProposalId),
                 FileUrl = createDto.FileUrl,
                 Status = DeliveryStatus.Pending
             };

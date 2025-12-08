@@ -14,8 +14,8 @@ namespace ServiceContracts.DTOs.Skill.FreelancerSkill
 
             return new FreelancerSkillReadDTO
             {
-                FreelancerId = freelancerSkill.FreelancerId,
-                SkillId = freelancerSkill.SkillId,
+                FreelancerId = freelancerSkill.FreelancerId.ToString(),
+                SkillId = freelancerSkill.SkillId.ToString(),
                 SkillName = freelancerSkill.Skill?.Name,
                 SkillCategory = freelancerSkill.Skill?.Category,
                 ProficiencyLevel = freelancerSkill.ProficiencyLevel,
@@ -36,8 +36,8 @@ namespace ServiceContracts.DTOs.Skill.FreelancerSkill
 
             return new Entities.Skill.FreelancerSkill
             {
-                FreelancerId = createDto.FreelancerId,
-                SkillId = createDto.SkillId,
+                FreelancerId = long.Parse(createDto.FreelancerId),
+                SkillId = long.Parse(createDto.SkillId),
                 ProficiencyLevel = createDto.ProficiencyLevel
             };
         }
