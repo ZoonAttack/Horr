@@ -5,9 +5,10 @@ namespace Entities.Enums
     /// </summary>
     public enum UserRole
     {
-        Freelancer,
         Client,
-        Specialist
+        Freelancer,
+        Specialist,
+        Admin
     }
 
     /// <summary>

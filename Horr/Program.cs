@@ -1,10 +1,11 @@
 using Entities;
-using Entities.User;
+using Entities.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using ServiceContracts;
+using ServiceImplementation.Authentication;
 using Services.Implementations;
 using Services.Interfaces;
 using System.Text;
@@ -13,7 +14,7 @@ namespace Horr
 {
     public class Program
     {
-        public static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -23,7 +24,15 @@ namespace Horr
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            builder.Services.AddIdentity<User, IdentityRole>()
+            builder.Services.AddIdentity<User, IdentityRole>(options =>
+            {
+                options.Password.RequireDigit = false;
+                options.Password.RequiredLength = 4;
+                options.Password.RequireLowercase = false;
+                options.Password.RequireUppercase = false;
+                options.Password.RequireNonAlphanumeric = false; // Adjust as needed
+                options.User.RequireUniqueEmail = true; // Ensure unique emails
+            })
                 .AddEntityFrameworkStores<AppDbContext>()
                 .AddDefaultTokenProviders();
 
@@ -99,8 +108,27 @@ namespace Horr
             app.UseAuthorization();
 
             app.MapControllers();
-
+            await SeedRolesAsync(app.Services);
             app.Run();
+        }
+
+        static async Task SeedRolesAsync(IServiceProvider serviceProvider)
+        {
+            // Create a new scope to retrieve scoped services
+            using var scope = serviceProvider.CreateScope();
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+            // Define the specific roles you want
+            string[] roleNames = { "Admin", "Client", "Freelancer", "Specialist" };
+
+            foreach (var roleName in roleNames)
+            {
+                // Check if the role already exists to avoid duplicates
+                if (!await roleManager.RoleExistsAsync(roleName))
+                {
+                    await roleManager.CreateAsync(new IdentityRole(roleName));
+                }
+            }
         }
     }
 }

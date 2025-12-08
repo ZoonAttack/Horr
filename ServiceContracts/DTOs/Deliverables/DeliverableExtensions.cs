@@ -20,7 +20,7 @@ namespace ServiceContracts.DTOs.Deliverables
                 Id = delivery.Id.ToString(),
                 ProjectId = delivery.ProjectId.ToString(),
                 MessageId = delivery.MessageId.ToString(),
-                ProposalId = delivery.ProposalId.HasValue ? delivery.ProposalId.Value.ToString() : null,
+                ProposalId = delivery.ProposalId,
                 FileUrl = delivery.FileUrl,
                 Status = delivery.Status,
                 DeliveredAt = delivery.DeliveredAt,
@@ -41,9 +41,9 @@ namespace ServiceContracts.DTOs.Deliverables
 
             return new Delivery
             {
-                ProjectId = long.Parse(createDto.ProjectId),
-                MessageId = long.Parse(createDto.MessageId),
-                ProposalId = string.IsNullOrWhiteSpace(createDto.ProposalId) ? null : long.Parse(createDto.ProposalId),
+                ProjectId = createDto.ProjectId,
+                MessageId = createDto.MessageId,
+                ProposalId = string.IsNullOrWhiteSpace(createDto.ProposalId) ? null : createDto.ProposalId,
                 FileUrl = createDto.FileUrl,
                 Status = DeliveryStatus.Pending
             };

@@ -15,12 +15,12 @@ namespace Entities.Payment
   
             [Key]
             [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-            public long Id { get; set; }
+            public string Id { get; set; }
 
             [Required]
             [ForeignKey("User")]
             public string UserId { get; set; }
-            public virtual Entities.User.User User { get; set; }
+            public virtual Entities.Users.User User { get; set; }
 
             [Required]
             [MaxLength(50)]

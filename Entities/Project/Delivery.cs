@@ -16,20 +16,20 @@ namespace Entities.Project
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public long Id { get; set; }
+        public string Id { get; set; }
 
         [Required]
         [ForeignKey("Project")]
-        public long ProjectId { get; set; }
+        public string ProjectId { get; set; }
         public virtual ClientProject Project { get; set; }
 
         [Required]
         [ForeignKey("Message")]
-        public long MessageId { get; set; }
+        public string MessageId { get; set; }
         public virtual Message Message { get; set; }
 
         [ForeignKey("Proposal")]
-        public long? ProposalId { get; set; }
+        public string? ProposalId { get; set; }
         public virtual Proposal Proposal { get; set; }
 
         [Required]

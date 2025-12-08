@@ -1,5 +1,5 @@
 using Entities.Enums;
-using Entities.User;
+using Entities.Users;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -18,21 +18,21 @@ namespace Entities.Project
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public long Id { get; set; }
+        public string Id { get; set; }
 
         [Required]
         [ForeignKey("Project")]
-        public long ProjectId { get; set; }
+        public string ProjectId { get; set; }
         public virtual ClientProject Project { get; set; }
 
         [Required]
         [ForeignKey("Client")]
-        public long ClientId { get; set; }
+        public string ClientId { get; set; }
         public virtual Client Client { get; set; }
 
         [Required]
         [ForeignKey("Freelancer")]
-        public long FreelancerId { get; set; }
+        public string FreelancerId { get; set; }
         public virtual Freelancer Freelancer { get; set; }
 
         [Column(TypeName = "text")]

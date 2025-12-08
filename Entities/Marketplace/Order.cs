@@ -1,6 +1,6 @@
 using Entities.Enums;
 using Entities.Project;
-using Entities.User;
+using Entities.Users;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -23,20 +23,20 @@ namespace Entities.Marketplace
 
         [Required]
         [ForeignKey("Client")]
-        public long ClientId { get; set; }
+        public string ClientId { get; set; }
         public virtual Client Client { get; set; }
 
         [Required]
         [ForeignKey("Freelancer")]
-        public long FreelancerId { get; set; }
+        public string FreelancerId { get; set; }
         public virtual Freelancer Freelancer { get; set; }
 
         [ForeignKey("Service")]
-        public long? ServiceId { get; set; }
+        public string? ServiceId { get; set; }
         public virtual Service Service { get; set; }
 
         [ForeignKey("Project")]
-        public long? ProjectId { get; set; }
+        public string? ProjectId { get; set; }
         public virtual ClientProject Project { get; set; }
 
         [Required]

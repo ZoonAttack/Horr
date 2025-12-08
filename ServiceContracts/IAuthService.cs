@@ -1,7 +1,7 @@
 ﻿
 
 using ServiceContracts.DTOs.Responses;
-using ServiceContracts.DTOs.User;
+using Services.DTOs.UserDTOs;
 
 namespace ServiceContracts
 {

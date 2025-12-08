@@ -9,7 +9,7 @@ namespace ServiceContracts.DTOs.Services
 {
     public class ServiceCreateDTO
     {
-        public long FreelancerId { get; set; }
+        public string FreelancerId { get; set; }
 
         public string Title { get; set; }
 

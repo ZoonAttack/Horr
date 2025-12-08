@@ -10,9 +10,9 @@ namespace ServiceContracts.DTOs.Services
 {
     public class ServiceReadDTO
     {
-        public long Id { get; set; }
+        public string Id { get; set; }
 
-        public long FreelancerId { get; set; }
+        public string FreelancerId { get; set; }
 
         // Optional display information
         public string Freelancer_Name { get; set; }

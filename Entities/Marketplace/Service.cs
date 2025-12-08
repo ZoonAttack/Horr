@@ -1,4 +1,4 @@
-using Entities.User;
+using Entities.Users;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -17,11 +17,11 @@ namespace Entities.Marketplace
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public long Id { get; set; }
+        public string Id { get; set; }
 
         [Required]
         [ForeignKey("Freelancer")]
-        public long FreelancerId { get; set; }
+        public string FreelancerId { get; set; }
         public virtual Freelancer Freelancer { get; set; }
 
         [Required]

@@ -9,13 +9,13 @@ namespace ServiceContracts.DTOs.Order
 {
     public class ServiceOrderCreateDTO
     {
-        public long ClientId { get; set; }
+        public string ClientId { get; set; }
 
-        public long FreelancerId { get; set; }
+        public string FreelancerId { get; set; }
 
-        public long? ServiceId { get; set; }
+        public string? ServiceId { get; set; }
 
-        public long? ProjectId { get; set; }
+        public string? ProjectId { get; set; }
 
         public OrderType OrderType { get; set; }
 

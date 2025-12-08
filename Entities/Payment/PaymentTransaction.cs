@@ -16,16 +16,16 @@ namespace Entities.Payment
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public long Id { get; set; }
+        public string Id { get; set; }
 
         [Required]
         [ForeignKey("Payment")]
-        public long PaymentId { get; set; }
+        public string PaymentId { get; set; }
         public virtual Payment Payment { get; set; }
 
         [Required]
         [ForeignKey("Transaction")]
-        public long TransactionId { get; set; }
+        public string TransactionId { get; set; }
         public virtual Transaction Transaction { get; set; }
 
         [Required]
