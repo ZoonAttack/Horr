@@ -15,7 +15,7 @@ namespace ServiceContracts.DTOs.Wallet.PaymentMethods
 
             return new PaymentMethodReadDTO
             {
-                Id = method.Id,
+                Id = method.Id.ToString(),
                 UserId = method.UserId,
                 MethodName = method.MethodName,
                 AccountIdentifier = method.AccountIdentifier,
@@ -23,7 +23,7 @@ namespace ServiceContracts.DTOs.Wallet.PaymentMethods
             };
         }
 
-        public static PaymentMethod ToPaymentMethod(this PaymentMethodCreateDTO createDto, long userId)
+        public static PaymentMethod ToPaymentMethod(this PaymentMethodCreateDTO createDto, string userId)
         {
             if (createDto == null) return null;
 

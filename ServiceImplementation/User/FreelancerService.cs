@@ -1,9 +1,9 @@
-﻿using ServiceContracts.DTOs.User.Freelancer;
+using ServiceContracts.DTOs.User.Freelancer;
 using ServiceContracts.User;
 using Entities.User;
-using ServiceImplementatio.Helpers;
+using ServiceImplementation.Helpers;
 
-namespace ServiceImplementatio.User
+namespace ServiceImplementation.User
 {
     public class FreelancerService : IFreelancerService
     {

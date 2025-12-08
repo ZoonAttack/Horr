@@ -63,8 +63,8 @@ namespace ServiceContracts.DTOs.Contract
 
             contract.Status = updateDto.Status;
 
-            // Set SignedAt when contract is signed
-            if (updateDto.Status == ContractStatus.Signed && contract.SignedAt == null)
+            // Set SignedAt when contract becomes active (signed)
+            if (updateDto.Status == ContractStatus.Active && contract.SignedAt == null)
             {
                 contract.SignedAt = DateTime.UtcNow;
             }

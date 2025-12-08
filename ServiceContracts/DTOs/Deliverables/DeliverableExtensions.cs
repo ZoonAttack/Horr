@@ -64,8 +64,8 @@ namespace ServiceContracts.DTOs.Deliverables
             if (!string.IsNullOrEmpty(updateDto.ReviewNotes))
                 delivery.ReviewNotes = updateDto.ReviewNotes;
 
-            // Set ReviewedAt when delivery is reviewed
-            if ((updateDto.Status == DeliveryStatus.Accepted || updateDto.Status == DeliveryStatus.Rejected) 
+            // Set ReviewedAt when delivery is reviewed (approved or rejected)
+            if ((updateDto.Status == DeliveryStatus.Approved || updateDto.Status == DeliveryStatus.Rejected)
                 && delivery.ReviewedAt == null)
             {
                 delivery.ReviewedAt = DateTime.UtcNow;
