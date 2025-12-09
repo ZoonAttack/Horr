@@ -41,7 +41,7 @@ namespace ServiceContracts.DTOs.Deliverables
 
             return new Delivery
             {
-                ProjectId = long.Parse(createDto.ProjectId),
+                ProjectId = createDto.ProjectId,
                 MessageId = long.Parse(createDto.MessageId),
                 ProposalId = string.IsNullOrWhiteSpace(createDto.ProposalId) ? null : long.Parse(createDto.ProposalId),
                 FileUrl = createDto.FileUrl,

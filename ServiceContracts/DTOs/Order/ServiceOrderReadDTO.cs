@@ -11,9 +11,9 @@ namespace ServiceContracts.DTOs.Order
     {
         public string Id { get; set; }
 
-        public long ClientId { get; set; }
+        public string ClientId { get; set; }
 
-        public long FreelancerId { get; set; }
+        public string FreelancerId { get; set; }
 
         public long? ServiceId { get; set; }
 

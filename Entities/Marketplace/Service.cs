@@ -21,7 +21,7 @@ namespace Entities.Marketplace
 
         [Required]
         [ForeignKey("Freelancer")]
-        public long FreelancerId { get; set; }
+        public string FreelancerId { get; set; }
         public virtual Freelancer Freelancer { get; set; }
 
         [Required]

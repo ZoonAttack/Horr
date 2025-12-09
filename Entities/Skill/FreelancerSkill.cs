@@ -16,7 +16,7 @@ namespace Entities.Skill
     {
         [Key, Column(Order = 0)]
         [ForeignKey("Freelancer")]
-        public long FreelancerId { get; set; }
+        public string FreelancerId { get; set; }
 
         [Key, Column(Order = 1)]
         [ForeignKey("Skill")]

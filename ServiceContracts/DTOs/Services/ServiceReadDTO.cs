@@ -12,7 +12,7 @@ namespace ServiceContracts.DTOs.Services
     {
         public long Id { get; set; }
 
-        public long FreelancerId { get; set; }
+        public string FreelancerId { get; set; }
 
         // Optional display information
         public string Freelancer_Name { get; set; }

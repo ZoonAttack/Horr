@@ -36,9 +36,9 @@ namespace ServiceContracts.DTOs.Chat
 
             return new Entities.Communication.Chat
             {
-                ProjectId = long.Parse(createDto.ProjectId),
-                ClientId = long.Parse(createDto.ClientId),
-                FreelancerId = long.Parse(createDto.FreelancerId)
+                ProjectId = createDto.ProjectId,
+                ClientId = createDto.ClientId,
+                FreelancerId = createDto.FreelancerId
             };
         }
 

@@ -21,11 +21,11 @@ namespace Entities.Project
 
         [Required]
         [ForeignKey("Project")]
-        public long ProjectId { get; set; }
+        public string ProjectId { get; set; }
 
         [Required]
         [ForeignKey("Freelancer")]
-        public long FreelancerId { get; set; }
+        public string FreelancerId { get; set; }
 
         [Column(TypeName = "text")]
         public string CoverLetter { get; set; }

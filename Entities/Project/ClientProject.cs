@@ -25,7 +25,7 @@ namespace Entities.Project
 
         [Required]
         [ForeignKey("Client")]
-        public long ClientId { get; set; }
+        public string ClientId { get; set; }
         public virtual Client Client { get; set; }
 
         public long? AcceptedProposalId { get; set; }

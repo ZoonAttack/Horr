@@ -23,12 +23,12 @@ namespace Entities.Review
 
         [Required]
         [ForeignKey("Client")]
-        public long ClientId { get; set; }
+        public string ClientId { get; set; }
         public virtual Client Client { get; set; }
 
         [Required]
         [ForeignKey("Project")]
-        public long ProjectId { get; set; }
+        public string ProjectId { get; set; }
         public virtual ClientProject Project { get; set; }
 
         [ForeignKey("Specialist")]

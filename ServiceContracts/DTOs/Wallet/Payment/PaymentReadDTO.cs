@@ -77,7 +77,7 @@ namespace ServiceContracts.DTOs.Wallet.Payment
 
             return new Entities.Payment.Payment
             {
-                ProjectId = long.Parse(createDto.ProjectId),
+                ProjectId = createDto.ProjectId,
                 FreelancerId = string.IsNullOrWhiteSpace(createDto.FreelancerId) ? null : long.Parse(createDto.FreelancerId),
                 Amount = createDto.Amount,
                 PaymentType = createDto.PaymentType,

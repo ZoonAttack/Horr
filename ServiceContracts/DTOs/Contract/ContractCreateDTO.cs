@@ -10,11 +10,11 @@ namespace ServiceContracts.DTOs.Contract
     public class ContractCreateDTO
     {
         // Identifiers used for persistence and mapping
-        public long ProjectId { get; set; }
+        public string ProjectId { get; set; }
 
-        public long ClientId { get; set; }
+        public string ClientId { get; set; }
 
-        public long FreelancerId { get; set; }
+        public string FreelancerId { get; set; }
 
         // Optional display names
         public string Project_Name { get; set; }

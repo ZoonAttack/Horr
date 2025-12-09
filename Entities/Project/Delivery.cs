@@ -20,7 +20,7 @@ namespace Entities.Project
 
         [Required]
         [ForeignKey("Project")]
-        public long ProjectId { get; set; }
+        public string ProjectId { get; set; }
         public virtual ClientProject Project { get; set; }
 
         [Required]
