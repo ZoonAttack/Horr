@@ -101,30 +101,32 @@ namespace ServiceImplementation.Authentication
                     Errors = roleResult.Errors.Select(e => e.Description).ToList()
                 };
             }
-            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            try
+            {
+                bool result = await SendEmailHelperAsync(user);
+                return new Result<AuthResponse>
+                {
+                    Succeeded = true, 
+                    Data = new AuthResponse
+                    {
+                        Id = user.Id,
+                        Email = user.Email,
+                        IsEmailConfirmationSent = result 
+                    },
+                    Message = result
+                    ? "Registration successful. Please check your email."
+                    : "Account created, but we failed to send the confirmation email. Please request a new one."
+                };
 
-            var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
-
-            // 3. Build URL
-            var baseUrl = _configuration["AppURL"];
-            var confirmationLink = $"{baseUrl}/api/Auth/confirm-email?userId={user.Id}&token={encodedToken}";
-
-            // 4. Send Email
-            var message = $"<h1>Welcome!</h1><p>Please <a href='{confirmationLink}'>click here</a> to confirm your email.</p>";
-            bool result = await _emailService.SendEmailAsync(user.Email, "Confirm your email", message);
-            if (result == false)
+            } catch(Exception ex)
             {
                 return new Result<AuthResponse>
                 {
                     Succeeded = false,
-                    Message = "Failed to send confirmation email."
+                    Message = "Account created, but failed to send confirmation email.",
+                    Errors = new List<string> { ex.Message }
                 };
             }
-            return new Result<AuthResponse>
-            {
-                Succeeded = true,
-                Message = "Registration successful. Please check your email to confirm your account."
-            };
         }
 
         public async Task<Result<AuthResponse>> ConfirmEmailAsync(string userId, string token)
@@ -158,7 +160,62 @@ namespace ServiceImplementation.Authentication
                 Data = authResponse
             };
         }
+
+        public async Task<Result<AuthResponse>> ResendConfirmationEmailAsync(string email)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null || user.EmailConfirmed)
+            {
+                return new Result<AuthResponse>()
+                {
+                    Succeeded = false,
+                    Message = "Invalid request.",
+                    Errors = new List<string> { "User not found or already confirmed." }
+                };
+            }
+            try { 
+            bool result = await SendEmailHelperAsync(user);
+                return new Result<AuthResponse>
+                {
+                    Succeeded = result,
+                    Data = new AuthResponse
+                    {
+                        Id = user.Id,
+                        Email = user.Email,
+                        IsEmailConfirmationSent = result
+                    },
+                    Message = result
+                   ? "Confirmation email resent. Please check your inbox."
+                   : "Failed to resend confirmation email. Please try again later."
+                };
+            } catch(Exception ex)
+            {
+                return new Result<AuthResponse>
+                {
+                    Succeeded = false,
+                    Message = "Failed to resend confirmation email. Please try again later.",
+                    Errors = new List<string> { ex.Message }
+                };
+            }
+        }
         #region helper
+
+        private async Task<bool> SendEmailHelperAsync(Entities.Users.User user)
+        {
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+
+            var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+
+            // 3. Build URL
+            var baseUrl = _configuration["AppURL"];
+            var confirmationLink = $"{baseUrl}/api/Auth/confirm-email?userId={user.Id}&token={encodedToken}";
+
+            // 4. Send Email
+            var message = $"<h1>Welcome!</h1><p>Please <a href='{confirmationLink}'>click here</a> to confirm your email.</p>";
+            bool result = await _emailService.SendEmailAsync(user.Email, "Confirm your email", message);
+            return result;
+        }
+
 
         // Helper method to generate tokens and update the user in DB
         private async Task<AuthResponse> GenerateAuthResponseAsync(Entities.Users.User user)

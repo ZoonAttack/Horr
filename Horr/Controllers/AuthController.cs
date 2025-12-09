@@ -48,7 +48,14 @@ namespace Horr.Controllers
 
             return Ok(result); // Email confirmed successfully(should redirect to login page in react for now)
         }
-
+        [HttpPost("resend-confirmation-email")]
+        public async Task<IActionResult> ResendConfirmationEmail(string email)
+        {
+            var result = await _authService.ResendConfirmationEmailAsync(email);
+            if (!result.Succeeded)
+                return BadRequest(result);
+            return Ok(result); // Confirmation email resent successfully
+        }
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDTO dto)
         {
@@ -60,26 +67,5 @@ namespace Horr.Controllers
             // React will receive: { succeeded: true, data: { accessToken: "...", ... } }
             return Ok(result);
         }
-
-        #region Helper
-        private async Task<IActionResult> RedirectToRoleDashboard(User user)
-        {
-            // Get the list of roles for this specific user
-            var roles = await _userManager.GetRolesAsync(user);
-
-            // Check roles and redirect accordingly
-            if (roles.Contains(UserRole.Freelancer.ToString()))
-            {
-                return RedirectToAction("Index", "FreelancerController");
-            }
-            else if (roles.Contains(UserRole.Client.ToString()))
-            {
-                return RedirectToAction("Index", "ClientDashboard");
-            }
-
-            // Default fallback (e.g., Home Page) if they have no role
-            return RedirectToAction("Index", "Home");
-        }
-        #endregion
     }
 }
