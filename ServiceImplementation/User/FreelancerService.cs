@@ -46,10 +46,53 @@ namespace ServiceImplementation.Authentication.User
             return Task.FromResult(freelancer_to_read(freelancer));
         }
 
-        public Task<bool> DeleteFreelancerAsync(Guid freelancerId)
+        public async Task<bool> DeleteFreelancerAsync(Guid freelancerId)
         {
-            throw new NotImplementedException();
+            if (freelancerId == Guid.Empty)
+            {
+                throw new ArgumentException("Freelancer ID cannot be empty.", nameof(freelancerId));
+            }
+
+            // fetch the User entity
+            var idString = freelancerId.ToString();
+            var user = await _db.Users
+                .FirstOrDefaultAsync(u => u.Id == idString && u.Role == Entities.Enums.UserRole.Freelancer);
+
+            if (user == null)
+                return false;
+
+            // if already deleted
+            if (user.IsDeleted)
+                return true;
+
+            await using var transaction = await _db.Database.BeginTransactionAsync();
+
+            try
+            {
+                // soft delete the user
+                user.IsDeleted = true;
+                user.DeletedAt = DateTime.UtcNow;
+
+                // soft delete their services
+                await _db.Services
+                    .Where(s => s.FreelancerId == idString && !s.IsDeleted)
+                    .ExecuteUpdateAsync(s => s
+                        .SetProperty(service => service.IsDeleted, true)
+                        .SetProperty(service => service.DeletedAt, DateTime.UtcNow)
+                        .SetProperty(service => service.IsActive, false));
+
+                await _db.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return true;
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw; 
+            }
         }
+        
 
         public Task<PagedResult<FreelancerReadDTO>> GetAllFreelancersAsync(List<Guid>? skillIds = null, decimal? minHourlyRate = null, decimal? maxHourlyRate = null, int? minYearsExperience = null, decimal? minTrustScore = null, bool? isVerified = null, string? sortBy = "TrustScore", bool sortDescending = true, int page = 1, int pageSize = 10)
         {
@@ -62,15 +105,19 @@ namespace ServiceImplementation.Authentication.User
             {
                 throw new ArgumentException("Freelancer ID cannot be empty.", nameof(freelancerId));        
             }
+            var idString = freelancerId.ToString();
 
-
-            Freelancer freelancer = await _db.Freelancers
-                .FirstOrDefaultAsync(f => f.UserId == freelancerId.ToString());
+            var freelancer = await _db.Freelancers
+                .Include(f => f.User)
+        .       FirstOrDefaultAsync(f =>
+                    f.UserId == idString &&
+                    f.User != null &&
+                    !f.User.IsDeleted);
 
             if (freelancer == null)
                 return null;
 
-            return  freelancer_to_read(freelancer);
+            return freelancer_to_read(freelancer);
         }
 
         public Task<FreelancerReadDTO?> GetFreelancerPublicProfileByIdAsync(Guid freelancerId)
