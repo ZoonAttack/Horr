@@ -1,12 +1,20 @@
 using ServiceContracts.DTOs.User.Freelancer;
 using Entities.Users;
-using ServiceImplementation.Authentication.Helpers;
 using Services;
+using ServiceImplementation.Authentication.Helpers;
+using Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace ServiceImplementation.Authentication.User
 {
     public class FreelancerService : IFreelancerService
     {
+        private readonly AppDbContext _db;
+        public FreelancerService(AppDbContext db)
+        {
+            _db = db;
+        }
+
         public FreelancerReadDTO freelancer_to_read(Freelancer freelancer)
         {
             return new FreelancerReadDTO
@@ -48,9 +56,21 @@ namespace ServiceImplementation.Authentication.User
             throw new NotImplementedException();
         }
 
-        public Task<FreelancerReadDTO?> GetFreelancerProfileByIdAsync(Guid freelancerId)
+        public async Task<FreelancerReadDTO?> GetFreelancerProfileByIdAsync(Guid freelancerId)
         {
-            throw new NotImplementedException();
+            if (freelancerId == Guid.Empty)
+            {
+                throw new ArgumentException("Freelancer ID cannot be empty.", nameof(freelancerId));        
+            }
+
+
+            Freelancer freelancer = await _db.Freelancers
+                .FirstOrDefaultAsync(f => f.UserId == freelancerId.ToString());
+
+            if (freelancer == null)
+                return null;
+
+            return  freelancer_to_read(freelancer);
         }
 
         public Task<FreelancerReadDTO?> GetFreelancerPublicProfileByIdAsync(Guid freelancerId)

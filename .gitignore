@@ -364,3 +364,4 @@ FodyWeavers.xsd
 
 # Warp AI configuration
 WARP.md
+/Entities/Migrations
