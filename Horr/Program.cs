@@ -43,6 +43,7 @@ namespace Horr
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddTransient<IEmailService, EmailService>();
+            builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
             // ==========================================
             // 3. JWT AUTHENTICATION SETUP
             // ==========================================

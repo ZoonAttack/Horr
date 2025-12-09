@@ -107,7 +107,7 @@ namespace ServiceImplementation.Authentication
 
             // 3. Build URL
             var baseUrl = _configuration["AppURL"];
-            var confirmationLink = $"{baseUrl}/api/auth/confirm-email?userId={user.Id}&token={encodedToken}";
+            var confirmationLink = $"{baseUrl}/api/Auth/confirm-email?userId={user.Id}&token={encodedToken}";
 
             // 4. Send Email
             var message = $"<h1>Welcome!</h1><p>Please <a href='{confirmationLink}'>click here</a> to confirm your email.</p>";

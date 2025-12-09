@@ -29,10 +29,9 @@ namespace Services.Implementations
                 email.From.Add(MailboxAddress.Parse(_settings.From));
                 email.To.Add(MailboxAddress.Parse(to));
                 email.Subject = subject;
-
                 var builder = new BodyBuilder { HtmlBody = htmlMessage };
                 email.Body = builder.ToMessageBody();
-
+                
                 using var smtp = new SmtpClient();
 
                 // 1. Connect
