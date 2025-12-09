@@ -1,7 +1,7 @@
 ﻿
 
 using ServiceContracts.DTOs.Responses;
-using ServiceContracts.DTOs.User;
+using Services.DTOs.UserDTOs;
 
 namespace ServiceContracts
 {
@@ -10,5 +10,7 @@ namespace ServiceContracts
         Task<Result<AuthResponse>> LoginAsync(LoginRequestDTO loginRequestDTO);
 
         Task<Result<AuthResponse>> RegisterAsync(RegisterRequestDto registerRequestDto);
+
+        Task<Result<AuthResponse>> ConfirmEmailAsync(string userId, string token);
     }
 }

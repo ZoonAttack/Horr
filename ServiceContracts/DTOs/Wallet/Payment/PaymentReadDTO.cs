@@ -53,7 +53,7 @@ namespace ServiceContracts.DTOs.Wallet.Payment
             {
                 Id = payment.Id.ToString(),
                 ProjectId = payment.ProjectId.ToString(),
-                FreelancerId = payment.FreelancerId.HasValue ? payment.FreelancerId.Value.ToString() : null,
+                FreelancerId = payment.FreelancerId,
                 Amount = payment.Amount,
                 PaymentType = payment.PaymentType,
                 Status = payment.Status,
@@ -78,7 +78,7 @@ namespace ServiceContracts.DTOs.Wallet.Payment
             return new Entities.Payment.Payment
             {
                 ProjectId = createDto.ProjectId,
-                FreelancerId = string.IsNullOrWhiteSpace(createDto.FreelancerId) ? null : long.Parse(createDto.FreelancerId),
+                FreelancerId = string.IsNullOrWhiteSpace(createDto.FreelancerId) ? null : createDto.FreelancerId,
                 Amount = createDto.Amount,
                 PaymentType = createDto.PaymentType,
                 PlatformCommission = createDto.PlatformCommission,

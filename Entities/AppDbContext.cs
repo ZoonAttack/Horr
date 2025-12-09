@@ -1,21 +1,19 @@
-using Entities.Communication;
+﻿using Entities.Communication;
 using Entities.Marketplace;
 using Entities.Payment;
 using Entities.Project;
 using Entities.Review;
 using Entities.Skill;
-using Entities.User;
+using Entities.Users;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Entities
 {
-    public class AppDbContext : IdentityDbContext<User.User>
+    public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbContext<User>(options)
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options)
-            : base(options){}
 
-    // User and Profile DbSets
+        // User and Profile DbSets
         public DbSet<UserVerification> UserVerifications { get; set; }
         public DbSet<Specialist> SpecialistProfiles { get; set; }
         public DbSet<Freelancer> Freelancers { get; set; }
@@ -51,74 +49,54 @@ namespace Entities
         {
             base.OnModelCreating(modelBuilder);
 
-            // --- Handle Composite Keys ---
-            // Data Annotations [Key, Column(Order=X)] handle this, 
-            // but explicit definition here is also common.
+            // ---------------------------------------------------------
+            // 1. MANUAL CONFIGURATION (Composite Keys & Constraints)
+            // ---------------------------------------------------------
+
+            // Composite Keys
             modelBuilder.Entity<FreelancerSkill>()
                 .HasKey(fs => new { fs.FreelancerId, fs.SkillId });
 
-            // --- Handle Complex Relationships (Cycles) ---
-            // The 1-to-1 relationship between ClientProject and its AcceptedProposal
-            // can be tricky. We need to define the principal and dependent ends clearly.
+            // Complex Relationships
             modelBuilder.Entity<ClientProject>()
                 .HasOne(p => p.AcceptedProposal)
-                .WithOne() // No inverse navigation property for this specific 1-to-1
+                .WithOne()
                 .HasForeignKey<ClientProject>(p => p.AcceptedProposalId)
-                .OnDelete(DeleteBehavior.Restrict); // Prevent deleting a proposal if it's accepted
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // --- Handle Multiple Relationships (e.g., User -> Review) ---
-            modelBuilder.Entity<Review.Review>()
-                .HasOne(r => r.Reviewer)
-                .WithMany(u => u.ReviewsGiven)
-                .HasForeignKey(r => r.ReviewerId)
-                .OnDelete(DeleteBehavior.Restrict); // Prevent user deletion if they gave reviews
-
-            modelBuilder.Entity<Review.Review>()
-                .HasOne(r => r.Reviewee)
-                .WithMany(u => u.ReviewsReceived)
-                .HasForeignKey(r => r.RevieweeId)
-                .OnDelete(DeleteBehavior.Restrict); // Prevent user deletion if they received reviews
-
-            // --- Handle Multiple Relationships (e.g., Wallet -> Transaction) ---
-            modelBuilder.Entity<Transaction>()
-                .HasOne(t => t.SenderWallet)
-                .WithMany(w => w.SentTransactions)
-                .HasForeignKey(t => t.SenderWalletId)
-                .OnDelete(DeleteBehavior.Restrict); // Or .SetNull
-
-            modelBuilder.Entity<Transaction>()
-                .HasOne(t => t.ReceiverWallet)
-                .WithMany(w => w.ReceivedTransactions)
-                .HasForeignKey(t => t.ReceiverWalletId)
-                .OnDelete(DeleteBehavior.Restrict); // Or .SetNull
-
-            // --- Add CHECK Constraints not supported by Annotations ---
-            // This is where you would add the rules from the [Comment] attributes.
-            // Example for the 'orders' table constraint:
-            // Note: Enums are stored as integers, so Service = 0, Project = 1
+            // CHECK Constraints (PascalCase Fixed)
             modelBuilder.Entity<Order>()
                 .ToTable(t => t.HasCheckConstraint("CHK_orders_type_relation",
-                    "([OrderType] = 0 AND [service_id] IS NOT NULL AND [project_id] IS NULL) OR " +
-                    "([OrderType] = 1 AND [project_id] IS NOT NULL AND [service_id] IS NULL)"));
+                    "([OrderType] = 0 AND [ServiceId] IS NOT NULL AND [ProjectId] IS NULL) OR " +
+                    "([OrderType] = 1 AND [ProjectId] IS NOT NULL AND [ServiceId] IS NULL)"));
 
-            // Example for the 'reviews' table constraint:
             modelBuilder.Entity<Review.Review>()
                 .ToTable(t => t.HasCheckConstraint("CHK_reviews_diff_users",
-                    "[reviewer_id] <> [reviewee_id]"));
+                    "[ReviewerId] <> [RevieweeId]"));
 
-            // Ensure Review has either ProjectId or OrderId, not both or neither
             modelBuilder.Entity<Review.Review>()
                 .ToTable(t => t.HasCheckConstraint("CHK_reviews_project_or_order",
-                    "([project_id] IS NOT NULL AND [order_id] IS NULL) OR " +
-                    "([project_id] IS NULL AND [order_id] IS NOT NULL)"));
+                    "([ProjectId] IS NOT NULL AND [OrderId] IS NULL) OR " +
+                    "([ProjectId] IS NULL AND [OrderId] IS NOT NULL)"));
 
-            // Example for 'transactions' wallet check (logic depends on SQL dialect)
-            // Note: TransactionType enum: Deposit=0, Withdrawal=1, Transfer=2, Refund=3, Commission=4, Escrow=5
             modelBuilder.Entity<Transaction>()
                 .ToTable(t => t.HasCheckConstraint("CHK_transactions_wallets",
-                    "([TransactionType] = 0 AND [receiver_wallet_id] IS NOT NULL AND [sender_wallet_id] IS NULL) OR " +
-                    "([TransactionType] = 1 AND [sender_wallet_id] IS NOT NULL AND [receiver_wallet_id] IS NULL) OR " +
-                    "([TransactionType] IN (2, 3, 4, 5) AND [sender_wallet_id] IS NOT NULL AND [receiver_wallet_id] IS NOT NULL)"));
+                    "([TransactionType] = 0 AND [ReceiverWalletId] IS NOT NULL AND [SenderWalletId] IS NULL) OR " +
+                    "([TransactionType] = 1 AND [SenderWalletId] IS NOT NULL AND [ReceiverWalletId] IS NULL) OR " +
+                    "([TransactionType] IN (2, 3, 4, 5) AND [SenderWalletId] IS NOT NULL AND [ReceiverWalletId] IS NOT NULL)"));
+
+
+            // ---------------------------------------------------------
+            // 2. THE GLOBAL FIX (Must be at the Bottom)
+            // ---------------------------------------------------------
+
+            // This loop finds EVERY relationship in your database (Orders, Chats, Deliveries, etc.)
+            // and changes the delete behavior to 'Restrict'.
+            // This effectively stops the "Multiple Cascade Paths" error for the whole project.
+            foreach (var relationship in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
+            {
+                relationship.DeleteBehavior = DeleteBehavior.Restrict;
+            }
         }
     }
 }

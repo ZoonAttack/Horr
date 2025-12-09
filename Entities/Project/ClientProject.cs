@@ -2,7 +2,7 @@ using Entities.Communication;
 using Entities.Enums;
 using Entities.Marketplace;
 using Entities.Review;
-using Entities.User;
+using Entities.Users;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -21,14 +21,14 @@ namespace Entities.Project
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public long Id { get; set; }
+        public string Id { get; set; }
 
         [Required]
         [ForeignKey("Client")]
         public string ClientId { get; set; }
         public virtual Client Client { get; set; }
 
-        public long? AcceptedProposalId { get; set; }
+        public string? AcceptedProposalId { get; set; }
 
         [Required]
         [MaxLength(255)]

@@ -16,7 +16,7 @@ namespace Entities.Project
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public long Id { get; set; }
+        public string Id { get; set; }
 
         [Required]
         [ForeignKey("Project")]
@@ -25,11 +25,11 @@ namespace Entities.Project
 
         [Required]
         [ForeignKey("Message")]
-        public long MessageId { get; set; }
+        public string MessageId { get; set; }
         public virtual Message Message { get; set; }
 
         [ForeignKey("Proposal")]
-        public long? ProposalId { get; set; }
+        public string? ProposalId { get; set; }
         public virtual Proposal Proposal { get; set; }
 
         [Required]

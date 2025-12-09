@@ -10,7 +10,7 @@ namespace ServiceContracts.DTOs.Contract
     public class ContractReadDTO
     {
         // Primary identifiers
-        public long Id { get; set; }
+        public string Id { get; set; }
 
         public string ProjectId { get; set; }
 

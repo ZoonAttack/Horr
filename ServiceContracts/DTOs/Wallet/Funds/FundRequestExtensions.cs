@@ -16,10 +16,10 @@ namespace ServiceContracts.DTOs.Wallet.Funds
                 Amount = request.Amount,
                 ClientTransactionReference = request.ClientTransactionReference,
                 Status = Enum.Parse<RequestStatus>(request.Status),
-                ApprovedByUserId = request.ApprovedByUserId.HasValue ? request.ApprovedByUserId.Value.ToString() : null,
+                ApprovedByUserId = request.ApprovedByUserId,
                 ProcessedAt = request.ProcessedAt,
                 PaymentMethodId = request.PaymentMethodId.ToString(),
-                TransactionId = request.TransactionId.HasValue ? request.TransactionId.Value.ToString() : null,
+                TransactionId = request.TransactionId,
                 RequestedAt = request.RequestedAt
             };
         }
@@ -31,21 +31,18 @@ namespace ServiceContracts.DTOs.Wallet.Funds
             return new FundRequest
             {
                 UserId = userId,
-                PaymentMethodId = long.Parse(createDto.PaymentMethodId),
+                PaymentMethodId = createDto.PaymentMethodId,
                 Amount = createDto.Amount,
                 ClientTransactionReference = createDto.ClientTransactionReference
             };
         }
 
-        public static void ApplyUpdate(this FundRequest request, RequestStatus status, long adminId, long? transactionId = null)
+        public static void ApplyUpdate(this FundRequest request, RequestStatus status, string adminId, string? transactionId = null)
         {
             request.Status = status.ToString();
             request.ApprovedByUserId = adminId;
             request.ProcessedAt = DateTime.UtcNow;
-            if (transactionId.HasValue)
-            {
-                request.TransactionId = transactionId.Value;
-            }
+            if (!String.IsNullOrEmpty(transactionId)) request.TransactionId = transactionId;
         }
     }
 }

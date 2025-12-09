@@ -10,7 +10,7 @@ namespace ServiceContracts.DTOs.Services
 {
     public class ServiceReadDTO
     {
-        public long Id { get; set; }
+        public string Id { get; set; }
 
         public string FreelancerId { get; set; }
 

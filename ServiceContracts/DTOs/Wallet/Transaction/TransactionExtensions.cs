@@ -15,8 +15,8 @@ namespace Horr.DTOs.Wallet.Transactions
             return new TransactionReadDTO
             {
                 Id = transaction.Id.ToString(),
-                SenderWalletId = transaction.SenderWalletId.HasValue ? transaction.SenderWalletId.Value.ToString() : null,
-                ReceiverWalletId = transaction.ReceiverWalletId.HasValue ? transaction.ReceiverWalletId.Value.ToString() : null,
+                SenderWalletId = transaction.SenderWalletId,
+                ReceiverWalletId = transaction.ReceiverWalletId,
                 Amount = transaction.Amount,
                 TransactionType = Enum.Parse<TransactionType>(transaction.TransactionType),
                 Status = Enum.Parse<TransactionStatus>(transaction.Status),
@@ -35,8 +35,8 @@ namespace Horr.DTOs.Wallet.Transactions
 
             return new Transaction
             {
-                SenderWalletId = string.IsNullOrWhiteSpace(createDto.SenderWalletId) ? null : long.Parse(createDto.SenderWalletId),
-                ReceiverWalletId = string.IsNullOrWhiteSpace(createDto.ReceiverWalletId) ? null : long.Parse(createDto.ReceiverWalletId),
+                SenderWalletId = string.IsNullOrWhiteSpace(createDto.SenderWalletId) ? null : createDto.SenderWalletId,
+                ReceiverWalletId = string.IsNullOrWhiteSpace(createDto.ReceiverWalletId) ? null : createDto.ReceiverWalletId,
                 Amount = createDto.Amount,
                 TransactionType = createDto.TransactionType.ToString(),
                 Description = createDto.Description,

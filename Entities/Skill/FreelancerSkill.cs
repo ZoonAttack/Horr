@@ -1,5 +1,5 @@
 using Entities.Enums;
-using Entities.User;
+using Entities.Users;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -20,7 +20,7 @@ namespace Entities.Skill
 
         [Key, Column(Order = 1)]
         [ForeignKey("Skill")]
-        public long SkillId { get; set; }
+        public string SkillId { get; set; }
 
         public ProficiencyLevel ProficiencyLevel { get; set; }
 

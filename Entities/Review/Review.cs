@@ -19,7 +19,7 @@ namespace Entities.Review
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public long Id { get; set; }
+        public string Id { get; set; }
 
         [Required]
         [ForeignKey("Reviewer")]
@@ -30,11 +30,11 @@ namespace Entities.Review
         public string RevieweeId { get; set; }
 
         [ForeignKey("Project")]
-        public long? ProjectId { get; set; }
+        public string? ProjectId { get; set; }
         public virtual ClientProject Project { get; set; }
 
         [ForeignKey("Order")]
-        public long? OrderId { get; set; }
+        public string? OrderId { get; set; }
         public virtual Order Order { get; set; }
 
         [Required]
@@ -52,7 +52,7 @@ namespace Entities.Review
         public DateTime CreatedAt { get; set; }
 
         // --- Navigation Properties ---
-        public virtual Entities.User.User Reviewer { get; set; }
-        public virtual Entities.User.User Reviewee { get; set; }
+        public virtual Entities.Users.User Reviewer { get; set; }
+        public virtual Entities.Users.User Reviewee { get; set; }
     }
 }

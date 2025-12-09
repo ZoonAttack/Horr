@@ -37,7 +37,7 @@ namespace ServiceContracts.DTOs.Skill.FreelancerSkill
             return new Entities.Skill.FreelancerSkill
             {
                 FreelancerId = createDto.FreelancerId,
-                SkillId = long.Parse(createDto.SkillId),
+                SkillId = createDto.SkillId,
                 ProficiencyLevel = createDto.ProficiencyLevel
             };
         }

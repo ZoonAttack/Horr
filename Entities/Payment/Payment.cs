@@ -1,6 +1,6 @@
 using Entities.Enums;
 using Entities.Project;
-using Entities.User;
+using Entities.Users;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -19,7 +19,7 @@ namespace Entities.Payment
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public long Id { get; set; }
+        public string Id { get; set; }
 
         [Required]
         [ForeignKey("Project")]
@@ -27,7 +27,7 @@ namespace Entities.Payment
         public virtual ClientProject Project { get; set; }
 
         [ForeignKey("Freelancer")]
-        public long? FreelancerId { get; set; }
+        public string? FreelancerId { get; set; }
         public virtual Freelancer Freelancer { get; set; }
 
         [Required]

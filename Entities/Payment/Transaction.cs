@@ -17,13 +17,13 @@ namespace Entities.Payment
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public long Id { get; set; }
+        public string Id { get; set; }
 
         [ForeignKey("SenderWallet")]
-        public long? SenderWalletId { get; set; }
+        public string? SenderWalletId { get; set; }
 
         [ForeignKey("ReceiverWallet")]
-        public long? ReceiverWalletId { get; set; }
+        public string? ReceiverWalletId { get; set; }
 
         [Required]
         [Column(TypeName = "decimal(10,2)")]

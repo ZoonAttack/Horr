@@ -1,6 +1,6 @@
 using Entities.Enums;
 using Entities.Project;
-using Entities.User;
+using Entities.Users;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -32,11 +32,11 @@ namespace Entities.Marketplace
         public virtual Freelancer Freelancer { get; set; }
 
         [ForeignKey("Service")]
-        public long? ServiceId { get; set; }
+        public string? ServiceId { get; set; }
         public virtual Service Service { get; set; }
 
         [ForeignKey("Project")]
-        public long? ProjectId { get; set; }
+        public string? ProjectId { get; set; }
         public virtual ClientProject Project { get; set; }
 
         [Required]

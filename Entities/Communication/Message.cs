@@ -18,17 +18,17 @@ namespace Entities.Communication
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public long Id { get; set; }
+        public string Id { get; set; }
 
         [Required]
         [ForeignKey("Chat")]
-        public long ChatId { get; set; }
+        public string ChatId { get; set; }
         public virtual Chat Chat { get; set; }
 
         [Required]
         [ForeignKey("Sender")]
         public string SenderId { get; set; }
-        public virtual Entities.User.User Sender { get; set; }
+        public virtual Entities.Users.User Sender { get; set; }
 
         [Column(TypeName = "text")]
         public string Content { get; set; }

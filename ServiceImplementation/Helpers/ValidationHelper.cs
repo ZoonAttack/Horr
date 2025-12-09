@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 
-namespace ServiceImplementation.Helpers
+namespace ServiceImplementation.Authentication.Helpers
 {
     public class ValidationHelper
     {

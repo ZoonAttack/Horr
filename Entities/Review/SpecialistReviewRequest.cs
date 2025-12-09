@@ -1,6 +1,6 @@
 using Entities.Enums;
 using Entities.Project;
-using Entities.User;
+using Entities.Users;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -19,7 +19,7 @@ namespace Entities.Review
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public long Id { get; set; }
+        public string Id { get; set; }
 
         [Required]
         [ForeignKey("Client")]
@@ -33,7 +33,7 @@ namespace Entities.Review
 
         [ForeignKey("Specialist")]
         public string? SpecialistId { get; set; }
-        public virtual Entities.User.User Specialist { get; set; }
+        public virtual Entities.Users.User Specialist { get; set; }
 
         [Required]
         [Column(TypeName = "decimal(10,2)")]

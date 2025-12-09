@@ -77,7 +77,7 @@ namespace ServiceContracts.DTOs.Chat
 
             return new Message
             {
-                ChatId = long.Parse(createDto.ChatId),
+                ChatId = createDto.ChatId,
                 SenderId = createDto.SenderId,
                 Content = createDto.Content,
                 AttachmentUrl = createDto.AttachmentUrl,

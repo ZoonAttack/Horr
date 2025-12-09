@@ -17,16 +17,16 @@ namespace Entities.Payment
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public long Id { get; set; }
+        public string Id { get; set; }
 
         [Required]
         [ForeignKey("User")]
         public string UserId { get; set; }
-        public virtual Entities.User.User User { get; set; }
+        public virtual Entities.Users.User User { get; set; }
 
         [Required]
         [ForeignKey("PaymentMethod")]
-        public long PaymentMethodId { get; set; }
+        public string PaymentMethodId { get; set; }
         public virtual PaymentMethod PaymentMethod { get; set; }
 
         [Required]
@@ -35,14 +35,14 @@ namespace Entities.Payment
 
         public string? Status { get; set; } = RequestStatus.Pending.ToString();
 
-        public long? ApprovedByUserId { get; set; } // Admin ID
+        public string? ApprovedByUserId { get; set; } // Admin ID
         public DateTime? ProcessedAt { get; set; }
 
         [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         public DateTime RequestedAt { get; set; }
 
         // --- Navigation Properties ---
-        public long? TransactionId { get; set; } // The resulting ledger transaction
+        public string? TransactionId { get; set; } // The resulting ledger transaction
         public virtual Transaction Transaction { get; set; }
     }
 }
