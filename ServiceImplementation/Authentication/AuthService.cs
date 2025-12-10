@@ -8,6 +8,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Services.DTOs.UserDTOs;
+using Microsoft.AspNetCore.Http;
 namespace ServiceImplementation.Authentication
 {
 
@@ -17,14 +18,15 @@ namespace ServiceImplementation.Authentication
         private readonly ITokenService _tokenService;
         private readonly IEmailService _emailService;
         private readonly IConfiguration _configuration;
+        private readonly SignInManager<Entities.Users.User> _signInManager;
 
-        public AuthService(UserManager<Entities.Users.User> userManager, ITokenService tokenService, IEmailService emailService, IConfiguration configuration)
+        public AuthService(UserManager<Entities.Users.User> userManager, ITokenService tokenService, IEmailService emailService,SignInManager<Entities.Users.User> signInmanager ,IConfiguration configuration)
 
-// ... rest of the file remains unchanged ...
         {
             _userManager = userManager;
             _tokenService = tokenService;
             _emailService = emailService;
+            _signInManager = signInmanager;
             _configuration = configuration;
         }
 

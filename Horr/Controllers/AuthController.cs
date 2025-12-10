@@ -13,13 +13,11 @@ namespace Horr.Controllers
     public class AuthController : Controller
     {
         private readonly IAuthService _authService;
-        private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
 
-        public AuthController(IAuthService authService, UserManager<User> userManager, SignInManager<User> signInManager)
+        public AuthController(IAuthService authService, SignInManager<User> signInManager)
         {
             _authService = authService;
-            _userManager = userManager;
             _signInManager = signInManager;
         }
 
@@ -66,6 +64,17 @@ namespace Horr.Controllers
 
             // React will receive: { succeeded: true, data: { accessToken: "...", ... } }
             return Ok(result);
+        }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            if(_signInManager.IsSignedIn(User) == false)
+            {
+                return BadRequest(new { Message = "No user is currently logged in." });
+            }
+            await _signInManager.SignOutAsync();
+            return Ok(new { Message = "Logged out successfully." });
         }
     }
 }
