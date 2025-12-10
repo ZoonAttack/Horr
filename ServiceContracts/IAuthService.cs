@@ -14,6 +14,6 @@ namespace ServiceContracts
         Task<Result<AuthResponse>> ConfirmEmailAsync(string userId, string token);
 
         Task<Result<AuthResponse>> ResendConfirmationEmailAsync(string email);
-
+        Task<Result<AuthResponse>> RefreshTokenAsync(string refreshToken);
     }
 }

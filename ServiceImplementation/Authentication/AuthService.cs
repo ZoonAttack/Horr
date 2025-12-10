@@ -1,13 +1,16 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Entities;
+using Entities.Token;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using ServiceContracts;
 using ServiceContracts.DTOs.Responses;
+using Services.DTOs.UserDTOs;
 using Services.Interfaces;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Services.DTOs.UserDTOs;
 namespace ServiceImplementation.Authentication
 {
 
@@ -17,13 +20,14 @@ namespace ServiceImplementation.Authentication
         private readonly ITokenService _tokenService;
         private readonly IEmailService _emailService;
         private readonly IConfiguration _configuration;
-
-        public AuthService(UserManager<Entities.Users.User> userManager, ITokenService tokenService, IEmailService emailService,IConfiguration configuration)
+        private readonly AppDbContext _context;
+        public AuthService(UserManager<Entities.Users.User> userManager, ITokenService tokenService, IEmailService emailService,AppDbContext context ,IConfiguration configuration)
 
         {
             _userManager = userManager;
             _tokenService = tokenService;
             _emailService = emailService;
+            _context = context;
             _configuration = configuration;
         }
 
@@ -197,6 +201,84 @@ namespace ServiceImplementation.Authentication
                 };
             }
         }
+
+        public async Task<Result<AuthResponse>> RefreshTokenAsync(string refreshToken)
+        {
+            // 1. Find the token in the database
+            // We include the User because we need to generate a new Access Token for them later
+            var storedToken = await _context.RefreshTokens
+                .Include(x => x.User)
+                .SingleOrDefaultAsync(x => x.Token == refreshToken);
+
+            // 2. Validation Checks
+            if (storedToken == null)
+            {
+                return new Result<AuthResponse> 
+                { 
+                    Succeeded = false,
+                    Errors = new List<string> { "Token does not exist" }
+                };
+            }
+
+            // Check 2a: Has it expired?
+            if (storedToken.IsExpired)
+            {
+                return new Result<AuthResponse>
+                {
+                    Succeeded = false,
+                    Errors = new List<string> { "Token has expired" }
+                };
+            }
+
+            // Check 2b: Has it already been revoked? (Replay Attack detection)
+            // If a user tries to use a token that we already marked as "Revoked", it might be stolen.
+            if (storedToken.Revoked != null)
+            {
+                // OPTIONAL SECURITY STEP: Revoke all tokens for this user chain
+                // because we don't know who is the real user anymore.
+                // await RevokeAllTokensForUser(storedToken.ApplicationUserId);
+
+                return new Result<AuthResponse>
+                {
+                    Succeeded = false,
+                    Errors = new List<string> { "Invalid Token" }
+                };
+            }
+
+            // 3. Mark the current token as used (Revoke it)
+            storedToken.Revoked = DateTime.UtcNow;
+
+            // 4. Generate NEW tokens (Rotation)
+            // Assuming you have a helper method to create the JWT string
+            var newAccessToken = _tokenService.GenerateAccessToken(await GetUserClaimsAsync(storedToken.User));
+            var newRefreshToken = _tokenService.GenerateRefreshToken();
+
+            // 5. Create the new Refresh Token entity in DB
+            var newTokenEntity = new RefreshToken
+            {
+                Token = newRefreshToken,
+                UserId = storedToken.UserId, // Link to same user
+                Created = DateTime.UtcNow,
+                Expires = DateTime.UtcNow.AddDays(7), // Match your cookie expiry                                        
+            };
+
+            // 6. Save changes
+            // This updates the old token (RevokedOn) AND inserts the new one
+            _context.RefreshTokens.Add(newTokenEntity);
+            await _context.SaveChangesAsync();
+
+            // 7. Return the result
+            return new Result<AuthResponse>
+            {
+                Succeeded = true,
+                Data = new AuthResponse
+                {
+                    Token = newAccessToken,
+                    RefreshToken = newRefreshToken
+                }
+            };
+        }
+
         #region helper
 
         private async Task<bool> SendEmailHelperAsync(Entities.Users.User user)
@@ -215,33 +297,26 @@ namespace ServiceImplementation.Authentication
             return result;
         }
 
-
-        // Helper method to generate tokens and update the user in DB
-        private async Task<AuthResponse> GenerateAuthResponseAsync(Entities.Users.User user)
+        private async Task<List<Claim>> GetUserClaimsAsync(Entities.Users.User user)
         {
-            // 1. Get Roles
             var userRoles = await _userManager.GetRolesAsync(user);
-
-            // 2. Build Claims (Same as Login)
             var authClaims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, user.UserName),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim("uid", user.Id)
             };
-
-            foreach (var role in userRoles)
-            {
-                authClaims.Add(new Claim(ClaimTypes.Role, role));
-            }
-
+            // Add role claims
+            authClaims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
+            return authClaims;
+        }
+        // Helper method to generate tokens and update the user in DB
+        private async Task<AuthResponse> GenerateAuthResponseAsync(Entities.Users.User user)
+        {
+            var authClaims = await GetUserClaimsAsync(user);
             // 3. Generate Tokens
             var accessToken = _tokenService.GenerateAccessToken(authClaims);
             var refreshToken = _tokenService.GenerateRefreshToken();
-
-            // 4. Update User with Refresh Token
-            //user.RefreshToken = refreshToken;
-            //user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
 
             await _userManager.UpdateAsync(user);
 

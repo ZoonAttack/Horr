@@ -2,6 +2,7 @@ using Entities.Communication;
 using Entities.Enums;
 using Entities.Payment;
 using Entities.Review;
+using Entities.Token;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
@@ -48,4 +49,5 @@ public class User : IdentityUser
     public virtual ICollection<Entities.Review.Review> ReviewsReceived { get; set; } = new List<Entities.Review.Review>();
     [InverseProperty("Specialist")]
     public virtual ICollection<SpecialistReviewRequest> SpecialistReviewRequests { get; set; } = new List<SpecialistReviewRequest>();
+    public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 }
