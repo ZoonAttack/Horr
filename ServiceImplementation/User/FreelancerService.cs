@@ -15,22 +15,7 @@ namespace ServiceImplementation.Authentication.User
             _db = db;
         }
 
-        public FreelancerReadDTO freelancer_to_read(Freelancer freelancer)
-        {
-            return new FreelancerReadDTO
-            {
-                Id = freelancer.UserId.ToString(),
-                Bio = freelancer.Bio,
-                HourlyRate = freelancer.HourlyRate,
-                Availability = freelancer.Availability,
-                YearsOfExperience = freelancer.YearsOfExperience,
-                PortfolioUrl = freelancer.PortfolioUrl,
-                CreatedAt = freelancer.CreatedAt,
-                UpdatedAt = freelancer.UpdatedAt
-            };
-        }
-
-        public Task<FreelancerReadDTO> CreateFreelancerAsync(FreelancerCreateDTO freelancerCreationDTO)
+        public async Task<FreelancerReadDTO> CreateFreelancerAsync(FreelancerCreateDTO freelancerCreationDTO)
         {
             if (freelancerCreationDTO == null)
             {
@@ -39,11 +24,29 @@ namespace ServiceImplementation.Authentication.User
 
             ValidationHelper.ModelValidation(freelancerCreationDTO);
 
-            Freelancer freelancer = freelancerCreationDTO.FreelancerCreate_To_User().Freelancer;
+            Entities.Users.User user = freelancerCreationDTO.FreelancerCreate_To_User();
 
-            freelancer.UserId = Guid.NewGuid().ToString();
+            user.Id = Guid.NewGuid().ToString();
+            user.Role = Entities.Enums.UserRole.Freelancer;
 
-            return Task.FromResult(freelancer_to_read(freelancer));
+            if (user.Freelancer == null)
+            {
+                throw new InvalidOperationException("Freelancer profile could not be created from DTO.");
+            }
+
+            string finalFreelancerId = user.Id;
+            user.Freelancer.UserId = finalFreelancerId;
+
+            // Iterate through the collections and fix the FreelancerId
+            foreach (var lang in user.Freelancer.Languages) { lang.FreelancerId = finalFreelancerId; }
+            foreach (var edu in user.Freelancer.Education) { edu.FreelancerId = finalFreelancerId; }
+            foreach (var exp in user.Freelancer.ExperienceDetails) { exp.FreelancerId = finalFreelancerId; }
+            foreach (var emp in user.Freelancer.EmploymentHistory) { emp.FreelancerId = finalFreelancerId; }
+
+            _db.Users.Add(user);
+            await _db.SaveChangesAsync();
+
+            return await Task.FromResult(user.Freelancer_To_FreelancerRead());
         }
 
         public async Task<bool> DeleteFreelancerAsync(Guid freelancerId)

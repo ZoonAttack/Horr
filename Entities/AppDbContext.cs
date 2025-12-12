@@ -4,9 +4,11 @@ using Entities.Payment;
 using Entities.Project;
 using Entities.Review;
 using Entities.Skill;
-using Entities.Users;
+using Entities.Users; // Contains the new profile collections
+using Entities.Users.FreelancerHelpers;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Linq; // Needed for the OnModelCreating loop
 
 namespace Entities
 {
@@ -18,6 +20,13 @@ namespace Entities
         public DbSet<Specialist> SpecialistProfiles { get; set; }
         public DbSet<Freelancer> Freelancers { get; set; }
         public DbSet<Client> Clients { get; set; }
+
+        // --- NEW FREELANCER PROFILE COLLECTIONS DbSets ---
+        public DbSet<FreelancerLanguage> FreelancerLanguages { get; set; }
+        public DbSet<FreelancerEducation> FreelancerEducation { get; set; }
+        public DbSet<FreelancerExperienceDetail> FreelancerExperienceDetails { get; set; }
+        public DbSet<FreelancerEmployment> FreelancerEmploymentHistory { get; set; }
+        // ----------------------------------------------------
 
         // Skills DbSets
         public DbSet<Skill.Skill> Skills { get; set; }
@@ -85,9 +94,22 @@ namespace Entities
                     "([TransactionType] = 1 AND [SenderWalletId] IS NOT NULL AND [ReceiverWalletId] IS NULL) OR " +
                     "([TransactionType] IN (2, 3, 4, 5) AND [SenderWalletId] IS NOT NULL AND [ReceiverWalletId] IS NOT NULL)"));
 
+            // ---------------------------------------------------------
+            // 2. NEW CONFIGURATION (Relationship with Freelancer)
+            // ---------------------------------------------------------
+
+            // These relationships are usually defined on the Freelancer entity 
+            // (e.g., Freelancer.HasMany(f => f.Languages).WithOne().HasForeignKey(l => l.FreelancerId))
+            // but for simplicity in the DbContext, ensure the foreign key is set up 
+            // if it wasn't done via data annotations.
+
+            // The default EF Core conventions (FreelancerId string property) should correctly
+            // set up the foreign key for all four new entities without explicit configuration here,
+            // as long as the base classes have the correct properties defined.
+            // Since the global DeleteBehavior is Restrict, we do not need to set it manually here.
 
             // ---------------------------------------------------------
-            // 2. THE GLOBAL FIX (Must be at the Bottom)
+            // 3. THE GLOBAL FIX (Must be at the Bottom)
             // ---------------------------------------------------------
 
             // This loop finds EVERY relationship in your database (Orders, Chats, Deliveries, etc.)
