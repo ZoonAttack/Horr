@@ -112,6 +112,10 @@ namespace ServiceImplementation.Authentication.User
 
             var freelancer = await _db.Freelancers
                 .Include(f => f.User)
+                .Include(f => f.Languages)
+                .Include(f => f.Education)
+                .Include(f => f.ExperienceDetails)
+                .Include(f => f.EmploymentHistory)
         .       FirstOrDefaultAsync(f =>
                     f.UserId == idString &&
                     f.User != null &&
@@ -120,7 +124,7 @@ namespace ServiceImplementation.Authentication.User
             if (freelancer == null)
                 return null;
 
-            return freelancer_to_read(freelancer);
+            return freelancer.User.Freelancer_To_FreelancerRead();
         }
 
         public Task<FreelancerReadDTO?> GetFreelancerPublicProfileByIdAsync(Guid freelancerId)
