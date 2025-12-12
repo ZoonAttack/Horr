@@ -138,5 +138,39 @@ namespace ServiceContracts.DTOs.User.Freelancer
                 string freelancerId = user.Id;
             }
         }
+
+        // Inside FreelancerExtensions static class
+        public static FreelancerPublicReadDTO ToPublicReadDto(this Entities.Users.User user)
+        {
+            if (user == null) return null;
+
+            var dto = new FreelancerPublicReadDTO
+            {
+                Id = user.Id,
+                FullName = user.FullName,
+
+                // Mapping the Public Trust Signals
+                IsVerified = user.IsVerified,      
+                TrustScore = user.TrustScore,       
+
+                // Freelancer Profile Mapping (null-safe access)
+                Bio = user.Freelancer?.Bio,
+                HourlyRate = user.Freelancer?.HourlyRate,
+                Availability = user.Freelancer?.Availability,
+                YearsOfExperience = user.Freelancer?.YearsOfExperience,
+                PortfolioUrl = user.Freelancer?.PortfolioUrl,
+
+                // Collections (using existing helper methods)
+                Languages = user.Freelancer?.Languages?
+                    .Select(l => l.ToReadDto()).ToList() ?? new List<LanguageReadDto>(),
+                Education = user.Freelancer?.Education?
+                    .Select(e => e.ToReadDto()).ToList() ?? new List<EducationReadDto>(),
+                ExperienceDetails = user.Freelancer?.ExperienceDetails?
+                    .Select(e => e.ToReadDto()).ToList() ?? new List<ExperienceDetailReadDto>(),
+                EmploymentHistory = user.Freelancer?.EmploymentHistory?
+                    .Select(e => e.ToReadDto()).ToList() ?? new List<EmploymentReadDto>()
+            };
+            return dto;
+        }
     }
 }

@@ -16,7 +16,7 @@ namespace Services
         /// <summary>
         /// Viewing Freelancer public profile (limited data)
         /// </summary>
-        public Task<FreelancerReadDTO?> GetFreelancerPublicProfileByIdAsync(Guid freelancerId);
+        public Task<FreelancerPublicReadDTO?> GetFreelancerPublicProfileByIdAsync(Guid freelancerId);
 
         /// <summary>
         /// Get all freelancers with optional filters 

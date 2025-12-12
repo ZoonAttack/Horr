@@ -127,9 +127,32 @@ namespace ServiceImplementation.Authentication.User
             return freelancer.User.Freelancer_To_FreelancerRead();
         }
 
-        public Task<FreelancerReadDTO?> GetFreelancerPublicProfileByIdAsync(Guid freelancerId)
+        public async Task<FreelancerPublicReadDTO?> GetFreelancerPublicProfileByIdAsync(Guid freelancerId)
         {
-            throw new NotImplementedException();
+            if (freelancerId == Guid.Empty)
+            {
+                throw new ArgumentException("Freelancer ID cannot be empty.", nameof(freelancerId));
+            }
+            var idString = freelancerId.ToString();
+
+            var freelancer = await _db.Freelancers
+                .Include(f => f.User)
+                .Include(f => f.Languages)
+                .Include(f => f.Education)
+                .Include(f => f.ExperienceDetails)
+                .Include(f => f.EmploymentHistory)
+                .FirstOrDefaultAsync(f =>
+                    f.UserId == idString &&
+                    f.User != null &&
+                    !f.User.IsDeleted);
+
+            if (freelancer == null)
+                return null;
+
+            if (freelancer.User == null)
+                return null; 
+
+            return freelancer.User.ToPublicReadDto();
         }
 
         public Task<PagedResult<FreelancerReadDTO>> SearchFreelancersAsync(string searchQuery, List<Guid>? skillIds = null, decimal? minHourlyRate = null, decimal? maxHourlyRate = null, int? minYearsExperience = null, decimal? minTrustScore = null, bool? isVerified = null, string? sortBy = "TrustScore", bool sortDescending = true, int page = 1, int pageSize = 10)
