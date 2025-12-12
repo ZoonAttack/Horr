@@ -23,9 +23,6 @@ public class User : IdentityUser
     public UserRole Role { get; set; }
     public bool IsVerified { get; set; } = false;
 
-    [Column(TypeName = "decimal(5,2)")]
-    [Range(0, 100)]
-    public decimal TrustScore { get; set; } = 0;
 
     // Soft Delete
     public bool IsDeleted { get; set; } = false;

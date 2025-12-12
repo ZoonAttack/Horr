@@ -19,6 +19,8 @@ namespace Entities.Users
         [Column(TypeName = "text")]
         public string Bio { get; set; }
 
+        public string ProfilePicturePath { get; set; }
+
         [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         public DateTime CreatedAt { get; set; }
 
