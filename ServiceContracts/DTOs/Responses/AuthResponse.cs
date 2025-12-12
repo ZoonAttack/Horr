@@ -12,6 +12,7 @@ namespace ServiceContracts.DTOs.Responses
         public string Email { get; set; }
 
         public bool IsEmailConfirmationSent { get; set; } 
+        public bool isEmailConfirmed { get; set; }
         public string Token { get; set; }
 
         public string RefreshToken { get; set; }

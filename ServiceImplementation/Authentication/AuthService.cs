@@ -35,6 +35,16 @@ namespace ServiceImplementation.Authentication
         {
             var user = await _userManager.FindByEmailAsync(dto.Email);
 
+            if(user.IsDeleted)
+            {
+                return new Result<AuthResponse>
+                {
+                    Succeeded = false,
+                    Message = "Account is deleted",
+                    Errors = new List<string> { "The account associated with this email has been deleted." }
+                };
+            }
+            
             // ... Validate Password Logic ...
             if (user is null || _userManager.CheckPasswordAsync(user, dto.Password).Result == false)
             {

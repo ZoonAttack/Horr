@@ -3,7 +3,6 @@ using Entities.Users;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using ServiceContracts;
-using ServiceImplementation.Authentication;
 using Services.DTOs.UserDTOs;
 namespace Horr.Controllers
 {
