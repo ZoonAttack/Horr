@@ -4,6 +4,7 @@ using Services;
 using ServiceImplementation.Authentication.Helpers;
 using Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace ServiceImplementation.Authentication.User
 {
@@ -13,6 +14,37 @@ namespace ServiceImplementation.Authentication.User
         public FreelancerService(AppDbContext db)
         {
             _db = db;
+        }
+        
+        /// <summary>
+        /// helper method to apply sorting
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="sortBy"></param>
+        /// <param name="sortDescending"></param>
+        /// <returns></returns>
+        private IQueryable<Entities.Users.User> ApplySorting(IQueryable<Entities.Users.User> query, string? sortBy, bool sortDescending)
+        {
+            // default sorting is by TrustScore descending
+            var sortProperty = sortBy?.ToLowerInvariant() ?? "trustscore";
+
+            switch (sortProperty)
+            {
+                case "fullname":
+                    query = sortDescending ? query.OrderByDescending(u => u.FullName) : query.OrderBy(u => u.FullName);
+                    break;
+                case "hourlyrate":
+                    query = sortDescending ? query.OrderByDescending(u => u.Freelancer!.HourlyRate) : query.OrderBy(u => u.Freelancer!.HourlyRate);
+                    break;
+                case "yearsofexperience":
+                    query = sortDescending ? query.OrderByDescending(u => u.Freelancer!.YearsOfExperience) : query.OrderBy(u => u.Freelancer!.YearsOfExperience);
+                    break;
+                case "trustscore":
+                default:
+                    query = sortDescending ? query.OrderByDescending(u => u.TrustScore) : query.OrderBy(u => u.TrustScore);
+                    break;
+            }
+            return query;
         }
 
         public async Task<FreelancerReadDTO> CreateFreelancerAsync(FreelancerCreateDTO freelancerCreationDTO)
@@ -97,9 +129,79 @@ namespace ServiceImplementation.Authentication.User
         }
         
 
-        public Task<PagedResult<FreelancerReadDTO>> GetAllFreelancersAsync(List<Guid>? skillIds = null, decimal? minHourlyRate = null, decimal? maxHourlyRate = null, int? minYearsExperience = null, decimal? minTrustScore = null, bool? isVerified = null, string? sortBy = "TrustScore", bool sortDescending = true, int page = 1, int pageSize = 10)
+        public async Task<PagedResult<FreelancerReadDTO>> GetAllFreelancersAsync(List<string>? skillIds = null, decimal? minHourlyRate = null, decimal? maxHourlyRate = null, int? minYearsExperience = null, decimal? minTrustScore = null, bool? isVerified = null, string? sortBy = "TrustScore", bool sortDescending = true, int page = 1, int pageSize = 10)
         {
-            throw new NotImplementedException();
+            // 1. get all non-deleted freelancers
+            IQueryable<Entities.Users.User> query = _db.Users
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.Languages)
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.Education)
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.ExperienceDetails)
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.EmploymentHistory)
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.FreelancerSkills)
+                        .ThenInclude(fs => fs.Skill)
+                
+                .Where(u => u.Role == Entities.Enums.UserRole.Freelancer && !u.IsDeleted && u.Freelancer != null);
+
+            // 2. apply filters
+            if (minHourlyRate.HasValue)
+            {
+                query = query.Where(u => u.Freelancer!.HourlyRate >= minHourlyRate.Value);
+            }
+            if (maxHourlyRate.HasValue)
+            {
+                query = query.Where(u => u.Freelancer!.HourlyRate <= maxHourlyRate.Value);
+            }
+            if (minYearsExperience.HasValue)
+            {
+                query = query.Where(u => u.Freelancer!.YearsOfExperience >= minYearsExperience.Value);
+            }
+            if (minTrustScore.HasValue)
+            {
+                query = query.Where(u => u.TrustScore >= minTrustScore.Value);
+            }
+            if (isVerified.HasValue)
+            {
+                query = query.Where(u => u.IsVerified == isVerified.Value);
+            }
+            if (skillIds != null && skillIds.Any())
+            {
+                query = query.Where(u => u.Freelancer!.FreelancerSkills!.Any(fs => skillIds.Contains(fs.SkillId)));
+            }
+
+            // 3. apply sorting
+            query = ApplySorting(query, sortBy, sortDescending);
+
+            // 4. apply pagination
+            int totalCount = await query.CountAsync();
+
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 1;
+
+            query = query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize);
+
+            // 5. execute query and map to DTOs
+            List<Freelancer> freelancers = await query
+                .Select(u => u.Freelancer!)
+                .ToListAsync();
+
+            List<FreelancerReadDTO> freelancersReadDtos = await query
+                .Select(f => f.Freelancer_To_FreelancerRead()).ToListAsync();
+
+            // 6. return paged result
+            return new PagedResult<FreelancerReadDTO>
+            {
+                Items = freelancersReadDtos,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
         public async Task<FreelancerReadDTO?> GetFreelancerProfileByIdAsync(Guid freelancerId)

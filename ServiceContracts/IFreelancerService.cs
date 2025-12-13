@@ -22,7 +22,7 @@ namespace Services
         /// Get all freelancers with optional filters 
         /// </summary>
         public Task<PagedResult<FreelancerReadDTO>> GetAllFreelancersAsync(
-            List<Guid>? skillIds = null,
+            List<string>? skillIds = null,
             decimal? minHourlyRate = null,
             decimal? maxHourlyRate = null,
             int? minYearsExperience = null,
