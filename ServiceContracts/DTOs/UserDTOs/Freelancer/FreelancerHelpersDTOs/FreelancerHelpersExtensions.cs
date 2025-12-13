@@ -142,7 +142,7 @@ namespace Mappers
     }
 }
 public class EmploymentUpdateDto
-    {
+{
         public int? Id { get; set; }
         public string Company { get; set; }
         public string City { get; set; }
@@ -151,5 +151,4 @@ public class EmploymentUpdateDto
         public bool CurrentlyWorkThere { get; set; }
         public DateTime FromDate { get; set; }
         public DateTime? ToDate { get; set; }
-    }
 }

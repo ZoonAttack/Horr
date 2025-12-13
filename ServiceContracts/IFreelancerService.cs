@@ -38,7 +38,7 @@ namespace Services
         /// </summary>
         public Task<PagedResult<FreelancerReadDTO>> SearchFreelancersAsync(
             string searchQuery,
-            List<Guid>? skillIds = null,
+            List<string>? skillIds = null,
             decimal? minHourlyRate = null,
             decimal? maxHourlyRate = null,
             int? minYearsExperience = null,

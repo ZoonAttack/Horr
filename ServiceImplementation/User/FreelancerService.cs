@@ -257,9 +257,92 @@ namespace ServiceImplementation.Authentication.User
             return freelancer.User.ToPublicReadDto();
         }
 
-        public Task<PagedResult<FreelancerReadDTO>> SearchFreelancersAsync(string searchQuery, List<Guid>? skillIds = null, decimal? minHourlyRate = null, decimal? maxHourlyRate = null, int? minYearsExperience = null, decimal? minTrustScore = null, bool? isVerified = null, string? sortBy = "TrustScore", bool sortDescending = true, int page = 1, int pageSize = 10)
+        public async Task<PagedResult<FreelancerReadDTO>> SearchFreelancersAsync(string searchQuery, List<string>? skillIds = null, decimal? minHourlyRate = null, decimal? maxHourlyRate = null, int? minYearsExperience = null, decimal? minTrustScore = null, bool? isVerified = null, string? sortBy = "TrustScore", bool sortDescending = true, int page = 1, int pageSize = 10)
         {
-            throw new NotImplementedException();
+            // 1. get all non-deleted freelancers
+            IQueryable<Entities.Users.User> query = _db.Users
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.Languages)
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.Education)
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.ExperienceDetails)
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.EmploymentHistory)
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.FreelancerSkills)
+                        .ThenInclude(fs => fs.Skill)
+
+                .Where(u => u.Role == Entities.Enums.UserRole.Freelancer && !u.IsDeleted && u.Freelancer != null);
+
+            // 2. apply search query
+            string normalizedSearchQuery = searchQuery?.Trim().ToLower() ?? string.Empty;
+
+            if (!string.IsNullOrEmpty(normalizedSearchQuery))
+            {
+                // search in name, bio, and skills
+                query = query.Where(u =>
+                    u.FullName.ToLower().Contains(normalizedSearchQuery) ||
+                    u.Freelancer!.Bio.ToLower().Contains(normalizedSearchQuery) ||
+                    u.Freelancer!.FreelancerSkills.Any(fs => fs.Skill.Name.ToLower().Contains(normalizedSearchQuery))
+                );
+            }
+
+            // 3. apply filters
+            if (minHourlyRate.HasValue)
+            {
+                query = query.Where(u => u.Freelancer!.HourlyRate >= minHourlyRate.Value);
+            }
+            if (maxHourlyRate.HasValue)
+            {
+                query = query.Where(u => u.Freelancer!.HourlyRate <= maxHourlyRate.Value);
+            }
+            if (minYearsExperience.HasValue)
+            {
+                query = query.Where(u => u.Freelancer!.YearsOfExperience >= minYearsExperience.Value);
+            }
+            if (minTrustScore.HasValue)
+            {
+                query = query.Where(u => u.TrustScore >= minTrustScore.Value);
+            }
+            if (isVerified.HasValue)
+            {
+                query = query.Where(u => u.IsVerified == isVerified.Value);
+            }
+            if (skillIds != null && skillIds.Any())
+            {
+                query = query.Where(u => u.Freelancer!.FreelancerSkills!.Any(fs => skillIds.Contains(fs.SkillId)));
+            }
+
+            // 3. apply sorting
+            query = ApplySorting(query, sortBy, sortDescending);
+
+            // 4. apply pagination
+            int totalCount = await query.CountAsync();
+
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 1;
+
+            query = query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize);
+
+            // 5. execute query and map to DTOs
+            List<Freelancer> freelancers = await query
+                .Select(u => u.Freelancer!)
+                .ToListAsync();
+
+            List<FreelancerReadDTO> freelancersReadDtos = await query
+                .Select(f => f.Freelancer_To_FreelancerRead()).ToListAsync();
+
+            // 6. return paged result
+            return new PagedResult<FreelancerReadDTO>
+            {
+                Items = freelancersReadDtos,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
         public Task<bool> UpdateFreelancerAsync(FreelancerUpdateDTO freelancerUpdateDTO)
