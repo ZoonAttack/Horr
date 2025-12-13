@@ -5,17 +5,26 @@ using ServiceImplementation.Authentication.Helpers;
 using Entities;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using Mappers;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using System.Security.Claims;
+using Entities.Users.FreelancerHelpers;
 
 namespace ServiceImplementation.Authentication.User
 {
     public class FreelancerService : IFreelancerService
     {
         private readonly AppDbContext _db;
-        public FreelancerService(AppDbContext db)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public FreelancerService(AppDbContext db, IHttpContextAccessor httpContextAccessor)
         {
             _db = db;
+            _httpContextAccessor = httpContextAccessor;
         }
-        
+
+        #region Helper Methods
+
         /// <summary>
         /// helper method to apply sorting
         /// </summary>
@@ -46,6 +55,168 @@ namespace ServiceImplementation.Authentication.User
             }
             return query;
         }
+
+        #region Reconcile Helpers
+
+        /// <summary>
+        /// Synchronizes the existing Languages collection with the incoming DTOs
+        /// </summary>
+        /// <param name="freelancer"></param>
+        /// <param name="incomingDtos"></param>
+        /// <param name="freelancerId"></param>
+        private void ReconcileLanguages(Freelancer freelancer, ICollection<LanguageUpdateDto> incomingDtos, string freelancerId)
+        {
+            var existing = freelancer.Languages;
+            var incomingIds = incomingDtos.Where(dto => dto.Id.HasValue).Select(dto => dto.Id.Value).ToList();
+
+            // 1. DELETE: Identify existing records whose IDs are NOT present in the incoming DTO list.
+            var itemsToDelete = existing.Where(e => !incomingIds.Contains(e.Id)).ToList();
+            if (itemsToDelete.Any())
+            {
+                _db.FreelancerLanguages.RemoveRange(itemsToDelete);
+            }
+
+            // 2. ADD/UPDATE:
+            foreach (var dto in incomingDtos)
+            {
+                if (dto.Id.HasValue)
+                {
+                    // UPDATE: Item exists, find it and modify
+                    var entity = existing.First(e => e.Id == dto.Id.Value);
+                    entity.Name = dto.Name;
+                    entity.Level = dto.Level;
+                }
+                else
+                {
+                    // ADD: Item is new (Id is null), create entity and add
+                    var newEntity = dto.ToEntity(freelancerId);
+                    existing.Add(newEntity);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Synchronizes the existing Education collection with the incoming DTOs
+        /// </summary>
+        /// <param name="freelancer"></param>
+        /// <param name="incomingDtos"></param>
+        /// <param name="freelancerId"></param>
+        private void ReconcileEducation(Freelancer freelancer, ICollection<EducationUpdateDto> incomingDtos, string freelancerId)
+        {
+            var existing = freelancer.Education;
+            var incomingIds = incomingDtos.Where(dto => dto.Id.HasValue).Select(dto => dto.Id.Value).ToList();
+
+            var itemsToDelete = existing.Where(e => !incomingIds.Contains(e.Id)).ToList();
+            if (itemsToDelete.Any())
+            {
+                _db.FreelancerEducation.RemoveRange(itemsToDelete);
+            }
+
+            foreach (var dto in incomingDtos)
+            {
+                if (dto.Id.HasValue)
+                {
+                    var entity = existing.First(e => e.Id == dto.Id.Value);
+                    entity.School = dto.School;
+                    entity.DateStart = dto.DateStart;
+                    entity.DateEnd = dto.DateEnd;
+                    entity.Degree = dto.Degree;
+                    entity.FieldOfStudy = dto.FieldOfStudy;
+                }
+                else
+                {
+                    var newEntity = dto.ToEntity(freelancerId);
+                    existing.Add(newEntity);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Synchronizes the existing ExperienceDetails collection with the incoming DTOs
+        /// </summary>
+        /// <param name="freelancer"></param>
+        /// <param name="incomingDtos"></param>
+        /// <param name="freelancerId"></param>
+        private void ReconcileExperienceDetails(Freelancer freelancer, ICollection<ExperienceDetailUpdateDto> incomingDtos, string freelancerId)
+        {
+            var existing = freelancer.ExperienceDetails;
+            var incomingIds = incomingDtos.Where(dto => dto.Id.HasValue).Select(dto => dto.Id.Value).ToList();
+
+            var itemsToDelete = existing.Where(e => !incomingIds.Contains(e.Id)).ToList();
+            if (itemsToDelete.Any())
+            {
+                _db.FreelancerExperienceDetails.RemoveRange(itemsToDelete);
+            }
+
+            foreach (var dto in incomingDtos)
+            {
+                if (dto.Id.HasValue)
+                {
+                    var entity = existing.First(e => e.Id == dto.Id.Value);
+                    entity.Subject = dto.Subject;
+                    entity.Description = dto.Description;
+                }
+                else
+                {
+                    var newEntity = dto.ToEntity(freelancerId);
+                    existing.Add(newEntity);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Synchronizes the existing EmploymentHistory collection with the incoming DTOs
+        /// </summary>
+        /// <param name="freelancer"></param>
+        /// <param name="incomingDtos"></param>
+        /// <param name="freelancerId"></param>
+        private void ReconcileEmployment(Freelancer freelancer, ICollection<ServiceContracts.DTOs.User.Freelancer.EmploymentUpdateDto> incomingDtos, string freelancerId)
+        {
+            var existing = freelancer.EmploymentHistory;
+            var incomingIds = incomingDtos.Where(dto => dto.Id.HasValue).Select(dto => dto.Id.Value).ToList();
+
+            var itemsToDelete = existing.Where(e => !incomingIds.Contains(e.Id)).ToList();
+            if (itemsToDelete.Any())
+            {
+                _db.FreelancerEmploymentHistory.RemoveRange(itemsToDelete);
+            }
+
+            foreach (var dto in incomingDtos)
+            {
+                if (dto.Id.HasValue)
+                {
+                    var entity = existing.First(e => e.Id == dto.Id.Value);
+                    entity.Company = dto.Company;
+                    entity.City = dto.City;
+                    entity.Country = dto.Country;
+                    entity.Title = dto.Title;
+                    entity.CurrentlyWorkThere = dto.CurrentlyWorkThere;
+                    entity.FromDate = dto.FromDate;
+                    entity.ToDate = dto.ToDate;
+                }
+                else
+                {
+                    FreelancerEmployment newEntity = new FreelancerEmployment
+                    {
+                        Id = dto.Id ?? 0,
+                        FreelancerId = freelancerId,
+                        Company = dto.Company,
+                        City = dto.City,
+                        Country = dto.Country,
+                        Title = dto.Title,
+                        CurrentlyWorkThere = dto.CurrentlyWorkThere,
+                        FromDate = dto.FromDate,
+                        ToDate = dto.ToDate
+                    };
+
+                    existing.Add(newEntity);
+                }
+            }
+        }
+
+        #endregion
+
+        #endregion
 
         public async Task<FreelancerReadDTO> CreateFreelancerAsync(FreelancerCreateDTO freelancerCreationDTO)
         {
@@ -345,9 +516,50 @@ namespace ServiceImplementation.Authentication.User
             };
         }
 
-        public Task<bool> UpdateFreelancerAsync(FreelancerUpdateDTO freelancerUpdateDTO)
+        public async Task<bool> UpdateFreelancerAsync(FreelancerUpdateDTO freelancerUpdateDTO)
         {
-            throw new NotImplementedException();
+            if (freelancerUpdateDTO == null)
+            {
+                throw new ArgumentNullException(nameof(freelancerUpdateDTO));
+            }
+
+            // getting the authenticated user id
+            string currentId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? throw new UnauthorizedAccessException("Unable to retrieve the authenticated user ID.");
+
+            // 1. fetch the existing user
+            var user = await _db.Users
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.Languages)
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.Education)
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.ExperienceDetails)
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.EmploymentHistory)
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.FreelancerSkills)
+                        .ThenInclude(fs => fs.Skill)
+
+                .FirstOrDefaultAsync(u => u.Id == currentId && u.Role == Entities.Enums.UserRole.Freelancer && !u.IsDeleted);
+
+            if (user == null || user.Freelancer == null)
+            {
+                return false;
+            }
+
+            // 2. update the base user and freelancer properties
+            user.FreelancerUpdate_To_Freelancer(freelancerUpdateDTO);
+
+            // 3. reconcile the collections
+            ReconcileLanguages(user.Freelancer, freelancerUpdateDTO.Languages, user.Id);
+            ReconcileEducation(user.Freelancer, freelancerUpdateDTO.Education, user.Id);
+            ReconcileExperienceDetails(user.Freelancer, freelancerUpdateDTO.ExperienceDetails, user.Id);
+            ReconcileEmployment(user.Freelancer, freelancerUpdateDTO.EmploymentHistory, user.Id);
+
+            // 4. save changes and return
+            await _db.SaveChangesAsync();
+            return true;
         }
     }
 }
