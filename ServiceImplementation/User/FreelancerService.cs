@@ -12,7 +12,6 @@ namespace ServiceImplementation.Authentication.User
             return new FreelancerReadDTO
             {
                 Id = freelancer.UserId.ToString(),
-                Bio = freelancer.Bio,
                 HourlyRate = freelancer.HourlyRate,
                 Availability = freelancer.Availability,
                 YearsOfExperience = freelancer.YearsOfExperience,

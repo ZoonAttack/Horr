@@ -28,7 +28,6 @@ namespace Application.DTOs.User
                 Email = user.Email,
                 Phone = user.PhoneNumber,
                 IsVerified = user.IsVerified,
-                TrustScore = user.TrustScore,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt,
 

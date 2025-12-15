@@ -46,8 +46,7 @@ namespace Services.DTOs.UserDTOs.User
                 // Password should be hashed later in the service layer
                 PasswordHash = Password,
                 Role = Role,
-                IsVerified = false,
-                TrustScore = 0,
+                IsVerified = false
             };
         }
 

@@ -18,12 +18,10 @@
                 Email = user.Email,
                 Phone = user.PhoneNumber,
                 IsVerified = user.IsVerified,
-                TrustScore = user.TrustScore,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt,
 
                 // Freelancer Profile Mapping (must check for existence)
-                Bio = user.Freelancer?.Bio,
                 HourlyRate = user.Freelancer?.HourlyRate,
                 Availability = user.Freelancer?.Availability,
                 YearsOfExperience = user.Freelancer?.YearsOfExperience,
@@ -46,7 +44,6 @@
 
                 Freelancer = new Entities.Users.Freelancer
                 {
-                    Bio = createDto.Bio,
                     HourlyRate = createDto.HourlyRate,
                     Availability = createDto.Availability,
                     YearsOfExperience = createDto.YearsOfExperience,
@@ -70,7 +67,6 @@
             // Apply updates to the Freelancer Profile
             if (user.Freelancer != null)
             {
-                user.Freelancer.Bio = updateDto.Bio;
                 user.Freelancer.HourlyRate = updateDto.HourlyRate;
                 user.Freelancer.Availability = updateDto.Availability;
                 user.Freelancer.YearsOfExperience = updateDto.YearsOfExperience;
