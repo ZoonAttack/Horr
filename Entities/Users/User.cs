@@ -2,6 +2,7 @@ using Entities.Communication;
 using Entities.Enums;
 using Entities.Payment;
 using Entities.Review;
+using Entities.Token;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
@@ -22,9 +23,6 @@ public class User : IdentityUser
     public UserRole Role { get; set; }
     public bool IsVerified { get; set; } = false;
 
-    [Column(TypeName = "decimal(5,2)")]
-    [Range(0, 100)]
-    public decimal TrustScore { get; set; } = 0;
 
     // Soft Delete
     public bool IsDeleted { get; set; } = false;
@@ -48,4 +46,5 @@ public class User : IdentityUser
     public virtual ICollection<Entities.Review.Review> ReviewsReceived { get; set; } = new List<Entities.Review.Review>();
     [InverseProperty("Specialist")]
     public virtual ICollection<SpecialistReviewRequest> SpecialistReviewRequests { get; set; } = new List<SpecialistReviewRequest>();
+    public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 }

@@ -14,6 +14,8 @@ namespace Entities.Users
         public string UserId { get; set; }
         public virtual User User { get; set; }
 
+        public string ProfilePicturePath { get; set; }
+
         [MaxLength(100)]
         public string Specialization { get; set; }
 

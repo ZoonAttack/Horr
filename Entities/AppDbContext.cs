@@ -4,6 +4,7 @@ using Entities.Payment;
 using Entities.Project;
 using Entities.Review;
 using Entities.Skill;
+using Entities.Token;
 using Entities.Users;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,7 @@ namespace Entities
     public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbContext<User>(options)
     {
 
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
         // User and Profile DbSets
         public DbSet<UserVerification> UserVerifications { get; set; }
         public DbSet<Specialist> SpecialistProfiles { get; set; }
@@ -84,7 +86,11 @@ namespace Entities
                     "([TransactionType] = 0 AND [ReceiverWalletId] IS NOT NULL AND [SenderWalletId] IS NULL) OR " +
                     "([TransactionType] = 1 AND [SenderWalletId] IS NOT NULL AND [ReceiverWalletId] IS NULL) OR " +
                     "([TransactionType] IN (2, 3, 4, 5) AND [SenderWalletId] IS NOT NULL AND [ReceiverWalletId] IS NOT NULL)"));
-
+            modelBuilder.Entity<User>()
+                .HasMany(u => u.RefreshTokens)
+                .WithOne(t => t.User)
+                .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.Cascade); // If user is deleted, delete their tokens
 
             // ---------------------------------------------------------
             // 2. THE GLOBAL FIX (Must be at the Bottom)
