@@ -23,6 +23,10 @@ public class User : IdentityUser
     public UserRole Role { get; set; }
     public bool IsVerified { get; set; } = false;
 
+    [Column(TypeName = "text")]
+    public string Bio { get; set; }
+
+    public string ProfilePicturePath { get; set; }
 
     // Soft Delete
     public bool IsDeleted { get; set; } = false;

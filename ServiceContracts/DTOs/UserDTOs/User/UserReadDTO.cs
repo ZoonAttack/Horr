@@ -46,7 +46,6 @@ namespace Services.DTOs.UserDTOs.User
                 Phone = user.PhoneNumber,
                 Role = user.Role,
                 IsVerified = user.IsVerified,
-                TrustScore = user.TrustScore,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt
             };
