@@ -802,6 +802,151 @@ namespace Entities.Migrations
                     b.ToTable("freelancers");
                 });
 
+            modelBuilder.Entity("Entities.Users.FreelancerHelpers.FreelancerEducation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("DateEnd")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DateStart")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Degree")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("FieldOfStudy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("FreelancerId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("School")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FreelancerId");
+
+                    b.ToTable("freelancer_education");
+                });
+
+            modelBuilder.Entity("Entities.Users.FreelancerHelpers.FreelancerEmployment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Company")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("CurrentlyWorkThere")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("FreelancerId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("FromDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("ToDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FreelancerId");
+
+                    b.ToTable("freelancer_employment_history");
+                });
+
+            modelBuilder.Entity("Entities.Users.FreelancerHelpers.FreelancerExperienceDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FreelancerId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FreelancerId");
+
+                    b.ToTable("freelancer_experience_details");
+                });
+
+            modelBuilder.Entity("Entities.Users.FreelancerHelpers.FreelancerLanguage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("FreelancerId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FreelancerId");
+
+                    b.ToTable("freelancer_languages");
+                });
+
             modelBuilder.Entity("Entities.Users.Specialist", b =>
                 {
                     b.Property<string>("UserId")
@@ -906,6 +1051,10 @@ namespace Entities.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasFilter("[Email] IS NOT NULL");
 
                     b.HasIndex("IsDeleted");
 
@@ -1442,6 +1591,50 @@ namespace Entities.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Entities.Users.FreelancerHelpers.FreelancerEducation", b =>
+                {
+                    b.HasOne("Entities.Users.Freelancer", "Freelancer")
+                        .WithMany("Education")
+                        .HasForeignKey("FreelancerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Freelancer");
+                });
+
+            modelBuilder.Entity("Entities.Users.FreelancerHelpers.FreelancerEmployment", b =>
+                {
+                    b.HasOne("Entities.Users.Freelancer", "Freelancer")
+                        .WithMany("EmploymentHistory")
+                        .HasForeignKey("FreelancerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Freelancer");
+                });
+
+            modelBuilder.Entity("Entities.Users.FreelancerHelpers.FreelancerExperienceDetail", b =>
+                {
+                    b.HasOne("Entities.Users.Freelancer", "Freelancer")
+                        .WithMany("ExperienceDetails")
+                        .HasForeignKey("FreelancerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Freelancer");
+                });
+
+            modelBuilder.Entity("Entities.Users.FreelancerHelpers.FreelancerLanguage", b =>
+                {
+                    b.HasOne("Entities.Users.Freelancer", "Freelancer")
+                        .WithMany("Languages")
+                        .HasForeignKey("FreelancerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Freelancer");
+                });
+
             modelBuilder.Entity("Entities.Users.Specialist", b =>
                 {
                     b.HasOne("Entities.Users.User", "User")
@@ -1600,7 +1793,15 @@ namespace Entities.Migrations
 
                     b.Navigation("Contracts");
 
+                    b.Navigation("Education");
+
+                    b.Navigation("EmploymentHistory");
+
+                    b.Navigation("ExperienceDetails");
+
                     b.Navigation("FreelancerSkills");
+
+                    b.Navigation("Languages");
 
                     b.Navigation("Orders");
 

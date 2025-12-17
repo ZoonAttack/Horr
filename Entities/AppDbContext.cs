@@ -1,4 +1,4 @@
-﻿using Entities.Communication;
+using Entities.Communication;
 using Entities.Marketplace;
 using Entities.Payment;
 using Entities.Project;
@@ -61,6 +61,23 @@ namespace Entities
             // ---------------------------------------------------------
             // 1. MANUAL CONFIGURATION (Composite Keys & Constraints)
             // ---------------------------------------------------------
+
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Email)
+                .IsUnique();
+
+            // When using SQLite (e.g., in tests), make sure CreatedAt/UpdatedAt
+            // get database-generated default values to satisfy NOT NULL constraints.
+            if (Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite")
+            {
+                modelBuilder.Entity<User>()
+                    .Property(u => u.CreatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                modelBuilder.Entity<User>()
+                    .Property(u => u.UpdatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            }
 
             // Composite Keys
             modelBuilder.Entity<FreelancerSkill>()
