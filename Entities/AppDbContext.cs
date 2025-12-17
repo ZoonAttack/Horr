@@ -1,4 +1,4 @@
-﻿using Entities.Communication;
+using Entities.Communication;
 using Entities.Marketplace;
 using Entities.Payment;
 using Entities.Project;
@@ -6,8 +6,10 @@ using Entities.Review;
 using Entities.Skill;
 using Entities.Token;
 using Entities.Users;
+using Entities.Users.FreelancerHelpers;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Linq; // Needed for the OnModelCreating loop
 
 namespace Entities
 {
@@ -20,6 +22,13 @@ namespace Entities
         public DbSet<Specialist> SpecialistProfiles { get; set; }
         public DbSet<Freelancer> Freelancers { get; set; }
         public DbSet<Client> Clients { get; set; }
+
+        // --- NEW FREELANCER PROFILE COLLECTIONS DbSets ---
+        public DbSet<FreelancerLanguage> FreelancerLanguages { get; set; }
+        public DbSet<FreelancerEducation> FreelancerEducation { get; set; }
+        public DbSet<FreelancerExperienceDetail> FreelancerExperienceDetails { get; set; }
+        public DbSet<FreelancerEmployment> FreelancerEmploymentHistory { get; set; }
+        // ----------------------------------------------------
 
         // Skills DbSets
         public DbSet<Skill.Skill> Skills { get; set; }
@@ -54,6 +63,29 @@ namespace Entities
             // ---------------------------------------------------------
             // 1. MANUAL CONFIGURATION (Composite Keys & Constraints)
             // ---------------------------------------------------------
+
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Email)
+                .IsUnique();
+
+            // When using SQLite (e.g., in tests), make sure CreatedAt/UpdatedAt
+            // get database-generated default values to satisfy NOT NULL constraints.
+            if (Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite")
+            {
+                modelBuilder.Entity<User>()
+                    .Property(u => u.CreatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                modelBuilder.Entity<User>()
+                    .Property(u => u.UpdatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            }
+
+            modelBuilder.Entity<Service>(entity =>
+            {
+                entity.Property(e => e.CreatedAt).ValueGeneratedNever();
+                entity.Property(e => e.UpdatedAt).ValueGeneratedNever();
+            });
 
             // Composite Keys
             modelBuilder.Entity<FreelancerSkill>()
@@ -93,7 +125,7 @@ namespace Entities
                 .OnDelete(DeleteBehavior.Cascade); // If user is deleted, delete their tokens
 
             // ---------------------------------------------------------
-            // 2. THE GLOBAL FIX (Must be at the Bottom)
+            // 3. THE GLOBAL FIX (Must be at the Bottom)
             // ---------------------------------------------------------
 
             // This loop finds EVERY relationship in your database (Orders, Chats, Deliveries, etc.)

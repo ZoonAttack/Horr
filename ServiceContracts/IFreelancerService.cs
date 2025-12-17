@@ -16,13 +16,13 @@ namespace Services
         /// <summary>
         /// Viewing Freelancer public profile (limited data)
         /// </summary>
-        public Task<FreelancerReadDTO?> GetFreelancerPublicProfileByIdAsync(Guid freelancerId);
+        public Task<FreelancerPublicReadDTO?> GetFreelancerPublicProfileByIdAsync(Guid freelancerId);
 
         /// <summary>
         /// Get all freelancers with optional filters 
         /// </summary>
         public Task<PagedResult<FreelancerReadDTO>> GetAllFreelancersAsync(
-            List<Guid>? skillIds = null,
+            List<string>? skillIds = null,
             decimal? minHourlyRate = null,
             decimal? maxHourlyRate = null,
             int? minYearsExperience = null,
@@ -38,7 +38,7 @@ namespace Services
         /// </summary>
         public Task<PagedResult<FreelancerReadDTO>> SearchFreelancersAsync(
             string searchQuery,
-            List<Guid>? skillIds = null,
+            List<string>? skillIds = null,
             decimal? minHourlyRate = null,
             decimal? maxHourlyRate = null,
             int? minYearsExperience = null,
