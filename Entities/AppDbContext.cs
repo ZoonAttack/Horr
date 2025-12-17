@@ -79,6 +79,12 @@ namespace Entities
                     .HasDefaultValueSql("CURRENT_TIMESTAMP");
             }
 
+            modelBuilder.Entity<Service>(entity =>
+            {
+                entity.Property(e => e.CreatedAt).ValueGeneratedNever();
+                entity.Property(e => e.UpdatedAt).ValueGeneratedNever();
+            });
+
             // Composite Keys
             modelBuilder.Entity<FreelancerSkill>()
                 .HasKey(fs => new { fs.FreelancerId, fs.SkillId });

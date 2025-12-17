@@ -313,7 +313,7 @@ public class FreelancerTests
             FullName = "Existing User",
             Email = "existing@test.com",
             UserName = "existing@test.com",
-            Role = Entities.Enums.UserRole.Freelancer,
+            Role = UserRole.Freelancer,
             IsDeleted = false
         };
 
@@ -736,6 +736,620 @@ public class FreelancerTests
         updatedUser.Freelancer.Education.Should().BeEmpty();
         updatedUser.Freelancer.ExperienceDetails.Should().BeEmpty();
         updatedUser.Freelancer.EmploymentHistory.Should().BeEmpty();
+    }
+
+    #endregion
+
+    #region DeleteFreelancerAsync Tests
+
+    [Fact]
+    public async Task DeleteFreelancer_ShouldThrowArgumentException_WhenIdIsEmpty()
+    {
+        using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+        var service = new FreelancerService(context, null);
+
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+        {
+            await service.DeleteFreelancerAsync(Guid.Empty);
+        });
+    }
+
+    [Fact]
+    public async Task DeleteFreelancer_ShouldReturnFalse_WhenUserNotFound()
+    {
+        using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+        var service = new FreelancerService(context, null);
+
+        var result = await service.DeleteFreelancerAsync(Guid.NewGuid());
+
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task DeleteFreelancer_ShouldSoftDeleteUser_AndRelatedServices_WhenUserExists()
+    {
+        // Use SQLite in-memory because DeleteFreelancerAsync opens a transaction,
+        // which is not supported by the EF Core in-memory provider.
+        var dbName = Guid.NewGuid().ToString();
+        using var context = DbContextUtility.CreateSqliteDbContext(dbName);
+        await context.Database.EnsureCreatedAsync();
+
+        var freelancerId = Guid.NewGuid().ToString();
+
+        var user = new Entities.Users.User
+        {
+            Id = freelancerId,
+            FullName = "To Delete",
+            Email = "delete@test.com",
+            UserName = "delete@test.com",
+            Role = UserRole.Freelancer,
+            IsDeleted = false,
+            CreatedAt = DateTime.UtcNow.AddDays(-10),
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        context.Freelancers.Add(new Entities.Users.Freelancer
+        {
+            UserId = freelancerId,
+            Bio = "Test Bio",
+            Availability = "FullTime",
+            PortfolioUrl = "https://test.com",
+            CreatedAt = DateTime.UtcNow.AddDays(-10),
+            UpdatedAt = DateTime.UtcNow
+        });
+
+        context.Users.Add(user);
+
+        context.Services.Add(new Entities.Marketplace.Service
+        {
+            FreelancerId = freelancerId,
+            Title = "Test Service",
+            Description = "Desc",
+            Price = 100m,
+            DeliveryTime = "1d",
+            IsActive = true,
+            IsDeleted = false,
+            // SQLite schema has NOT NULL constraints on CreatedAt/UpdatedAt,
+            // so set them explicitly when seeding directly.
+            CreatedAt = DateTime.UtcNow.AddDays(-10),
+            UpdatedAt = DateTime.UtcNow
+        });
+
+        await context.SaveChangesAsync();
+
+        var service = new FreelancerService(context, null);
+
+        var result = await service.DeleteFreelancerAsync(Guid.Parse(freelancerId));
+
+        result.Should().BeTrue();
+
+        var reloadedUser = await context.Users.FirstAsync(u => u.Id == freelancerId);
+        reloadedUser.IsDeleted.Should().BeTrue();
+        reloadedUser.DeletedAt.Should().NotBeNull();
+
+        var relatedServices = await context.Services
+            .AsNoTracking()
+            .Where(s => s.FreelancerId == freelancerId)
+            .ToListAsync();
+        relatedServices.Should().NotBeEmpty();
+        relatedServices.All(s => s.IsDeleted && s.DeletedAt != null && !s.IsActive).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task DeleteFreelancer_ShouldBeIdempotent_WhenUserAlreadySoftDeleted()
+    {
+        using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+
+        var freelancerId = Guid.NewGuid().ToString();
+
+        var user = new Entities.Users.User
+        {
+            Id = freelancerId,
+            FullName = "Deleted User",
+            Email = "deleted@test.com",
+            UserName = "deleted@test.com",
+            Role = UserRole.Freelancer,
+            IsDeleted = true,
+            DeletedAt = DateTime.UtcNow.AddDays(-1),
+        };
+
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        var service = new FreelancerService(context, null);
+
+        var result = await service.DeleteFreelancerAsync(Guid.Parse(freelancerId));
+
+        result.Should().BeTrue();
+
+        var reloadedUser = await context.Users.FirstAsync(u => u.Id == freelancerId);
+        reloadedUser.IsDeleted.Should().BeTrue();
+    }
+
+    #endregion
+
+    #region GetFreelancerProfileByIdAsync Tests
+
+    [Fact]
+    public async Task GetFreelancerProfileById_ShouldThrowArgumentException_WhenIdIsEmpty()
+    {
+        using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+        var service = new FreelancerService(context, null);
+
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+        {
+            await service.GetFreelancerProfileByIdAsync(Guid.Empty);
+        });
+    }
+
+    [Fact]
+    public async Task GetFreelancerProfileById_ShouldReturnNull_WhenFreelancerNotFound()
+    {
+        using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+        var service = new FreelancerService(context, null);
+
+        var result = await service.GetFreelancerProfileByIdAsync(Guid.NewGuid());
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetFreelancerProfileById_ShouldReturnDto_WhenFreelancerExistsAndUserNotDeleted()
+    {
+        using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+
+        var userId = Guid.NewGuid().ToString();
+
+        var user = new Entities.Users.User
+        {
+            Id = userId,
+            FullName = "Profile User",
+            Email = "profile@test.com",
+            UserName = "profile@test.com",
+            Role = UserRole.Freelancer,
+            IsDeleted = false
+        };
+
+        var freelancer = new Entities.Users.Freelancer
+        {
+            UserId = userId,
+            User = user,
+            Bio = "Profile bio",
+            HourlyRate = 80m,
+            Availability = "FullTime",
+            YearsOfExperience = 4,
+            PortfolioUrl = "https://profile.com"
+        };
+
+        user.Freelancer = freelancer;
+
+        context.Users.Add(user);
+        context.Freelancers.Add(freelancer);
+        await context.SaveChangesAsync();
+
+        var service = new FreelancerService(context, null);
+
+        var result = await service.GetFreelancerProfileByIdAsync(Guid.Parse(userId));
+
+        result.Should().NotBeNull();
+        result!.Id.Should().Be(userId);
+        result.Email.Should().Be(user.Email);
+        result.Bio.Should().Be(freelancer.Bio);
+    }
+
+    [Fact]
+    public async Task GetFreelancerProfileById_ShouldReturnNull_WhenUserIsSoftDeleted()
+    {
+        using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+
+        var userId = Guid.NewGuid().ToString();
+
+        var user = new Entities.Users.User
+        {
+            Id = userId,
+            FullName = "Deleted Profile User",
+            Email = "deletedprofile@test.com",
+            UserName = "deletedprofile@test.com",
+            Role = UserRole.Freelancer,
+            IsDeleted = true,
+            DeletedAt = DateTime.UtcNow.AddDays(-1)
+        };
+
+        var freelancer = new Entities.Users.Freelancer
+        {
+            UserId = userId,
+            User = user,
+            Bio = "Soft-deleted profile bio",
+            HourlyRate = 0m,
+            Availability = "Unavailable",
+            YearsOfExperience = 0,
+            PortfolioUrl = "https://example.com/deleted-profile"
+        };
+
+        user.Freelancer = freelancer;
+
+        context.Users.Add(user);
+        context.Freelancers.Add(freelancer);
+        await context.SaveChangesAsync();
+
+        var service = new FreelancerService(context, null);
+
+        var result = await service.GetFreelancerProfileByIdAsync(Guid.Parse(userId));
+
+        result.Should().BeNull();
+    }
+
+    #endregion
+
+    #region GetFreelancerPublicProfileByIdAsync Tests
+
+    [Fact]
+    public async Task GetFreelancerPublicProfileById_ShouldThrowArgumentException_WhenIdIsEmpty()
+    {
+        using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+        var service = new FreelancerService(context, null);
+
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+        {
+            await service.GetFreelancerPublicProfileByIdAsync(Guid.Empty);
+        });
+    }
+
+    [Fact]
+    public async Task GetFreelancerPublicProfileById_ShouldReturnNull_WhenFreelancerNotFound()
+    {
+        using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+        var service = new FreelancerService(context, null);
+
+        var result = await service.GetFreelancerPublicProfileByIdAsync(Guid.NewGuid());
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetFreelancerPublicProfileById_ShouldReturnNull_WhenUserIsSoftDeleted()
+    {
+        using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+
+        var userId = Guid.NewGuid().ToString();
+
+        var user = new Entities.Users.User
+        {
+            Id = userId,
+            FullName = "Deleted Public User",
+            Email = "deletedpublic@test.com",
+            UserName = "deletedpublic@test.com",
+            Role = UserRole.Freelancer,
+            IsDeleted = true,
+            DeletedAt = DateTime.UtcNow.AddDays(-1)
+        };
+
+        var freelancer = new Entities.Users.Freelancer
+        {
+            UserId = userId,
+            User = user,
+            Bio = "Soft-deleted public profile bio",
+            HourlyRate = 0m,
+            Availability = "Unavailable",
+            YearsOfExperience = 0,
+            PortfolioUrl = "https://example.com/deleted-public"
+        };
+
+        user.Freelancer = freelancer;
+
+        context.Users.Add(user);
+        context.Freelancers.Add(freelancer);
+        await context.SaveChangesAsync();
+
+        var service = new FreelancerService(context, null);
+
+        var result = await service.GetFreelancerPublicProfileByIdAsync(Guid.Parse(userId));
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetFreelancerPublicProfileById_ShouldReturnDto_WhenFreelancerExistsAndUserNotDeleted()
+    {
+        using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+
+        var userId = Guid.NewGuid().ToString();
+
+        var user = new Entities.Users.User
+        {
+            Id = userId,
+            FullName = "Public User",
+            Email = "public@test.com",
+            UserName = "public@test.com",
+            Role = UserRole.Freelancer,
+            IsDeleted = false,
+            IsVerified = true,
+            TrustScore = 95
+        };
+
+        var freelancer = new Entities.Users.Freelancer
+        {
+            UserId = userId,
+            User = user,
+            Bio = "Public bio",
+            HourlyRate = 100m,
+            Availability = "FullTime",
+            YearsOfExperience = 6,
+            PortfolioUrl = "https://public.com"
+        };
+
+        user.Freelancer = freelancer;
+
+        context.Users.Add(user);
+        context.Freelancers.Add(freelancer);
+        await context.SaveChangesAsync();
+
+        var service = new FreelancerService(context, null);
+
+        var result = await service.GetFreelancerPublicProfileByIdAsync(Guid.Parse(userId));
+
+        result.Should().NotBeNull();
+        result!.Id.Should().Be(userId);
+        result.FullName.Should().Be(user.FullName);
+        result.IsVerified.Should().BeTrue();
+        result.TrustScore.Should().Be(user.TrustScore);
+        result.Bio.Should().Be(freelancer.Bio);
+    }
+
+    #endregion
+
+    #region GetAllFreelancersAsync Tests
+
+    [Fact]
+    public async Task GetAllFreelancers_ShouldReturnPagedFreelancers_WithDefaultParameters()
+    {
+        using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+
+        for (int i = 0; i < 3; i++)
+        {
+            var id = Guid.NewGuid().ToString();
+            var user = new Entities.Users.User
+            {
+                Id = id,
+                FullName = $"Freelancer {i}",
+                Email = $"freelancer{i}@test.com",
+                UserName = $"freelancer{i}@test.com",
+                Role = UserRole.Freelancer,
+                IsDeleted = false,
+                TrustScore = 50 + i
+            };
+
+            var freelancer = new Entities.Users.Freelancer
+            {
+                UserId = id,
+                User = user,
+                Bio = $"Bio {i}",
+                HourlyRate = 50 + 10 * i,
+                Availability = "FullTime",
+                YearsOfExperience = 2 + i,
+                PortfolioUrl = "https://example.com/freelancer-default"
+            };
+
+            user.Freelancer = freelancer;
+
+            context.Users.Add(user);
+            context.Freelancers.Add(freelancer);
+        }
+
+        await context.SaveChangesAsync();
+
+        var service = new FreelancerService(context, null);
+
+        var result = await service.GetAllFreelancersAsync();
+
+        result.Should().NotBeNull();
+        result.Items.Should().HaveCount(3);
+        result.TotalCount.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task GetAllFreelancers_ShouldApplyFilters_AndSorting_AndPaging()
+    {
+        using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+
+        for (int i = 0; i < 5; i++)
+        {
+            var id = Guid.NewGuid().ToString();
+            var user = new Entities.Users.User
+            {
+                Id = id,
+                FullName = $"Freelancer {i}",
+                Email = $"freelancer{i}@test.com",
+                UserName = $"freelancer{i}@test.com",
+                Role = UserRole.Freelancer,
+                IsDeleted = false,
+                TrustScore = 40 + 10 * i,
+                IsVerified = i % 2 == 0
+            };
+
+            var freelancer = new Entities.Users.Freelancer
+            {
+                UserId = id,
+                User = user,
+                Bio = $"Bio filter {i}",
+                HourlyRate = 40 + 10 * i,
+                Availability = "PartTime",
+                YearsOfExperience = i,
+                PortfolioUrl = "https://example.com/freelancer-filter"
+            };
+
+            user.Freelancer = freelancer;
+
+            context.Users.Add(user);
+            context.Freelancers.Add(freelancer);
+        }
+
+        await context.SaveChangesAsync();
+
+        var service = new FreelancerService(context, null);
+
+        var result = await service.GetAllFreelancersAsync(
+            minHourlyRate: 60,
+            maxHourlyRate: 80,
+            minYearsExperience: 2,
+            minTrustScore: 50,
+            isVerified: true,
+            sortBy: "FullName",
+            sortDescending: false,
+            page: 1,
+            pageSize: 2);
+
+        result.Should().NotBeNull();
+        result.Items.Should().NotBeEmpty();
+        result.Items.All(f => f.HourlyRate >= 60 && f.HourlyRate <= 80).Should().BeTrue();
+        result.Items.All(f => f.YearsOfExperience >= 2).Should().BeTrue();
+        result.Items.All(f => f.TrustScore >= 50).Should().BeTrue();
+        result.Items.All(f => f.IsVerified).Should().BeTrue();
+    }
+
+    #endregion
+
+    #region SearchFreelancersAsync Tests
+
+    [Fact]
+    public async Task SearchFreelancers_ShouldReturnFreelancersMatchingNameBioOrSkills()
+    {
+        using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+
+        var skill = new Entities.Skill.Skill
+        {
+            Id = Guid.NewGuid().ToString(),
+            Name = "C#",
+            Category = "Programming"
+        };
+
+        context.Skills.Add(skill);
+
+        var id1 = Guid.NewGuid().ToString();
+        var user1 = new Entities.Users.User
+        {
+            Id = id1,
+            FullName = "Alice Developer",
+            Email = "alice@test.com",
+            UserName = "alice@test.com",
+            Role = UserRole.Freelancer,
+            IsDeleted = false
+        };
+        var freelancer1 = new Entities.Users.Freelancer
+        {
+            UserId = id1,
+            User = user1,
+            Bio = "Expert in backend C# services",
+            HourlyRate = 100m,
+            Availability = "FullTime",
+            YearsOfExperience = 5,
+            PortfolioUrl = "https://example.com/alice"
+        };
+        user1.Freelancer = freelancer1;
+
+        var fs1 = new Entities.Skill.FreelancerSkill
+        {
+            FreelancerId = id1,
+            SkillId = skill.Id
+        };
+        freelancer1.FreelancerSkills.Add(fs1);
+
+        var id2 = Guid.NewGuid().ToString();
+        var user2 = new Entities.Users.User
+        {
+            Id = id2,
+            FullName = "Bob Designer",
+            Email = "bob@test.com",
+            UserName = "bob@test.com",
+            Role = UserRole.Freelancer,
+            IsDeleted = false
+        };
+        var freelancer2 = new Entities.Users.Freelancer
+        {
+            UserId = id2,
+            User = user2,
+            Bio = "UI/UX specialist",
+            HourlyRate = 80m,
+            Availability = "PartTime",
+            YearsOfExperience = 3,
+            PortfolioUrl = "https://example.com/bob"
+        };
+        user2.Freelancer = freelancer2;
+
+        context.Users.AddRange(user1, user2);
+        context.Freelancers.AddRange(freelancer1, freelancer2);
+        context.FreelancerSkills.Add(fs1);
+
+        await context.SaveChangesAsync();
+
+        var service = new FreelancerService(context, null);
+
+        var result = await service.SearchFreelancersAsync("c#");
+
+        result.Should().NotBeNull();
+        result.Items.Should().HaveCount(1);
+        result.Items.Should().ContainSingle(f => f.FullName == "Alice Developer");
+    }
+
+    [Fact]
+    public async Task SearchFreelancers_ShouldApplyFiltersAndPaging()
+    {
+        using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+
+        for (int i = 0; i < 5; i++)
+        {
+            var id = Guid.NewGuid().ToString();
+            var user = new Entities.Users.User
+            {
+                Id = id,
+                FullName = $"Test User {i}",
+                Email = $"user{i}@test.com",
+                UserName = $"user{i}@test.com",
+                Role = UserRole.Freelancer,
+                IsDeleted = false,
+                TrustScore = 50 + i,
+                IsVerified = i % 2 == 0
+            };
+
+            var freelancer = new Entities.Users.Freelancer
+            {
+                UserId = id,
+                User = user,
+                Bio = i % 2 == 0 ? "searchable" : "other",
+                HourlyRate = 40 + 10 * i,
+                Availability = "FullTime",
+                YearsOfExperience = i,
+                PortfolioUrl = "https://example.com/search-freelancer"
+            };
+
+            user.Freelancer = freelancer;
+
+            context.Users.Add(user);
+            context.Freelancers.Add(freelancer);
+        }
+
+        await context.SaveChangesAsync();
+
+        var service = new FreelancerService(context, null);
+
+        var result = await service.SearchFreelancersAsync(
+            searchQuery: "searchable",
+            minHourlyRate: 50,
+            maxHourlyRate: 80,
+            minYearsExperience: 1,
+            minTrustScore: 50,
+            isVerified: true,
+            sortBy: "FullName",
+            sortDescending: false,
+            page: 1,
+            pageSize: 2);
+
+        result.Should().NotBeNull();
+        result.Items.Should().NotBeEmpty();
+        result.Items.All(f => f.HourlyRate >= 50 && f.HourlyRate <= 80).Should().BeTrue();
+        result.Items.All(f => f.YearsOfExperience >= 1).Should().BeTrue();
+        result.Items.All(f => f.TrustScore >= 50).Should().BeTrue();
+        result.Items.All(f => f.IsVerified).Should().BeTrue();
     }
 
     #endregion
