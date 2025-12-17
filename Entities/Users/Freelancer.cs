@@ -21,11 +21,6 @@ namespace Entities.Users
         public string UserId { get; set; }
         public virtual User User { get; set; }
 
-
-        [Column(TypeName = "decimal(5,2)")]
-        [Range(0, 100)]
-        public decimal TrustScore { get; set; } = 0;
-
         [Column(TypeName = "decimal(10,2)")]
         public decimal? HourlyRate { get; set; }
 

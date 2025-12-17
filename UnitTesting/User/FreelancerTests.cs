@@ -83,6 +83,8 @@ public class FreelancerTests
             .ThenInclude(f => f.Languages) // Eager load the child collection
             .FirstOrDefaultAsync(u => u.Id == result.Id.ToString());
 
+        savedUser.Bio = "Bio";
+
         savedUser.Should().NotBeNull("User should be saved to the database.");
         savedUser!.Role.Should().Be(UserRole.Freelancer);
         savedUser.FullName.Should().Be(_validCreateDto.FullName);
@@ -173,6 +175,7 @@ public class FreelancerTests
             Id = Guid.NewGuid().ToString(),
             FullName = _validCreateDto.FullName,
             Email = duplicateEmail,
+            Bio = "Bio",
             UserName = duplicateEmail,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -314,6 +317,8 @@ public class FreelancerTests
             Email = "existing@test.com",
             UserName = "existing@test.com",
             Role = UserRole.Freelancer,
+            // ProfilePicturePath = "pic",
+            Bio = "Bio",
             IsDeleted = false
         };
 
@@ -356,7 +361,9 @@ public class FreelancerTests
             FullName = "Original Name",
             Email = "original@test.com",
             UserName = "original@test.com",
+            Bio = "Original bio",
             PhoneNumber = "000",
+            // ProfilePicturePath = "pic",
             Role = Entities.Enums.UserRole.Freelancer,
             IsDeleted = false
         };
@@ -365,7 +372,7 @@ public class FreelancerTests
         {
             UserId = userId,
             User = user,
-            Bio = "Original bio",
+            
             HourlyRate = 50m,
             Availability = "PartTime",
             YearsOfExperience = 3,
@@ -570,8 +577,8 @@ public class FreelancerTests
         updatedUser.FullName.Should().Be(updateDto.FullName);
         updatedUser.Email.Should().Be(updateDto.Email);
         updatedUser.PhoneNumber.Should().Be(updateDto.Phone);
+        updatedUser.Bio.Should().Be(updateDto.Bio);
 
-        updatedUser.Freelancer.Bio.Should().Be(updateDto.Bio);
         updatedUser.Freelancer.HourlyRate.Should().Be(updateDto.HourlyRate);
         updatedUser.Freelancer.Availability.Should().Be(updateDto.Availability);
         updatedUser.Freelancer.YearsOfExperience.Should().Be(updateDto.YearsOfExperience);
@@ -638,6 +645,8 @@ public class FreelancerTests
             FullName = "Original Name",
             Email = "original@test.com",
             UserName = "original@test.com",
+            // ProfilePicturePath = "pic",
+            Bio = "Original bio",
             PhoneNumber = "000",
             Role = Entities.Enums.UserRole.Freelancer,
             IsDeleted = false
@@ -647,7 +656,6 @@ public class FreelancerTests
         {
             UserId = userId,
             User = user,
-            Bio = "Original bio",
             HourlyRate = 50m,
             Availability = "PartTime",
             YearsOfExperience = 3,
@@ -781,6 +789,7 @@ public class FreelancerTests
             Id = freelancerId,
             FullName = "To Delete",
             Email = "delete@test.com",
+            Bio = "Test bio",
             UserName = "delete@test.com",
             Role = UserRole.Freelancer,
             IsDeleted = false,
@@ -791,7 +800,6 @@ public class FreelancerTests
         context.Freelancers.Add(new Entities.Users.Freelancer
         {
             UserId = freelancerId,
-            Bio = "Test Bio",
             Availability = "FullTime",
             PortfolioUrl = "https://test.com",
             CreatedAt = DateTime.UtcNow.AddDays(-10),
@@ -849,6 +857,7 @@ public class FreelancerTests
             Email = "deleted@test.com",
             UserName = "deleted@test.com",
             Role = UserRole.Freelancer,
+            Bio = "Deleted bio",
             IsDeleted = true,
             DeletedAt = DateTime.UtcNow.AddDays(-1),
         };
@@ -905,6 +914,7 @@ public class FreelancerTests
             Id = userId,
             FullName = "Profile User",
             Email = "profile@test.com",
+            Bio = "Profile bio",
             UserName = "profile@test.com",
             Role = UserRole.Freelancer,
             IsDeleted = false
@@ -914,7 +924,6 @@ public class FreelancerTests
         {
             UserId = userId,
             User = user,
-            Bio = "Profile bio",
             HourlyRate = 80m,
             Availability = "FullTime",
             YearsOfExperience = 4,
@@ -934,7 +943,7 @@ public class FreelancerTests
         result.Should().NotBeNull();
         result!.Id.Should().Be(userId);
         result.Email.Should().Be(user.Email);
-        result.Bio.Should().Be(freelancer.Bio);
+        result.Bio.Should().Be(user.Bio);
     }
 
     [Fact]
@@ -949,6 +958,7 @@ public class FreelancerTests
             Id = userId,
             FullName = "Deleted Profile User",
             Email = "deletedprofile@test.com",
+            Bio = "Soft-deleted profile bio",
             UserName = "deletedprofile@test.com",
             Role = UserRole.Freelancer,
             IsDeleted = true,
@@ -959,7 +969,7 @@ public class FreelancerTests
         {
             UserId = userId,
             User = user,
-            Bio = "Soft-deleted profile bio",
+            
             HourlyRate = 0m,
             Availability = "Unavailable",
             YearsOfExperience = 0,
@@ -1019,6 +1029,8 @@ public class FreelancerTests
             FullName = "Deleted Public User",
             Email = "deletedpublic@test.com",
             UserName = "deletedpublic@test.com",
+            Bio = "Soft-deleted public profile bio",
+            // ProfilePicturePath = "pic",
             Role = UserRole.Freelancer,
             IsDeleted = true,
             DeletedAt = DateTime.UtcNow.AddDays(-1)
@@ -1028,7 +1040,7 @@ public class FreelancerTests
         {
             UserId = userId,
             User = user,
-            Bio = "Soft-deleted public profile bio",
+            
             HourlyRate = 0m,
             Availability = "Unavailable",
             YearsOfExperience = 0,
@@ -1062,6 +1074,8 @@ public class FreelancerTests
             Email = "public@test.com",
             UserName = "public@test.com",
             Role = UserRole.Freelancer,
+            Bio = "Public bio",
+            // ProfilePicturePath = "pic",
             IsDeleted = false,
             IsVerified = true,
             TrustScore = 95
@@ -1071,7 +1085,7 @@ public class FreelancerTests
         {
             UserId = userId,
             User = user,
-            Bio = "Public bio",
+            
             HourlyRate = 100m,
             Availability = "FullTime",
             YearsOfExperience = 6,
@@ -1093,7 +1107,7 @@ public class FreelancerTests
         result.FullName.Should().Be(user.FullName);
         result.IsVerified.Should().BeTrue();
         result.TrustScore.Should().Be(user.TrustScore);
-        result.Bio.Should().Be(freelancer.Bio);
+        result.Bio.Should().Be(user.Bio);
     }
 
     #endregion
@@ -1113,9 +1127,11 @@ public class FreelancerTests
                 Id = id,
                 FullName = $"Freelancer {i}",
                 Email = $"freelancer{i}@test.com",
+                Bio = $"Bio {i}",
                 UserName = $"freelancer{i}@test.com",
                 Role = UserRole.Freelancer,
                 IsDeleted = false,
+                // ProfilePicturePath = "pic",
                 TrustScore = 50 + i
             };
 
@@ -1123,7 +1139,7 @@ public class FreelancerTests
             {
                 UserId = id,
                 User = user,
-                Bio = $"Bio {i}",
+                
                 HourlyRate = 50 + 10 * i,
                 Availability = "FullTime",
                 YearsOfExperience = 2 + i,
@@ -1162,6 +1178,8 @@ public class FreelancerTests
                 Email = $"freelancer{i}@test.com",
                 UserName = $"freelancer{i}@test.com",
                 Role = UserRole.Freelancer,
+                Bio = $"Bio filter {i}",
+                // ProfilePicturePath = "pic",
                 IsDeleted = false,
                 TrustScore = 40 + 10 * i,
                 IsVerified = i % 2 == 0
@@ -1171,7 +1189,7 @@ public class FreelancerTests
             {
                 UserId = id,
                 User = user,
-                Bio = $"Bio filter {i}",
+                
                 HourlyRate = 40 + 10 * i,
                 Availability = "PartTime",
                 YearsOfExperience = i,
@@ -1232,14 +1250,16 @@ public class FreelancerTests
             FullName = "Alice Developer",
             Email = "alice@test.com",
             UserName = "alice@test.com",
+            // ProfilePicturePath = "pic",
             Role = UserRole.Freelancer,
+            Bio = "Expert in backend C# services",
             IsDeleted = false
         };
         var freelancer1 = new Entities.Users.Freelancer
         {
             UserId = id1,
             User = user1,
-            Bio = "Expert in backend C# services",
+            
             HourlyRate = 100m,
             Availability = "FullTime",
             YearsOfExperience = 5,
@@ -1261,14 +1281,16 @@ public class FreelancerTests
             FullName = "Bob Designer",
             Email = "bob@test.com",
             UserName = "bob@test.com",
+            // ProfilePicturePath = "pic",
             Role = UserRole.Freelancer,
+            Bio = "UI/UX specialist",
             IsDeleted = false
         };
         var freelancer2 = new Entities.Users.Freelancer
         {
             UserId = id2,
             User = user2,
-            Bio = "UI/UX specialist",
+            
             HourlyRate = 80m,
             Availability = "PartTime",
             YearsOfExperience = 3,
@@ -1306,6 +1328,8 @@ public class FreelancerTests
                 Email = $"user{i}@test.com",
                 UserName = $"user{i}@test.com",
                 Role = UserRole.Freelancer,
+                Bio = i % 2 == 0 ? "searchable" : "other",
+                // ProfilePicturePath = "pic",
                 IsDeleted = false,
                 TrustScore = 50 + i,
                 IsVerified = i % 2 == 0
@@ -1315,7 +1339,7 @@ public class FreelancerTests
             {
                 UserId = id,
                 User = user,
-                Bio = i % 2 == 0 ? "searchable" : "other",
+                
                 HourlyRate = 40 + 10 * i,
                 Availability = "FullTime",
                 YearsOfExperience = i,

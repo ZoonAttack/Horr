@@ -150,7 +150,7 @@ namespace ServiceContracts.DTOs.User.Freelancer
                 TrustScore = user.TrustScore,       
 
                 // Freelancer Profile Mapping (null-safe access)
-                Bio = user.Freelancer?.Bio,
+                Bio = user.Bio,
                 HourlyRate = user.Freelancer?.HourlyRate,
                 Availability = user.Freelancer?.Availability,
                 YearsOfExperience = user.Freelancer?.YearsOfExperience,
