@@ -21,39 +21,5 @@ namespace ServiceContracts.DTOs.Skill.Skill
                 UpdatedAt = skill.UpdatedAt
             };
         }
-
-        /// <summary>
-        /// Converts SkillCreateDTO to Skill entity
-        /// </summary>
-        public static Entities.Skill.Skill SkillCreate_To_Skill(this SkillCreateDTO createDto)
-        {
-            if (createDto == null)
-            {
-                return null;
-            }
-
-            return new Entities.Skill.Skill
-            {
-                Name = createDto.Name,
-                Category = createDto.Category
-            };
-        }
-
-        /// <summary>
-        /// Applies SkillUpdateDTO to an existing Skill entity
-        /// </summary>
-        public static void SkillUpdate_To_Skill(this Entities.Skill.Skill skill, SkillUpdateDTO updateDto)
-        {
-            if (skill == null || updateDto == null)
-            {
-                return;
-            }
-
-            if (!string.IsNullOrEmpty(updateDto.Name))
-                skill.Name = updateDto.Name;
-
-            if (!string.IsNullOrEmpty(updateDto.Category))
-                skill.Category = updateDto.Category;
-        }
     }
 }
