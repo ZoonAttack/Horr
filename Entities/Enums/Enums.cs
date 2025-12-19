@@ -169,17 +169,6 @@ namespace Entities.Enums
     }
 
     /// <summary>
-    /// Represents the proficiency level for a skill.
-    /// </summary>
-    public enum ProficiencyLevel
-    {
-        Beginner,
-        Intermediate,
-        Advanced,
-        Expert
-    }
-
-    /// <summary>
     /// Represents the role in a payment transaction.
     /// </summary>
     public enum PaymentTransactionRole

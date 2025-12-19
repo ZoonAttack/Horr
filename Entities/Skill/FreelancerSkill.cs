@@ -22,8 +22,6 @@ namespace Entities.Skill
         [ForeignKey("Skill")]
         public string SkillId { get; set; }
 
-        public ProficiencyLevel ProficiencyLevel { get; set; }
-
         [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         public DateTime CreatedAt { get; set; }
 

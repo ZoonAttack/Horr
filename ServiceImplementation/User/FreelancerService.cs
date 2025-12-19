@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 using Entities.Users.FreelancerHelpers;
+using Services.User;
 
 namespace ServiceImplementation.Authentication.User
 {
