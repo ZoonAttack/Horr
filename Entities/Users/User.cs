@@ -23,6 +23,24 @@ public class User : IdentityUser
     public UserRole Role { get; set; }
     public bool IsVerified { get; set; } = false;
 
+    [MaxLength(200)]
+    public string Address { get; set; }
+    
+    [MaxLength(50)]
+    public string City { get; set; }
+    
+    [MaxLength(50)]
+    public string StateProvince { get; set; }
+    
+    [MaxLength(20)]
+    public string ZipCode { get; set; }
+    
+    [MaxLength(50)]
+    public string Country { get; set; }
+    
+    [MaxLength(50)]
+    public string TimeZone { get; set; } = "UTC+02:00";
+
     [Column(TypeName = "text")]
     public string Bio { get; set; }
 
