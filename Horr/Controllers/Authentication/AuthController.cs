@@ -2,9 +2,9 @@
 using Entities.Users;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using ServiceContracts;
+using Services.Authentication;
 using Services.DTOs.UserDTOs;
-namespace Horr.Controllers
+namespace Horr.Controllers.Authentication
 {
 
     [Route("api/[controller]")]

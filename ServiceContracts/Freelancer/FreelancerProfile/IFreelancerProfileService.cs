@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ServiceContracts.DTOs.FreelancerProfile;
 
-namespace ServiceContracts.FreelancerProfile
+namespace Services.Freelancer.FreelancerProfile
 {
     public interface IPortfolioService
     {

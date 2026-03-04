@@ -10,9 +10,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 using Entities.Users.FreelancerHelpers;
-using Services.User;
+using Services.Freelancer;
 
-namespace ServiceImplementation.Authentication.User
+namespace ServiceImplementation.Implementations.Freelancer
 {
     public class FreelancerService : IFreelancerService
     {
@@ -33,7 +33,7 @@ namespace ServiceImplementation.Authentication.User
         /// <param name="sortBy"></param>
         /// <param name="sortDescending"></param>
         /// <returns></returns>
-        private IQueryable<Entities.Users.User> ApplySorting(IQueryable<Entities.Users.User> query, string? sortBy, bool sortDescending)
+        private IQueryable<User> ApplySorting(IQueryable<User> query, string? sortBy, bool sortDescending)
         {
             // default sorting is by TrustScore descending
             var sortProperty = sortBy?.ToLowerInvariant() ?? "trustscore";
@@ -228,7 +228,7 @@ namespace ServiceImplementation.Authentication.User
 
             ValidationHelper.ModelValidation(freelancerCreationDTO);
 
-            Entities.Users.User user = freelancerCreationDTO.FreelancerCreate_To_User();
+            User user = freelancerCreationDTO.FreelancerCreate_To_User();
 
             user.Id = Guid.NewGuid().ToString();
             user.Role = Entities.Enums.UserRole.Freelancer;
@@ -304,7 +304,7 @@ namespace ServiceImplementation.Authentication.User
         public async Task<PagedResult<FreelancerReadDTO>> GetAllFreelancersAsync(List<string>? skillIds = null, decimal? minHourlyRate = null, decimal? maxHourlyRate = null, int? minYearsExperience = null, decimal? minTrustScore = null, bool? isVerified = null, string? sortBy = "TrustScore", bool sortDescending = true, int page = 1, int pageSize = 10)
         {
             // 1. get all non-deleted freelancers
-            IQueryable<Entities.Users.User> query = _db.Users
+            IQueryable<User> query = _db.Users
                 .Include(u => u.Freelancer)
                     .ThenInclude(f => f.Languages)
                 .Include(u => u.Freelancer)
@@ -432,7 +432,7 @@ namespace ServiceImplementation.Authentication.User
         public async Task<PagedResult<FreelancerReadDTO>> SearchFreelancersAsync(string searchQuery, List<string>? skillIds = null, decimal? minHourlyRate = null, decimal? maxHourlyRate = null, int? minYearsExperience = null, decimal? minTrustScore = null, bool? isVerified = null, string? sortBy = "TrustScore", bool sortDescending = true, int page = 1, int pageSize = 10)
         {
             // 1. get all non-deleted freelancers
-            IQueryable<Entities.Users.User> query = _db.Users
+            IQueryable<User> query = _db.Users
                 .Include(u => u.Freelancer)
                     .ThenInclude(f => f.Languages)
                 .Include(u => u.Freelancer)

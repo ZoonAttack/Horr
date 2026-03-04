@@ -4,10 +4,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using ServiceContracts;
 using ServiceImplementation.Authentication;
+using Services.Authentication;
 using Services.Implementations;
-using Services.Interfaces;
 using System.Text;
 
 namespace Horr

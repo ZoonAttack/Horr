@@ -3,14 +3,14 @@ using Entities.Skill;
 using Microsoft.EntityFrameworkCore;
 using ServiceContracts.DTOs.Skill.FreelancerSkill;
 using ServiceContracts.DTOs.Skill.Skill;
-using Services.Skill;
+using Services.Freelancer.Skill;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ServiceImplementation.Skills
+namespace ServiceImplementation.Implementations.Freelancer.Skills
 {
     public class FreelancerSkillService : IFreelancerSkillService
     {

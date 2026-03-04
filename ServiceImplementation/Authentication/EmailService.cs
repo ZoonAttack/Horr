@@ -3,7 +3,7 @@ using MailKit.Security;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using MimeKit;
-using Services.Interfaces;
+using Services.Authentication;
 using System;
 using System.Collections.Generic;
 using System.Linq;

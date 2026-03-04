@@ -6,7 +6,7 @@ using ServiceContracts.DTOs.Settings;
 using ServiceContracts.Settings;
 using Entities.Users;
 
-namespace ServiceImplementation.Services.Settings
+namespace ServiceImplementation.Implementations.Settings
 {
     public class SettingsService : ISettingsService
     {

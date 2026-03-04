@@ -1,7 +1,7 @@
 ﻿using Entities.Skill;
 using ServiceContracts.DTOs.Skill.Skill;
 
-namespace Services.Skill
+namespace Services.Freelancer.Skill
 {
     public interface ISkillService
     {

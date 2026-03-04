@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using ServiceContracts.DTOs.Settings;
 using ServiceContracts.Settings;
 
-namespace Horr.Controllers.Settings
+namespace Horr.Controllers.UserProfile
 {
     [ApiController]
     [Route("api/settings")]

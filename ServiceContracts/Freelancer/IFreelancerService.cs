@@ -1,6 +1,6 @@
 ﻿using ServiceContracts.DTOs.User.Freelancer;
 
-namespace Services.User
+namespace Services.Freelancer
 {
     public interface IFreelancerService
     {

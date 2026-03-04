@@ -1,7 +1,7 @@
 ﻿using ServiceContracts.DTOs.Skill.FreelancerSkill;
 using ServiceContracts.DTOs.Skill.Skill;
 
-namespace Services.Skill
+namespace Services.Freelancer.Skill
 {
     public interface IFreelancerSkillService
     {

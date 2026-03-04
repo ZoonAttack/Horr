@@ -1,9 +1,7 @@
-﻿
-
-using ServiceContracts.DTOs.Responses;
+﻿using ServiceContracts.DTOs.Responses;
 using Services.DTOs.UserDTOs;
 
-namespace ServiceContracts
+namespace Services.Authentication
 {
     public interface IAuthService
     {

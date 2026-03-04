@@ -1,9 +1,9 @@
 ﻿using Entities;
 using Microsoft.EntityFrameworkCore;
 using ServiceContracts.DTOs.Skill.Skill;
-using Services.Skill;
+using Services.Freelancer.Skill;
 
-namespace ServiceImplementation.Skills
+namespace ServiceImplementation.Implementations.Freelancer.Skills
 {
     public class SkillsService : ISkillService
     {
