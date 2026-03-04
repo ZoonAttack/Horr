@@ -3,7 +3,6 @@ using Entities.Users;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using ServiceContracts;
-using ServiceImplementation.Authentication;
 using Services.DTOs.UserDTOs;
 namespace Horr.Controllers
 {
@@ -13,13 +12,11 @@ namespace Horr.Controllers
     public class AuthController : Controller
     {
         private readonly IAuthService _authService;
-        private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
 
-        public AuthController(IAuthService authService, UserManager<User> userManager, SignInManager<User> signInManager)
+        public AuthController(IAuthService authService, SignInManager<User> signInManager)
         {
             _authService = authService;
-            _userManager = userManager;
             _signInManager = signInManager;
         }
 
@@ -48,7 +45,14 @@ namespace Horr.Controllers
 
             return Ok(result); // Email confirmed successfully(should redirect to login page in react for now)
         }
-
+        [HttpPost("resend-confirmation-email")]
+        public async Task<IActionResult> ResendConfirmationEmail(string email)
+        {
+            var result = await _authService.ResendConfirmationEmailAsync(email);
+            if (!result.Succeeded)
+                return BadRequest(result);
+            return Ok(result); // Confirmation email resent successfully
+        }
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDTO dto)
         {
@@ -57,28 +61,51 @@ namespace Horr.Controllers
             if (!result.Succeeded)
                 return BadRequest(result);
 
-            // React will receive: { succeeded: true, data: { accessToken: "...", ... } }
-            return Ok(result);
+            SetRefreshTokenInCookie(result.Data.RefreshToken);
+            return Ok(result.Data.Token);
         }
 
-        #region Helper
-        private async Task<IActionResult> RedirectToRoleDashboard(User user)
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
         {
-            // Get the list of roles for this specific user
-            var roles = await _userManager.GetRolesAsync(user);
-
-            // Check roles and redirect accordingly
-            if (roles.Contains(UserRole.Freelancer.ToString()))
+            if (_signInManager.IsSignedIn(User) == false)
             {
-                return RedirectToAction("Index", "FreelancerController");
+                return BadRequest(new { Message = "No user is currently logged in." });
             }
-            else if (roles.Contains(UserRole.Client.ToString()))
-            {
-                return RedirectToAction("Index", "ClientDashboard");
-            }
+            Response.Cookies.Delete("refreshToken");
+            await _signInManager.SignOutAsync();
+            return Ok(new { Message = "Logged out successfully." });
+        }
 
-            // Default fallback (e.g., Home Page) if they have no role
-            return RedirectToAction("Index", "Home");
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken()
+        {
+            if (!Request.Cookies.TryGetValue("refreshToken", out var refreshToken))
+            {
+                return Unauthorized(new { Message = "Refresh token is missing." });
+            }
+            var result = await _authService.RefreshTokenAsync(refreshToken);
+
+            if (!result.Succeeded)
+                return Unauthorized(result);
+
+            SetRefreshTokenInCookie(result.Data.RefreshToken);
+
+            return Ok(result.Data.Token);
+        }
+
+
+        #region helper
+        private void SetRefreshTokenInCookie(string refreshToken)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                Expires = DateTime.UtcNow.AddDays(7), // Set expiration as needed
+                SameSite = SameSiteMode.Strict
+            };
+            Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
         }
         #endregion
     }

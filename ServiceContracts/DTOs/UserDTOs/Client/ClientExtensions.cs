@@ -22,12 +22,8 @@ namespace Services.DTOs.UserDTOs.Client
                 Email = user.Email,
                 Phone = user.PhoneNumber,
                 IsVerified = user.IsVerified,
-                TrustScore = user.TrustScore,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt,
-
-                // Client Profile Mapping
-                Bio = user.Client?.Bio
             };
         }
 
@@ -42,13 +38,7 @@ namespace Services.DTOs.UserDTOs.Client
             {
                 FullName = createDto.FullName,
                 Email = createDto.Email,
-                PhoneNumber = createDto.Phone,
-
-                // Initialize the Client navigation property with the specific data
-                Client = new Entities.Users.Client
-                {
-                    Bio = createDto.Bio
-                }
+                PhoneNumber = createDto.Phone
             };
         }
 
@@ -64,11 +54,6 @@ namespace Services.DTOs.UserDTOs.Client
             user.Email = updateDto.Email;
             user.PhoneNumber = updateDto.Phone;
 
-            // Apply updates to the Client Profile
-            if (user.Client != null)
-            {
-                user.Client.Bio = updateDto.Bio;
-            }
         }
     }
 }

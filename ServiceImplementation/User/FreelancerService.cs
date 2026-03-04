@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 using Entities.Users.FreelancerHelpers;
+using Services.User;
 
 namespace ServiceImplementation.Authentication.User
 {
@@ -454,7 +455,7 @@ namespace ServiceImplementation.Authentication.User
                 // search in name, bio, and skills
                 query = query.Where(u =>
                     u.FullName.ToLower().Contains(normalizedSearchQuery) ||
-                    u.Freelancer!.Bio.ToLower().Contains(normalizedSearchQuery) ||
+                    u.Bio.ToLower().Contains(normalizedSearchQuery) ||
                     u.Freelancer!.FreelancerSkills.Any(fs => fs.Skill.Name.ToLower().Contains(normalizedSearchQuery))
                 );
             }

@@ -2,6 +2,7 @@ using Entities.Communication;
 using Entities.Enums;
 using Entities.Payment;
 using Entities.Review;
+using Entities.Token;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
@@ -22,6 +23,29 @@ public class User : IdentityUser
     public UserRole Role { get; set; }
     public bool IsVerified { get; set; } = false;
 
+    [MaxLength(200)]
+    public string Address { get; set; }
+    
+    [MaxLength(50)]
+    public string City { get; set; }
+    
+    [MaxLength(50)]
+    public string StateProvince { get; set; }
+    
+    [MaxLength(20)]
+    public string ZipCode { get; set; }
+    
+    [MaxLength(50)]
+    public string Country { get; set; }
+    
+    [MaxLength(50)]
+    public string TimeZone { get; set; } = "UTC+02:00";
+
+    [Column(TypeName = "text")]
+    public string Bio { get; set; }
+
+    //public string ProfilePicturePath { get; set; }
+
     [Column(TypeName = "decimal(5,2)")]
     [Range(0, 100)]
     public decimal TrustScore { get; set; } = 0;
@@ -30,11 +54,10 @@ public class User : IdentityUser
     public bool IsDeleted { get; set; } = false;
     public DateTime? DeletedAt { get; set; }
 
-    [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
-    public DateTime CreatedAt { get; set; }
+    // Timestamps (set in application code, not database-generated)
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
-    public DateTime UpdatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     // --- Navigation Properties ---
     public virtual UserVerification UserVerification { get; set; }
@@ -49,4 +72,5 @@ public class User : IdentityUser
     public virtual ICollection<Entities.Review.Review> ReviewsReceived { get; set; } = new List<Entities.Review.Review>();
     [InverseProperty("Specialist")]
     public virtual ICollection<SpecialistReviewRequest> SpecialistReviewRequests { get; set; } = new List<SpecialistReviewRequest>();
+    public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 }

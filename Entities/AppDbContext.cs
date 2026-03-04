@@ -4,7 +4,8 @@ using Entities.Payment;
 using Entities.Project;
 using Entities.Review;
 using Entities.Skill;
-using Entities.Users; // Contains the new profile collections
+using Entities.Token;
+using Entities.Users;
 using Entities.Users.FreelancerHelpers;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,7 @@ namespace Entities
     public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbContext<User>(options)
     {
 
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
         // User and Profile DbSets
         public DbSet<UserVerification> UserVerifications { get; set; }
         public DbSet<Specialist> SpecialistProfiles { get; set; }
@@ -116,20 +118,11 @@ namespace Entities
                     "([TransactionType] = 0 AND [ReceiverWalletId] IS NOT NULL AND [SenderWalletId] IS NULL) OR " +
                     "([TransactionType] = 1 AND [SenderWalletId] IS NOT NULL AND [ReceiverWalletId] IS NULL) OR " +
                     "([TransactionType] IN (2, 3, 4, 5) AND [SenderWalletId] IS NOT NULL AND [ReceiverWalletId] IS NOT NULL)"));
-
-            // ---------------------------------------------------------
-            // 2. NEW CONFIGURATION (Relationship with Freelancer)
-            // ---------------------------------------------------------
-
-            // These relationships are usually defined on the Freelancer entity 
-            // (e.g., Freelancer.HasMany(f => f.Languages).WithOne().HasForeignKey(l => l.FreelancerId))
-            // but for simplicity in the DbContext, ensure the foreign key is set up 
-            // if it wasn't done via data annotations.
-
-            // The default EF Core conventions (FreelancerId string property) should correctly
-            // set up the foreign key for all four new entities without explicit configuration here,
-            // as long as the base classes have the correct properties defined.
-            // Since the global DeleteBehavior is Restrict, we do not need to set it manually here.
+            modelBuilder.Entity<User>()
+                .HasMany(u => u.RefreshTokens)
+                .WithOne(t => t.User)
+                .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.Cascade); // If user is deleted, delete their tokens
 
             // ---------------------------------------------------------
             // 3. THE GLOBAL FIX (Must be at the Bottom)

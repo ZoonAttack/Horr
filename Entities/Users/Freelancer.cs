@@ -21,9 +21,6 @@ namespace Entities.Users
         public string UserId { get; set; }
         public virtual User User { get; set; }
 
-        [Column(TypeName = "text")]
-        public string Bio { get; set; }
-
         [Column(TypeName = "decimal(10,2)")]
         public decimal? HourlyRate { get; set; }
 
@@ -31,6 +28,9 @@ namespace Entities.Users
         public string Availability { get; set; }
 
         public int? YearsOfExperience { get; set; }
+
+        public Enums.Visibility VisibilityPreference { get; set; } = Enums.Visibility.Public;
+        public Enums.ExperienceLevel ExperienceLevel { get; set; } = Enums.ExperienceLevel.EntryLevel;
 
         [MaxLength(255)]
         [Url]
