@@ -1,8 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.Collections.Generic;
 // Assuming your helper DTOs (LanguageCreateDto, etc.) are properly defined
 
-namespace ServiceContracts.DTOs.User.Freelancer
+namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
 {
     public class FreelancerCreateDTO
     {

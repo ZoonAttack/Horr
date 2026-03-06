@@ -1,4 +1,4 @@
-﻿using ServiceContracts.DTOs.Responses;
+using ServiceContracts.DTOs.Responses;
 using Services.DTOs.UserDTOs;
 
 namespace Services.Authentication

@@ -1,4 +1,4 @@
-﻿namespace ServicesImplementations.Helpers
+namespace ServicesImplementations.Helpers
 {
     public class EmailSettings
     {

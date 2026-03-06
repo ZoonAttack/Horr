@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Entities.Payment;
 
 namespace ServiceContracts.DTOs.Wallet

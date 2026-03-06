@@ -1,4 +1,4 @@
-﻿using ServiceContracts.DTOs.Contract;
+using ServiceContracts.DTOs.Contract;
 using System;
 using System.Collections.Generic;
 using System.Linq;

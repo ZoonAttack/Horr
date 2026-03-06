@@ -1,4 +1,4 @@
-using ServiceContracts.DTOs.User.Freelancer;
+using ServiceContracts.DTOs.UserDTOs.FreelancerManagement;
 using Entities.Users;
 using Services;
 using ServiceImplementation.Authentication.Helpers;
@@ -12,7 +12,7 @@ using System.Security.Claims;
 using Entities.Users.FreelancerHelpers;
 using Services.Freelancer;
 
-namespace ServiceImplementation.Implementations.Freelancer
+namespace ServiceImplementation.Implementations.FreelancerImplementation
 {
     public class FreelancerService : IFreelancerService
     {
@@ -171,7 +171,7 @@ namespace ServiceImplementation.Implementations.Freelancer
         /// <param name="freelancer"></param>
         /// <param name="incomingDtos"></param>
         /// <param name="freelancerId"></param>
-        private void ReconcileEmployment(Freelancer freelancer, ICollection<ServiceContracts.DTOs.User.Freelancer.EmploymentUpdateDto> incomingDtos, string freelancerId)
+        private void ReconcileEmployment(Freelancer freelancer, ICollection<EmploymentUpdateDto> incomingDtos, string freelancerId)
         {
             var existing = freelancer.EmploymentHistory;
             var incomingIds = incomingDtos.Where(dto => dto.Id.HasValue).Select(dto => dto.Id.Value).ToList();

@@ -1,4 +1,4 @@
-﻿namespace Services
+namespace Services
 {
     public class PagedResult<T>
     {

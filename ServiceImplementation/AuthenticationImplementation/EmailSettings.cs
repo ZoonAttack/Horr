@@ -1,4 +1,4 @@
-﻿namespace Services.Implementations
+namespace Services.Implementations
 {
     public class EmailSettings
     {

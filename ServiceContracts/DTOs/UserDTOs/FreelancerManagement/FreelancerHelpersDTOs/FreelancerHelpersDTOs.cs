@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
-namespace ServiceContracts.DTOs.User.Freelancer
+namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
 {
     // =========================================================
     // 1. LANGUAGE DTOs

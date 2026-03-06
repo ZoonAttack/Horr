@@ -1,4 +1,4 @@
-﻿using Entities.Skill;
+using Entities.Skill;
 using ServiceContracts.DTOs.Skill.Skill;
 
 namespace Services.Freelancer.Skill

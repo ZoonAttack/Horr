@@ -1,4 +1,4 @@
-﻿using Entities.Payment;
+using Entities.Payment;
 using Entities.Enums;
 
 namespace Horr.DTOs.Wallet.Transactions

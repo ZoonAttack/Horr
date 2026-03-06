@@ -198,4 +198,34 @@ namespace Entities.Enums
         USERDISCONNECTED,
         SERVERDISCONNECTED
     }
+
+    /// <summary>
+    /// Represents the pay type of a job post.
+    /// </summary>
+    public enum JobType
+    {
+        FixedPrice,
+        Hourly
+    }
+
+    /// <summary>
+    /// Represents the sorting options for job searches.
+    /// </summary>
+    public enum JobSortEnum
+    {
+        Newest,
+        Oldest,
+        Budget
+    }
+
+    /// <summary>
+    /// Represents the proficiency level of a skill.
+    /// </summary>
+    public enum ProficiencyLevel
+    {
+        Beginner,
+        Intermediate,
+        Advanced,
+        Expert
+    }
 }

@@ -1,4 +1,4 @@
-using Xunit;
+﻿using Xunit;
 using FluentAssertions;
 using System;
 using System.Threading.Tasks;
@@ -8,14 +8,14 @@ using System.Collections.Generic;
 using System.Security.Claims;
 using Moq;
 
+
 // --- NAMESPACE MAPPINGS ---
 // IMPORTANT: Adjust these using statements to match your project structure
-using ServiceContracts.DTOs.User.Freelancer; // Your DTO namespace
+using ServiceContracts.DTOs.UserDTOs.FreelancerManagement; // Your DTO namespace
 using Entities.Enums; // For UserRole
-using ServiceImplementation.Authentication.User; // Your service namespace
-// Ensure your Entity namespaces are accessible, or add them here:
-// using Entities.Users; 
-// using Entities.Users.FreelancerHelpers;
+using ServiceImplementation.Implementations.FreelancerImplementation; // Your service namespace
+using Entities.Users; 
+using Entities.Users.FreelancerHelpers;
 // -------------------------
 
 // NOTE: IHttpContextAccessor is not strictly needed for CreateFreelancerAsync 
@@ -23,10 +23,12 @@ using ServiceImplementation.Authentication.User; // Your service namespace
 public interface IHttpContextAccessor { }
 
 
-public class FreelancerTests
+namespace UnitTesting.User
 {
+    public class FreelancerTests
+    {
     // =====================================================================
-    // ⚙️ SETUP UTILITIES
+    // âš™ï¸ SETUP UTILITIES
     // =====================================================================
 
     // A reusable, fully populated and valid DTO structure for Create tests
@@ -173,7 +175,7 @@ public class FreelancerTests
         context.Users.Add(new Entities.Users.User
         {
             Id = Guid.NewGuid().ToString(),
-            FullName = _validCreateDto.FullName,
+            FullName = _validCreateDto.FullName, Address = "Addr", City = "City", StateProvince = "State", ZipCode = "12345", Country = "Egypt",
             Email = duplicateEmail,
             Bio = "Bio",
             UserName = duplicateEmail,
@@ -313,7 +315,7 @@ public class FreelancerTests
         var user = new Entities.Users.User
         {
             Id = userId,
-            FullName = "Existing User",
+            FullName = "Existing User", Address = "Addr", City = "City", StateProvince = "State", ZipCode = "12345", Country = "Egypt",
             Email = "existing@test.com",
             UserName = "existing@test.com",
             Role = UserRole.Freelancer,
@@ -358,7 +360,7 @@ public class FreelancerTests
         var user = new Entities.Users.User
         {
             Id = userId,
-            FullName = "Original Name",
+            FullName = "Original Name", Address = "Addr", City = "City", StateProvince = "State", ZipCode = "12345", Country = "Egypt",
             Email = "original@test.com",
             UserName = "original@test.com",
             Bio = "Original bio",
@@ -526,9 +528,9 @@ public class FreelancerTests
                     Description = "Desc3"
                 }
             },
-            EmploymentHistory = new List<ServiceContracts.DTOs.User.Freelancer.EmploymentUpdateDto>
+            EmploymentHistory = new List<ServiceContracts.DTOs.UserDTOs.FreelancerManagement.EmploymentUpdateDto>
             {
-                new ServiceContracts.DTOs.User.Freelancer.EmploymentUpdateDto
+                new ServiceContracts.DTOs.UserDTOs.FreelancerManagement.EmploymentUpdateDto
                 {
                     Id = existingEmployment1.Id,
                     Company = "Company A Updated",
@@ -539,7 +541,7 @@ public class FreelancerTests
                     FromDate = existingEmployment1.FromDate,
                     ToDate = existingEmployment1.ToDate
                 },
-                new ServiceContracts.DTOs.User.Freelancer.EmploymentUpdateDto
+                new ServiceContracts.DTOs.UserDTOs.FreelancerManagement.EmploymentUpdateDto
                 {
                     Id = null,
                     Company = "Company C",
@@ -642,7 +644,7 @@ public class FreelancerTests
         var user = new Entities.Users.User
         {
             Id = userId,
-            FullName = "Original Name",
+            FullName = "Original Name", Address = "Addr", City = "City", StateProvince = "State", ZipCode = "12345", Country = "Egypt",
             Email = "original@test.com",
             UserName = "original@test.com",
             // ProfilePicturePath = "pic",
@@ -717,7 +719,7 @@ public class FreelancerTests
             Languages = new List<LanguageUpdateDto>(),
             Education = new List<EducationUpdateDto>(),
             ExperienceDetails = new List<ExperienceDetailUpdateDto>(),
-            EmploymentHistory = new List<ServiceContracts.DTOs.User.Freelancer.EmploymentUpdateDto>()
+            EmploymentHistory = new List<ServiceContracts.DTOs.UserDTOs.FreelancerManagement.EmploymentUpdateDto>()
         };
 
         var accessorMock = CreateHttpContextAccessorMock(userId);
@@ -787,7 +789,7 @@ public class FreelancerTests
         var user = new Entities.Users.User
         {
             Id = freelancerId,
-            FullName = "To Delete",
+            FullName = "To Delete", Address = "Addr", City = "City", StateProvince = "State", ZipCode = "12345", Country = "Egypt",
             Email = "delete@test.com",
             Bio = "Test bio",
             UserName = "delete@test.com",
@@ -853,7 +855,7 @@ public class FreelancerTests
         var user = new Entities.Users.User
         {
             Id = freelancerId,
-            FullName = "Deleted User",
+            FullName = "Deleted User", Address = "Addr", City = "City", StateProvince = "State", ZipCode = "12345", Country = "Egypt",
             Email = "deleted@test.com",
             UserName = "deleted@test.com",
             Role = UserRole.Freelancer,
@@ -912,7 +914,7 @@ public class FreelancerTests
         var user = new Entities.Users.User
         {
             Id = userId,
-            FullName = "Profile User",
+            FullName = "Profile User", Address = "Addr", City = "City", StateProvince = "State", ZipCode = "12345", Country = "Egypt",
             Email = "profile@test.com",
             Bio = "Profile bio",
             UserName = "profile@test.com",
@@ -956,7 +958,7 @@ public class FreelancerTests
         var user = new Entities.Users.User
         {
             Id = userId,
-            FullName = "Deleted Profile User",
+            FullName = "Deleted Profile User", Address = "Addr", City = "City", StateProvince = "State", ZipCode = "12345", Country = "Egypt",
             Email = "deletedprofile@test.com",
             Bio = "Soft-deleted profile bio",
             UserName = "deletedprofile@test.com",
@@ -1026,7 +1028,7 @@ public class FreelancerTests
         var user = new Entities.Users.User
         {
             Id = userId,
-            FullName = "Deleted Public User",
+            FullName = "Deleted Public User", Address = "Addr", City = "City", StateProvince = "State", ZipCode = "12345", Country = "Egypt",
             Email = "deletedpublic@test.com",
             UserName = "deletedpublic@test.com",
             Bio = "Soft-deleted public profile bio",
@@ -1070,7 +1072,7 @@ public class FreelancerTests
         var user = new Entities.Users.User
         {
             Id = userId,
-            FullName = "Public User",
+            FullName = "Public User", Address = "Addr", City = "City", StateProvince = "State", ZipCode = "12345", Country = "Egypt",
             Email = "public@test.com",
             UserName = "public@test.com",
             Role = UserRole.Freelancer,
@@ -1125,7 +1127,7 @@ public class FreelancerTests
             var user = new Entities.Users.User
             {
                 Id = id,
-                FullName = $"Freelancer {i}",
+                FullName = $"Freelancer {i}", Address = "Addr", City = "City", StateProvince = "State", ZipCode = "12345", Country = "Egypt",
                 Email = $"freelancer{i}@test.com",
                 Bio = $"Bio {i}",
                 UserName = $"freelancer{i}@test.com",
@@ -1174,7 +1176,7 @@ public class FreelancerTests
             var user = new Entities.Users.User
             {
                 Id = id,
-                FullName = $"Freelancer {i}",
+                FullName = $"Freelancer {i}", Address = "Addr", City = "City", StateProvince = "State", ZipCode = "12345", Country = "Egypt",
                 Email = $"freelancer{i}@test.com",
                 UserName = $"freelancer{i}@test.com",
                 Role = UserRole.Freelancer,
@@ -1247,7 +1249,7 @@ public class FreelancerTests
         var user1 = new Entities.Users.User
         {
             Id = id1,
-            FullName = "Alice Developer",
+            FullName = "Alice Developer", Address = "Addr", City = "City", StateProvince = "State", ZipCode = "12345", Country = "Egypt",
             Email = "alice@test.com",
             UserName = "alice@test.com",
             // ProfilePicturePath = "pic",
@@ -1278,7 +1280,7 @@ public class FreelancerTests
         var user2 = new Entities.Users.User
         {
             Id = id2,
-            FullName = "Bob Designer",
+            FullName = "Bob Designer", Address = "Addr", City = "City", StateProvince = "State", ZipCode = "12345", Country = "Egypt",
             Email = "bob@test.com",
             UserName = "bob@test.com",
             // ProfilePicturePath = "pic",
@@ -1324,7 +1326,7 @@ public class FreelancerTests
             var user = new Entities.Users.User
             {
                 Id = id,
-                FullName = $"Test User {i}",
+                FullName = $"Test User {i}", Address = "Addr", City = "City", StateProvince = "State", ZipCode = "12345", Country = "Egypt",
                 Email = $"user{i}@test.com",
                 UserName = $"user{i}@test.com",
                 Role = UserRole.Freelancer,
@@ -1378,3 +1380,7 @@ public class FreelancerTests
 
     #endregion
 }
+
+}
+
+

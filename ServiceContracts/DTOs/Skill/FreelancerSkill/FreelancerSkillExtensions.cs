@@ -1,3 +1,6 @@
+using Entities.Enums;
+using ServiceContracts.DTOs.Skill.FreelancerSkill;
+
 namespace ServiceContracts.DTOs.Skill.FreelancerSkill
 {
     public static class FreelancerSkillExtensions
