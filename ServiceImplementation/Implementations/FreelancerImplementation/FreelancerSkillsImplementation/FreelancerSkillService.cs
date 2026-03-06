@@ -1,4 +1,4 @@
-﻿using Entities;
+using Entities;
 using Entities.Skill;
 using Microsoft.EntityFrameworkCore;
 using ServiceContracts.DTOs.Skill.FreelancerSkill;
@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ServiceImplementation.Implementations.Freelancer.Skills
+namespace ServiceImplementation.Implementations.FreelancerImplementation.Skills
 {
     public class FreelancerSkillService : IFreelancerSkillService
     {

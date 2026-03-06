@@ -1,4 +1,4 @@
-﻿using Entities.Payment;
+using Entities.Payment;
 using System;
 using System.Collections.Generic;
 using System.Linq;

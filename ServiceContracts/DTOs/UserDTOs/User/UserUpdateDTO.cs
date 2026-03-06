@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Entities.Users;
 
 namespace Services.DTOs.UserDTOs.User

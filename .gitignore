@@ -364,6 +364,7 @@ FodyWeavers.xsd
 
 # Warp AI configuration
 WARP.md
-/Entities/Migrations
+Entities/Migrations/
+[Ee]ntities/[Mm]igrations/
 /Horr/appsettings.Development.json
 Horr-prototype/

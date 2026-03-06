@@ -1,4 +1,4 @@
-﻿using ServiceContracts.DTOs.Chat;
+using ServiceContracts.DTOs.Chat;
 using System;
 using System.Collections.Generic;
 using System.Linq;

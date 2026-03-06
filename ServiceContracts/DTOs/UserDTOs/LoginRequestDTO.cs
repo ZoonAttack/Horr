@@ -1,4 +1,4 @@
-﻿namespace Services.DTOs.UserDTOs
+namespace Services.DTOs.UserDTOs
 {
     public class LoginRequestDTO
     {

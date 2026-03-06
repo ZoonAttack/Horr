@@ -1,4 +1,4 @@
-﻿using ServiceContracts.DTOs.User.Freelancer;
+using ServiceContracts.DTOs.UserDTOs.FreelancerManagement;
 
 namespace Services.Freelancer
 {

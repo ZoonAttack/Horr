@@ -1,4 +1,4 @@
-﻿namespace Application.DTOs.User
+namespace Application.DTOs.User
 {
     /// <summary>
     /// Data Transfer Object for creating a new User and their initial Specialist profile.

@@ -1,4 +1,4 @@
-﻿using Entities.Enums;
+using Entities.Enums;
 using Entities.Payment;
 
 namespace ServiceContracts.DTOs.Wallet.Withdrawls

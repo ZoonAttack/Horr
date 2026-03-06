@@ -1,6 +1,6 @@
-﻿using Mappers;
+using Mappers;
 
-namespace ServiceContracts.DTOs.User.Freelancer
+namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
 {
     public static class FreelancerExtensions
     {
@@ -24,10 +24,12 @@ namespace ServiceContracts.DTOs.User.Freelancer
                 Email = user.Email,
                 Phone = user.PhoneNumber,
                 IsVerified = user.IsVerified,
+                TrustScore = user.TrustScore,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt,
 
                 // Freelancer Profile Mapping (must check for existence)
+                Bio = user.Bio,
                 HourlyRate = user.Freelancer?.HourlyRate,
                 Availability = user.Freelancer?.Availability,
                 YearsOfExperience = user.Freelancer?.YearsOfExperience,
@@ -72,7 +74,14 @@ namespace ServiceContracts.DTOs.User.Freelancer
             {
                 FullName = createDto.FullName,
                 Email = createDto.Email,
+                UserName = createDto.Email, // Identity requires UserName
                 PhoneNumber = createDto.Phone,
+                Bio = createDto.Bio ?? "Bio",
+                Address = "Addr",
+                City = "City",
+                StateProvince = "State",
+                ZipCode = "12345",
+                Country = "Egypt",
 
                 // --- NEW FREELANCER PROFILE CREATION ---
                 Freelancer = new Entities.Users.Freelancer
@@ -119,7 +128,9 @@ namespace ServiceContracts.DTOs.User.Freelancer
             // Apply updates to the User entity
             user.FullName = updateDto.FullName;
             user.Email = updateDto.Email;
+            user.UserName = updateDto.Email;
             user.PhoneNumber = updateDto.Phone;
+            user.Bio = updateDto.Bio;
 
             // Apply updates to the Freelancer Profile
             if (user.Freelancer != null)

@@ -1,4 +1,4 @@
-﻿using Entities.Enums;
+using Entities.Enums;
 
 namespace ServiceContracts.DTOs.Wallet.Funds
 {

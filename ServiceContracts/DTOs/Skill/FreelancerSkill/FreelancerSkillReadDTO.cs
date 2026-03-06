@@ -1,3 +1,4 @@
+using System;
 using Entities.Enums;
 
 namespace ServiceContracts.DTOs.Skill.FreelancerSkill

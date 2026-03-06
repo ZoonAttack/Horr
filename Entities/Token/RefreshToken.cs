@@ -1,4 +1,4 @@
-﻿using Entities.Users;
+using Entities.Users;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 namespace Entities.Token

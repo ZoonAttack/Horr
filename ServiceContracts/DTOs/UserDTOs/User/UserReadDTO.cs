@@ -1,4 +1,4 @@
-﻿using Entities.Enums;
+using Entities.Enums;
 using Entities.Users;
 
 namespace Services.DTOs.UserDTOs.User

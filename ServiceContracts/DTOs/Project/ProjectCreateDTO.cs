@@ -1,4 +1,4 @@
-﻿using Entities.Project;
+using Entities.Project;
 using ServiceContracts.DTOs.Contract;
 using System;
 using System.Collections.Generic;

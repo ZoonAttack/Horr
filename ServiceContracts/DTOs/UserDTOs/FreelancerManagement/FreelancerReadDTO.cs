@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Entities.Enums;
 // Assuming your helper DTOs (LanguageReadDto, etc.) are in the same namespace or referenced.
 
-namespace ServiceContracts.DTOs.User.Freelancer
+namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
 {
     public class FreelancerReadDTO
     {
