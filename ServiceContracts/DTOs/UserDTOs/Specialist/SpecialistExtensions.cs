@@ -1,4 +1,4 @@
-﻿using Entities.Users; // Required to reference the Specialist and User entities
+using Entities.Users; // Required to reference the Specialist and User entities
 
 namespace Application.DTOs.User
 {

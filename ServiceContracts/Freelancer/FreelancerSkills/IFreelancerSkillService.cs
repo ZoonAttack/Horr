@@ -1,4 +1,4 @@
-﻿using ServiceContracts.DTOs.Skill.FreelancerSkill;
+using ServiceContracts.DTOs.Skill.FreelancerSkill;
 using ServiceContracts.DTOs.Skill.Skill;
 
 namespace Services.Freelancer.Skill

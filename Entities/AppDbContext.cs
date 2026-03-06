@@ -5,6 +5,8 @@ using Entities.Project;
 using Entities.Review;
 using Entities.Skill;
 using Entities.Token;
+using Entities.Common;
+using Entities.Project;
 using Entities.Users;
 using Entities.Users.FreelancerHelpers;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -56,9 +58,20 @@ namespace Entities
         public DbSet<SpecialistReviewRequest> SpecialistReviewRequests { get; set; }
         public DbSet<Contract> Contracts { get; set; }
 
+        // Job Management DbSets
+        public DbSet<JobPost> JobPosts { get; set; }
+        public DbSet<SavedJob> SavedJobs { get; set; }
+        public DbSet<JobSkill> JobSkills { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // ---------------------------------------------------------
+            // 0. GLOBAL QUERY FILTERS
+            // ---------------------------------------------------------
+            modelBuilder.Entity<JobPost>().HasQueryFilter(j => !j.IsDeleted);
+
 
             // ---------------------------------------------------------
             // 1. MANUAL CONFIGURATION (Composite Keys & Constraints)
@@ -90,6 +103,15 @@ namespace Entities
             // Composite Keys
             modelBuilder.Entity<FreelancerSkill>()
                 .HasKey(fs => new { fs.FreelancerId, fs.SkillId });
+
+            modelBuilder.Entity<SavedJob>()
+                .HasKey(sj => new { sj.FreelancerId, sj.JobPostId });
+
+            modelBuilder.Entity<JobSkill>()
+                .HasKey(js => new { js.JobPostId, js.SkillId });
+
+            // Ensure SavedJob/JobPost relationship doesn't cause delete path issues if needed,
+            // but fixed via bottom loop anyway.
 
             // Complex Relationships
             modelBuilder.Entity<ClientProject>()

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Entities.Users;
 using Services.DTOs.UserDTOs.Client;
 

@@ -1,4 +1,4 @@
-﻿namespace ServiceContracts.DTOs.Wallet.PaymentTransaction
+namespace ServiceContracts.DTOs.Wallet.PaymentTransaction
 {
     public static class PaymentTransactionExtensions
     {

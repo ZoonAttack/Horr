@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Entities.Enums;
 
 namespace Horr.DTOs.Wallet.Transactions

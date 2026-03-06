@@ -1,6 +1,6 @@
-﻿using Entities.Users;
+using Entities.Users;
 using Entities.Users.FreelancerHelpers;
-using ServiceContracts.DTOs.User.Freelancer;
+using ServiceContracts.DTOs.UserDTOs.FreelancerManagement;
 using System.Linq;
 
 namespace Mappers
@@ -140,15 +140,4 @@ namespace Mappers
                 ToDate = dto.ToDate
             };
     }
-}
-public class EmploymentUpdateDto
-{
-        public int? Id { get; set; }
-        public string Company { get; set; }
-        public string City { get; set; }
-        public string Country { get; set; }
-        public string Title { get; set; }
-        public bool CurrentlyWorkThere { get; set; }
-        public DateTime FromDate { get; set; }
-        public DateTime? ToDate { get; set; }
 }

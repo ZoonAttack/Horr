@@ -1,4 +1,4 @@
-﻿namespace ServiceContracts.DTOs.User.Freelancer
+namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
 {
     public class FreelancerPublicReadDTO
     {

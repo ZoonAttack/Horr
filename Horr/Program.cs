@@ -43,6 +43,9 @@ namespace Horr
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddTransient<IEmailService, EmailService>();
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+
+            // MediatR Registration
+            builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(AuthService).Assembly));
             // ==========================================
             // 3. JWT AUTHENTICATION SETUP
             // ==========================================

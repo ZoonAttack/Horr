@@ -6,7 +6,7 @@ using ServiceImplementation.Repositories.FreelancerProfile;
 using ServiceImplementation.Mappings.FreelancerProfile;
 using Services.Freelancer.FreelancerProfile;
 
-namespace ServiceImplementation.Implementations.Freelancer.FreelancerProfile
+namespace ServiceImplementation.Implementations.FreelancerImplementation.FreelancerProfile
 {
 
     public class ExperienceService : IExperienceService
