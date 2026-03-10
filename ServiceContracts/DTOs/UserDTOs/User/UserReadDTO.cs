@@ -24,6 +24,14 @@ namespace Services.DTOs.UserDTOs.User
 
         public decimal TrustScore { get; set; }
 
+        public string? Address { get; set; }
+        public string? City { get; set; }
+        public string? StateProvince { get; set; }
+        public string? ZipCode { get; set; }
+        public string? Country { get; set; }
+        public string? TimeZone { get; set; }
+        public string? Bio { get; set; }
+
         public DateTime CreatedAt { get; set; }
 
         public DateTime UpdatedAt { get; set; }
@@ -46,6 +54,14 @@ namespace Services.DTOs.UserDTOs.User
                 Phone = user.PhoneNumber,
                 Role = user.Role,
                 IsVerified = user.IsVerified,
+                TrustScore = user.TrustScore,
+                Address = user.Address,
+                City = user.City,
+                StateProvince = user.StateProvince,
+                ZipCode = user.ZipCode,
+                Country = user.Country,
+                TimeZone = user.TimeZone,
+                Bio = user.Bio,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt
             };

@@ -15,6 +15,9 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
         public bool IsVerified { get; set; }
         public decimal TrustScore { get; set; }
 
+        public string? City { get; set; }
+        public string? Country { get; set; }
+
         // --- Profile Collections (Read DTOs) ---
         public ICollection<LanguageReadDto> Languages { get; set; } = new List<LanguageReadDto>();
         public ICollection<EducationReadDto> Education { get; set; } = new List<EducationReadDto>();
