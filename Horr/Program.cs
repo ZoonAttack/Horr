@@ -85,7 +85,23 @@ namespace Horr
             });
 
             builder.Services.AddControllers();
-            builder.Services.AddOpenApiDocument();
+            // builder.Services.AddOpenApiDocument();
+
+            builder.Services.AddOpenApiDocument(config =>
+            {
+                config.Title = "My API";
+
+                config.AddSecurity("JWT", Enumerable.Empty<string>(), new NSwag.OpenApiSecurityScheme
+                {
+                    Type = NSwag.OpenApiSecuritySchemeType.ApiKey,
+                    Name = "Authorization",
+                    In = NSwag.OpenApiSecurityApiKeyLocation.Header,
+                    Description = "Type into the textbox: Bearer {your JWT token}"
+                });
+
+                config.OperationProcessors.Add(
+                    new NSwag.Generation.Processors.Security.AspNetCoreOperationSecurityScopeProcessor("JWT"));
+            });
 
             var app = builder.Build();
 

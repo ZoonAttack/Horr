@@ -25,6 +25,13 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
         public int? YearsOfExperience { get; set; }
         public string PortfolioUrl { get; set; }
 
+        public string? Address { get; set; }
+        public string? City { get; set; }
+        public string? StateProvince { get; set; }
+        public string? ZipCode { get; set; }
+        public string? Country { get; set; }
+        public string? TimeZone { get; set; }
+
         // --- NEW PROFILE COLLECTIONS for Read ---
 
         // 1. Languages [name and level for each one]

@@ -34,6 +34,9 @@ namespace ServiceImplementation.Implementations.Settings
                 user.NormalizedUserName = dto.Email.ToUpper();
             }
 
+            if (dto.Bio != null)
+                user.Bio = dto.Bio;
+
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
             return true;
