@@ -50,6 +50,14 @@ namespace Horr
             // 3. JWT AUTHENTICATION SETUP
             // ==========================================
             // This tells ASP.NET how to read the token coming from React
+
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+                options.AddPolicy("ClientOnly", policy => policy.RequireRole("Client"));
+                options.AddPolicy("FreelancerOnly", policy => policy.RequireRole("Freelancer"));
+                options.AddPolicy("SpecialistOnly", policy => policy.RequireRole("Specialist"));
+            });
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
