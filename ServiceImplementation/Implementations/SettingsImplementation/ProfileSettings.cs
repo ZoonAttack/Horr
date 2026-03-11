@@ -188,9 +188,29 @@ namespace ServiceImplementation.Implementations.Settings
             };
         }
 
-        public Task<Result<User>> CreateBillingAsync(string userId, PaymentMethodCreateDTO dto)
+        public async Task<Result<User>> CreateBillingAsync(string userId, PaymentMethodCreateDTO dto)
         {
-            throw new NotImplementedException();
+            var user = await _context.Users.FindAsync(userId);
+            if(user == null || user.IsDeleted) return new Result<User>
+            {
+                Succeeded = false,
+                Errors = { "User not found." },
+                Message = "Failed to add payment method."
+            };
+
+            await _context.PaymentMethods.AddAsync(dto.ToPaymentMethod(userId));
+            await _context.SaveChangesAsync();
+            return new Result<User>
+            {
+                Succeeded = true,
+                Errors = { },
+                Message = "Payment method added successfully.",
+                Data = user //This needs to change to a more appropriate DTO that includes the new payment method details,
+                            //but for simplicity, I'm returning the user here. In a real implementation,
+                            //a UserDTO with payment method details should be returned.
+                            //This goes for all methods that currently return User,
+                            //they should ideally return a more specific DTO that includes the relevant details for the operation performed.
+            };
         }
     }
 }
