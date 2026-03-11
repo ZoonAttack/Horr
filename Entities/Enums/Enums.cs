@@ -8,7 +8,14 @@ namespace Entities.Enums
         Client,
         Freelancer,
         Specialist,
-        Admin
+        Admin,
+        Agency
+    }
+
+    public enum SubmitAsType
+    {
+        Freelancer,
+        Agency
     }
 
     /// <summary>
@@ -46,8 +53,9 @@ namespace Entities.Enums
     /// </summary>
     public enum ProposalStatus
     {
-        Pending,
-        Accepted,
+        Active,
+        Submitted,
+        Offer,
         Rejected,
         Withdrawn
     }

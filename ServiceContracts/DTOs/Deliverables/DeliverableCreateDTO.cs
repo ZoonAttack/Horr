@@ -13,7 +13,7 @@ namespace ServiceContracts.DTOs.Deliverables
         [Required]
         public string MessageId { get; set; }
 
-        public string? ProposalId { get; set; }
+        public int? ProposalId { get; set; }
 
         [Required]
         [MaxLength(255)]
