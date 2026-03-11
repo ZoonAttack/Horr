@@ -19,4 +19,9 @@ namespace ServiceImplementation.Exceptions
             Errors = errors;
         }
     }
+
+    public class ConflictException : Exception
+    {
+        public ConflictException(string message) : base(message) { }
+    }
 }

@@ -1,54 +1,49 @@
 using Entities.Enums;
 using Entities.Users;
-using Microsoft.EntityFrameworkCore;
+using Entities.Common;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Entities.Project
 {
-    /// <summary>
-    /// A freelancer's bid or application for a ClientProject.
-    /// </summary>
     [Table("proposals")]
-    [Index(nameof(ProjectId))]
-    [Index(nameof(FreelancerId))]
-    [Index(nameof(Status))]
-    public class Proposal
+    public class Proposal : ISoftDeletable
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public string Id { get; set; }
+        public int Id { get; set; }
 
         [Required]
-        [ForeignKey("Project")]
-        public string ProjectId { get; set; }
+        public int JobPostId { get; set; }
+
+        [ForeignKey(nameof(JobPostId))]
+        public virtual JobPost JobPost { get; set; } = null!;
 
         [Required]
-        [ForeignKey("Freelancer")]
-        public string FreelancerId { get; set; }
+        public string FreelancerId { get; set; } = string.Empty;
 
-        [Column(TypeName = "text")]
-        public string CoverLetter { get; set; }
+        [ForeignKey(nameof(FreelancerId))]
+        public virtual Freelancer Freelancer { get; set; } = null!;
+
+        public SubmitAsType SubmitAsType { get; set; }
 
         [Column(TypeName = "decimal(10,2)")]
-        public decimal? ProposedAmount { get; set; }
+        public decimal BidRate { get; set; }
 
-        [MaxLength(50)]
-        public string EstimatedDuration { get; set; }
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal HORRFee { get; set; }
 
-        public ProposalStatus Status { get; set; } = ProposalStatus.Pending;
+        [Required]
+        [MaxLength(2000)]
+        public string CoverLetter { get; set; } = string.Empty;
 
-        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
-        public DateTime CreatedAt { get; set; }
+        public ProposalStatus Status { get; set; } = ProposalStatus.Active;
 
-        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
-        public DateTime UpdatedAt { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // --- Navigation Properties ---
-        [InverseProperty("Proposals")]
-        public virtual ClientProject Project { get; set; }
-        public virtual Freelancer Freelancer { get; set; }
+        // Soft Delete
+        public bool IsDeleted { get; set; }
 
+        public virtual ICollection<ProposalTerm> Terms { get; set; } = new List<ProposalTerm>();
         public virtual ICollection<Delivery> Deliveries { get; set; } = new List<Delivery>();
     }
 }

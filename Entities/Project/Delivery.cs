@@ -29,8 +29,8 @@ namespace Entities.Project
         public virtual Message Message { get; set; }
 
         [ForeignKey("Proposal")]
-        public string? ProposalId { get; set; }
-        public virtual Proposal Proposal { get; set; }
+        public int? ProposalId { get; set; }
+        public virtual Proposal? Proposal { get; set; }
 
         [Required]
         [MaxLength(255)]
