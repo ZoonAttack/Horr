@@ -1,16 +1,23 @@
 using System;
 using System.Threading.Tasks;
+using Entities.Users;
+using ServiceContracts.DTOs.Responses;
 using ServiceContracts.DTOs.Settings;
+using ServiceContracts.DTOs.Wallet.PaymentMethods;
 
 namespace ServiceContracts.Settings
 {
     public interface IProfileSettings
     {
-        Task<bool> UpdateFullNameAsync(string userId, string newName);
-        Task<bool> UpdateEmailAsync(string userId, string newEmail);
-        Task<bool> UpdateAccountAsync(Guid userId, AccountUpdateDto dto);
-        Task<bool> UpdateLocationAsync(Guid userId, LocationUpdateDto dto);
-        Task<PrivacyResponseDto?> GetPrivacySettingsAsync(Guid userId);
-        Task<bool> UpdatePrivacySettingsAsync(Guid userId, PrivacyUpdateDto dto);
+        Task<Result<User>> UpdateFullNameAsync(string userId, string newName);
+        Task<Result<User>> UpdateEmailAsync(string userId, string newEmail);
+        Task<Result<User>> CreateBillingAsync(string userId, PaymentMethodCreateDTO dto);
+
+        //Task<Result<User>> UpdateBillingAsync(string userId, CreateBillingDTO);
+
+        Task<Result<User>> UpdateAccountAsync(Guid userId, AccountUpdateDto dto);
+        Task<Result<User>> UpdateLocationAsync(Guid userId, LocationUpdateDto dto);
+        Task<Result<PrivacyResponseDto>> GetPrivacySettingsAsync(Guid userId);
+        Task<Result<User>> UpdatePrivacySettingsAsync(Guid userId, PrivacyUpdateDto dto);
     }
 }

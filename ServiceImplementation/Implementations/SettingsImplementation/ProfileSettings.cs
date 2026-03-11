@@ -6,6 +6,8 @@ using ServiceContracts.DTOs.Settings;
 using ServiceContracts.Settings;
 using Entities.Users;
 using Microsoft.AspNetCore.Identity;
+using ServiceContracts.DTOs.Responses;
+using ServiceContracts.DTOs.Wallet.PaymentMethods;
 
 namespace ServiceImplementation.Implementations.Settings
 {
@@ -21,21 +23,39 @@ namespace ServiceImplementation.Implementations.Settings
         }
 
 
-        public Task<bool> UpdateFullNameAsync(string userId, string newName)
+        public async Task<Result<User>> UpdateFullNameAsync(string userId, string newName)
         {
             var user = _userManager.FindByIdAsync(userId).Result;
-            if (user == null || user.IsDeleted) return Task.FromResult(false);
-            
+            if (user == null || user.IsDeleted) return new Result<User>
+            {
+                Succeeded = false,
+                Errors = { "User not found." },
+                Message = "Failed to update full name.",
+                Data = null
+            };
+
             user.FullName = newName;
             _userManager.UpdateAsync(user).Wait();
 
-            return Task.FromResult(true);
+            return new Result<User>
+            {
+                Succeeded = true,
+                Errors = { },
+                Message = "Full name updated successfully.",
+                Data = user
+            };
         }
 
-        public Task<bool> UpdateEmailAsync(string userId, string newEmail)
+        public async Task<Result<User>> UpdateEmailAsync(string userId, string newEmail)
         {
             var user = _userManager.FindByIdAsync(userId).Result;
-            if (user == null || user.IsDeleted) return Task.FromResult(false);
+            if (user == null || user.IsDeleted) return new Result<User>
+            {
+                Succeeded = false,
+                Errors = { "User not found." },
+                Message = "Failed to update email.",
+                Data = null
+            };
 
             _userManager.SetEmailAsync(user, newEmail).Wait();
             //The above line should be changed later(I kept it like this for now to avoid breaking changes
@@ -43,13 +63,24 @@ namespace ServiceImplementation.Implementations.Settings
             //The user then clicks on the link sent to the new email to confirm the change
             //Then using the ChangeEmailAsync method to update the email after confirmation
 
-            return Task.FromResult(true);
+            return new Result<User>
+            {
+                Succeeded = true,
+                Errors = { },
+                Message = "Email updated successfully",
+                Data = user
+            };
         }
 
-        public async Task<bool> UpdateAccountAsync(Guid userId, AccountUpdateDto dto)
+        public async Task<Result<User>> UpdateAccountAsync(Guid userId, AccountUpdateDto dto)
         {
             var user = await _context.Users.FindAsync(userId.ToString());
-            if (user == null || user.IsDeleted) return false;
+            if (user == null || user.IsDeleted) return new Result<User>
+            {
+                Succeeded = false,
+                Errors = { "User not found." },
+                Message = "Failed to update account settings."
+            };
 
             // Partial update: only update if value is provided
             if (!string.IsNullOrWhiteSpace(dto.FullName))
@@ -68,13 +99,24 @@ namespace ServiceImplementation.Implementations.Settings
 
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
-            return true;
+            return new Result<User>
+            {
+                Succeeded = true,
+                Errors = { },
+                Message = "Account settings updated successfully.",
+                Data = user
+            };
         }
 
-        public async Task<bool> UpdateLocationAsync(Guid userId, LocationUpdateDto dto)
+        public async Task<Result<User>> UpdateLocationAsync(Guid userId, LocationUpdateDto dto)
         {
             var user = await _context.Users.FindAsync(userId.ToString());
-            if (user == null || user.IsDeleted) return false;
+            if (user == null || user.IsDeleted) return new Result<User>
+            {
+                Succeeded = false,
+                Errors = { "User not found." },
+                Message = "Failed to update location settings."
+            };
 
             // Partial update
             if (dto.Address != null) user.Address = dto.Address;
@@ -88,10 +130,16 @@ namespace ServiceImplementation.Implementations.Settings
 
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
-            return true;
+            return new Result<User>
+            {
+                Succeeded = true,
+                Errors = { },
+                Message = "Location settings updated successfully.",
+                Data = user
+            };
         }
 
-        public async Task<PrivacyResponseDto?> GetPrivacySettingsAsync(Guid userId)
+        public async Task<Result<PrivacyResponseDto>> GetPrivacySettingsAsync(Guid userId)
         {
             var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId.ToString());
             if (freelancer == null) return null;
@@ -99,18 +147,29 @@ namespace ServiceImplementation.Implementations.Settings
             // Requirement: HTML Prototype User ID Hash (e83b2bbd) -> Use first 8 chars of GUID for representation
             string hash = userId.ToString("N").Substring(0, 8);
 
-            return new PrivacyResponseDto
+            return new Result<PrivacyResponseDto>
             {
-                UserIdHash = hash,
-                Visibility = freelancer.VisibilityPreference,
-                ExperienceLevel = freelancer.ExperienceLevel
+                Succeeded = true,
+                Errors = { },
+                Message = "Privacy settings retrieved successfully.",
+                Data = new PrivacyResponseDto
+                {
+                    UserIdHash = hash,
+                    Visibility = freelancer.VisibilityPreference,
+                    ExperienceLevel = freelancer.ExperienceLevel
+                }
             };
         }
 
-        public async Task<bool> UpdatePrivacySettingsAsync(Guid userId, PrivacyUpdateDto dto)
+        public async Task<Result<User>> UpdatePrivacySettingsAsync(Guid userId, PrivacyUpdateDto dto)
         {
             var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId.ToString());
-            if (freelancer == null) return false;
+            if (freelancer == null) return new Result<User>
+            {
+                Succeeded = false,
+                Errors = { "Freelancer profile not found." },
+                Message = "Failed to update privacy settings."
+            };
 
             if (dto.Visibility.HasValue)
                 freelancer.VisibilityPreference = dto.Visibility.Value;
@@ -120,8 +179,18 @@ namespace ServiceImplementation.Implementations.Settings
 
             _context.Freelancers.Update(freelancer);
             await _context.SaveChangesAsync();
-            return true;
+            return new Result<User>
+            {
+                Succeeded = true,
+                Errors = { },
+                Message = "Privacy settings updated successfully.",
+                Data = await _context.Users.FindAsync(userId.ToString())
+            };
         }
 
+        public Task<Result<User>> CreateBillingAsync(string userId, PaymentMethodCreateDTO dto)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
