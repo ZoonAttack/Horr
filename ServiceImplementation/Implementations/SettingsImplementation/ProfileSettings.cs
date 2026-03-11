@@ -5,16 +5,45 @@ using Entities; // Using the AppDbContext directly for simplicity if a specific 
 using ServiceContracts.DTOs.Settings;
 using ServiceContracts.Settings;
 using Entities.Users;
+using Microsoft.AspNetCore.Identity;
 
 namespace ServiceImplementation.Implementations.Settings
 {
-    public class SettingsService : ISettingsService
+    public class ProfileSettings : IProfileSettings
     {
         private readonly AppDbContext _context;
+        private readonly UserManager<User> _userManager;
 
-        public SettingsService(AppDbContext context)
+        public ProfileSettings(UserManager<User> userManager, AppDbContext context)
         {
+            _userManager = userManager;
             _context = context;
+        }
+
+
+        public Task<bool> UpdateFullNameAsync(string userId, string newName)
+        {
+            var user = _userManager.FindByIdAsync(userId).Result;
+            if (user == null || user.IsDeleted) return Task.FromResult(false);
+            
+            user.FullName = newName;
+            _userManager.UpdateAsync(user).Wait();
+
+            return Task.FromResult(true);
+        }
+
+        public Task<bool> UpdateEmailAsync(string userId, string newEmail)
+        {
+            var user = _userManager.FindByIdAsync(userId).Result;
+            if (user == null || user.IsDeleted) return Task.FromResult(false);
+
+            _userManager.SetEmailAsync(user, newEmail).Wait();
+            //The above line should be changed later(I kept it like this for now to avoid breaking changes
+            //In a real implementation. a token should be gnerated and sent to the new email
+            //The user then clicks on the link sent to the new email to confirm the change
+            //Then using the ChangeEmailAsync method to update the email after confirmation
+
+            return Task.FromResult(true);
         }
 
         public async Task<bool> UpdateAccountAsync(Guid userId, AccountUpdateDto dto)
@@ -93,5 +122,6 @@ namespace ServiceImplementation.Implementations.Settings
             await _context.SaveChangesAsync();
             return true;
         }
+
     }
 }

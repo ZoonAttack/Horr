@@ -13,9 +13,9 @@ namespace Horr.Controllers.UserProfile
     [Authorize]
     public class SettingsController : ControllerBase
     {
-        private readonly ISettingsService _settingsService;
+        private readonly IProfileSettings _settingsService;
 
-        public SettingsController(ISettingsService settingsService)
+        public SettingsController(IProfileSettings settingsService)
         {
             _settingsService = settingsService;
         }
