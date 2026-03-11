@@ -28,7 +28,7 @@ namespace Entities.Project
         public string ClientId { get; set; }
         public virtual Client Client { get; set; }
 
-        public string? AcceptedProposalId { get; set; }
+        public int? AcceptedProposalId { get; set; }
 
         [Required]
         [MaxLength(255)]
@@ -56,11 +56,8 @@ namespace Entities.Project
         public DateTime UpdatedAt { get; set; }
 
         // --- Navigation Properties ---
-        [ForeignKey("AcceptedProposalId")]
-        public virtual Proposal AcceptedProposal { get; set; }
-
-        [InverseProperty("Project")]
-        public virtual ICollection<Proposal> Proposals { get; set; } = new List<Proposal>();
+        [ForeignKey(nameof(AcceptedProposalId))]
+        public virtual Proposal? AcceptedProposal { get; set; }
 
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
         public virtual ICollection<Chat> Chats { get; set; } = new List<Chat>();

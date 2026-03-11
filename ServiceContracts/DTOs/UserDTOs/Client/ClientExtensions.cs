@@ -24,6 +24,13 @@ namespace Services.DTOs.UserDTOs.Client
                 IsVerified = user.IsVerified,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt,
+                Bio = user.Bio,
+                Address = user.Address,
+                City = user.City,
+                StateProvince = user.StateProvince,
+                ZipCode = user.ZipCode,
+                Country = user.Country,
+                TimeZone = user.TimeZone,
             };
         }
 

@@ -84,7 +84,14 @@ namespace ServiceImplementation.Authentication
                 UserName = dto.Email,
                 Email = dto.Email,
                 FullName = dto.FullName,
-                PhoneNumber = dto.PhoneNumber
+                PhoneNumber = dto.PhoneNumber,
+                Bio = dto.Bio ?? string.Empty,
+                Address = dto.Address ?? string.Empty,
+                City = dto.City ?? string.Empty,
+                Country = dto.Country ?? string.Empty,
+                StateProvince = dto.StateProvince ?? string.Empty,
+                TimeZone = dto.TimeZone ?? "UTC+02:00",
+                ZipCode = dto.ZipCode ?? string.Empty
                 // Ensure Refresh Token is null initially
                 //RefreshToken = null
             };

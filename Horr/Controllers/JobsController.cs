@@ -35,7 +35,7 @@ namespace Horr.Controllers
         }
 
         [HttpPost("{id}/save")]
-        [Authorize(Roles = "Freelancer")]
+        [Authorize(Policy ="FreelancerOnly")]
         public async Task<IActionResult> SaveJob(int id)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -46,7 +46,7 @@ namespace Horr.Controllers
         }
 
         [HttpDelete("{id}/save")]
-        [Authorize(Roles = "Freelancer")]
+        [Authorize(Policy = "FreelancerOnly")]
         public async Task<IActionResult> UnsaveJob(int id)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);

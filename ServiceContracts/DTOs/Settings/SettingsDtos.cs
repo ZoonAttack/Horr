@@ -12,6 +12,8 @@ namespace ServiceContracts.DTOs.Settings
         [EmailAddress]
         [MaxLength(256)]
         public string? Email { get; set; }
+
+        public string? Bio { get; set; }
     }
 
     public class LocationUpdateDto

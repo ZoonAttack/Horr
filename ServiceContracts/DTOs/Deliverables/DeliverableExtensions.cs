@@ -43,7 +43,7 @@ namespace ServiceContracts.DTOs.Deliverables
             {
                 ProjectId = createDto.ProjectId,
                 MessageId = createDto.MessageId,
-                ProposalId = string.IsNullOrWhiteSpace(createDto.ProposalId) ? null : createDto.ProposalId,
+                ProposalId = createDto.ProposalId,
                 FileUrl = createDto.FileUrl,
                 Status = DeliveryStatus.Pending
             };

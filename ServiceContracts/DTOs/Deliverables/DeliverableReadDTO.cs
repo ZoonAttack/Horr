@@ -13,7 +13,7 @@ namespace ServiceContracts.DTOs.Deliverables
 
         public string MessageId { get; set; }
 
-        public string? ProposalId { get; set; }
+        public int? ProposalId { get; set; }
 
         public string FileUrl { get; set; }
 

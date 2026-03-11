@@ -28,6 +28,13 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt,
 
+                Address = user.Address,
+                City = user.City,
+                StateProvince = user.StateProvince,
+                ZipCode = user.ZipCode,
+                Country = user.Country,
+                TimeZone = user.TimeZone,
+
                 // Freelancer Profile Mapping (must check for existence)
                 Bio = user.Bio,
                 HourlyRate = user.Freelancer?.HourlyRate,
@@ -76,12 +83,13 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
                 Email = createDto.Email,
                 UserName = createDto.Email, // Identity requires UserName
                 PhoneNumber = createDto.Phone,
-                Bio = createDto.Bio ?? "Bio",
-                Address = "Addr",
-                City = "City",
-                StateProvince = "State",
-                ZipCode = "12345",
-                Country = "Egypt",
+                Bio = createDto.Bio ?? string.Empty,
+                Address = createDto.Address ?? string.Empty,
+                City = createDto.City ?? string.Empty,
+                StateProvince = createDto.StateProvince ?? string.Empty,
+                ZipCode = createDto.ZipCode ?? string.Empty,
+                Country = createDto.Country ?? "Egypt",
+                TimeZone = createDto.TimeZone ?? "UTC+02:00",
 
                 // --- NEW FREELANCER PROFILE CREATION ---
                 Freelancer = new Entities.Users.Freelancer
@@ -158,7 +166,9 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
 
                 // Mapping the Public Trust Signals
                 IsVerified = user.IsVerified,      
-                TrustScore = user.TrustScore,       
+                TrustScore = user.TrustScore,
+                City = user.City,
+                Country = user.Country,
 
                 // Freelancer Profile Mapping (null-safe access)
                 Bio = user.Bio,

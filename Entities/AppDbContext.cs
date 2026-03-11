@@ -62,6 +62,7 @@ namespace Entities
         public DbSet<JobPost> JobPosts { get; set; }
         public DbSet<SavedJob> SavedJobs { get; set; }
         public DbSet<JobSkill> JobSkills { get; set; }
+        public DbSet<ProposalTerm> ProposalTerms { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -71,6 +72,7 @@ namespace Entities
             // 0. GLOBAL QUERY FILTERS
             // ---------------------------------------------------------
             modelBuilder.Entity<JobPost>().HasQueryFilter(j => !j.IsDeleted);
+            modelBuilder.Entity<Proposal>().HasQueryFilter(p => !p.IsDeleted);
 
 
             // ---------------------------------------------------------
@@ -109,6 +111,10 @@ namespace Entities
 
             modelBuilder.Entity<JobSkill>()
                 .HasKey(js => new { js.JobPostId, js.SkillId });
+
+            modelBuilder.Entity<Proposal>()
+                .HasIndex(p => new { p.FreelancerId, p.JobPostId })
+                .IsUnique();
 
             // Ensure SavedJob/JobPost relationship doesn't cause delete path issues if needed,
             // but fixed via bottom loop anyway.
