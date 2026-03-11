@@ -72,9 +72,9 @@ namespace ServiceImplementation.Implementations.Settings
             };
         }
 
-        public async Task<Result<User>> UpdateAccountAsync(Guid userId, AccountUpdateDto dto)
+        public async Task<Result<User>> UpdateAccountAsync(string userId, AccountUpdateDto dto)
         {
-            var user = await _context.Users.FindAsync(userId.ToString());
+            var user = await _context.Users.FindAsync(userId);
             if (user == null || user.IsDeleted) return new Result<User>
             {
                 Succeeded = false,
@@ -108,9 +108,9 @@ namespace ServiceImplementation.Implementations.Settings
             };
         }
 
-        public async Task<Result<User>> UpdateLocationAsync(Guid userId, LocationUpdateDto dto)
+        public async Task<Result<User>> UpdateLocationAsync(string userId, LocationUpdateDto dto)
         {
-            var user = await _context.Users.FindAsync(userId.ToString());
+            var user = await _context.Users.FindAsync(userId);
             if (user == null || user.IsDeleted) return new Result<User>
             {
                 Succeeded = false,
@@ -139,13 +139,13 @@ namespace ServiceImplementation.Implementations.Settings
             };
         }
 
-        public async Task<Result<PrivacyResponseDto>> GetPrivacySettingsAsync(Guid userId)
+        public async Task<Result<PrivacyResponseDto>> GetPrivacySettingsAsync(string userId)
         {
-            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId.ToString());
+            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
             if (freelancer == null) return null;
 
             // Requirement: HTML Prototype User ID Hash (e83b2bbd) -> Use first 8 chars of GUID for representation
-            string hash = userId.ToString("N").Substring(0, 8);
+            string hash = userId.Substring(0, 8);
 
             return new Result<PrivacyResponseDto>
             {
@@ -161,9 +161,9 @@ namespace ServiceImplementation.Implementations.Settings
             };
         }
 
-        public async Task<Result<User>> UpdatePrivacySettingsAsync(Guid userId, PrivacyUpdateDto dto)
+        public async Task<Result<User>> UpdatePrivacySettingsAsync(string userId, PrivacyUpdateDto dto)
         {
-            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId.ToString());
+            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
             if (freelancer == null) return new Result<User>
             {
                 Succeeded = false,
@@ -184,7 +184,7 @@ namespace ServiceImplementation.Implementations.Settings
                 Succeeded = true,
                 Errors = { },
                 Message = "Privacy settings updated successfully.",
-                Data = await _context.Users.FindAsync(userId.ToString())
+                Data = await _context.Users.FindAsync(userId)
             };
         }
 

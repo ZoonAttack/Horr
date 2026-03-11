@@ -5,6 +5,7 @@ using Horr.Extentions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ServiceContracts.DTOs.Settings;
+using ServiceContracts.DTOs.Wallet.PaymentMethods;
 using ServiceContracts.Settings;
 
 namespace Horr.Controllers.UserProfile
@@ -29,6 +30,17 @@ namespace Horr.Controllers.UserProfile
             //if (!success) return NotFound("User not found.");
             return Ok(new { message = "Name updated successfully.",  data = success });
         }
+
+        [HttpPost("payment-method")]
+        public async Task<IActionResult> CreatePaymentMethod([FromBody] PaymentMethodCreateDTO dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            var response = await _settingsService.CreateBillingAsync(userId, dto);
+            if (!response.Succeeded) return NotFound("User not found.");
+            return Ok(new { message = "Billing information created successfully." });
+        }
+
         [HttpPatch("account")]
         public async Task<IActionResult> UpdateAccount([FromBody] AccountUpdateDto dto)
         {
@@ -48,9 +60,9 @@ namespace Horr.Controllers.UserProfile
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
-            var success = await _settingsService.UpdateLocationAsync(userId, dto);
+            var response = await _settingsService.UpdateLocationAsync(userId, dto);
 
-            if (!success) return NotFound("User not found.");
+            if (!response.Succeeded) return NotFound("User not found.");
 
             return Ok(new { message = "Location updated successfully." });
         }
@@ -59,11 +71,11 @@ namespace Horr.Controllers.UserProfile
         public async Task<IActionResult> GetPrivacy()
         {
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
-            var privacy = await _settingsService.GetPrivacySettingsAsync(userId);
+            var response = await _settingsService.GetPrivacySettingsAsync(userId);
 
-            if (privacy == null) return NotFound("Freelancer profile not found for user.");
+            if (response.Data == null) return NotFound("Freelancer profile not found for user.");
 
-            return Ok(privacy);
+            return Ok(response);
         }
 
         [HttpPatch("privacy")]
@@ -72,19 +84,11 @@ namespace Horr.Controllers.UserProfile
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
-            var success = await _settingsService.UpdatePrivacySettingsAsync(userId, dto);
+            var response = await _settingsService.UpdatePrivacySettingsAsync(userId, dto);
 
-            if (!success) return NotFound("Freelancer profile not found.");
+            if (!response.Succeeded) return NotFound("Freelancer profile not found.");
 
             return Ok(new { message = "Privacy settings updated successfully." });
-        }
-
-        private string getCurrentUserId()
-        {
-            var userIdClaim = User.Identity.IsAuthenticated ? User.FindFirst(ClaimTypes.NameIdentifier) : throw ;
-            if (userIdClaim == null)
-                throw new Exception("User ID claim not found. User might not be authenticated.");
-            return userIdClaim?.Value;
         }
     }
 }

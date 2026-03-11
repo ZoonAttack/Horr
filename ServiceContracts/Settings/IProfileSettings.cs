@@ -15,9 +15,9 @@ namespace ServiceContracts.Settings
 
         //Task<Result<User>> UpdateBillingAsync(string userId, CreateBillingDTO);
 
-        Task<Result<User>> UpdateAccountAsync(Guid userId, AccountUpdateDto dto);
-        Task<Result<User>> UpdateLocationAsync(Guid userId, LocationUpdateDto dto);
-        Task<Result<PrivacyResponseDto>> GetPrivacySettingsAsync(Guid userId);
-        Task<Result<User>> UpdatePrivacySettingsAsync(Guid userId, PrivacyUpdateDto dto);
+        Task<Result<User>> UpdateAccountAsync(string userId, AccountUpdateDto dto);
+        Task<Result<User>> UpdateLocationAsync(string userId, LocationUpdateDto dto);
+        Task<Result<PrivacyResponseDto>> GetPrivacySettingsAsync(string userId);
+        Task<Result<User>> UpdatePrivacySettingsAsync(string userId, PrivacyUpdateDto dto);
     }
 }

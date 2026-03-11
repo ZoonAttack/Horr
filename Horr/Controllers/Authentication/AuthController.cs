@@ -1,8 +1,10 @@
 using Entities.Enums;
 using Entities.Users;
+using Horr.Extentions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Services.Authentication;
+using Services.DTOs.Authentication;
 using Services.DTOs.UserDTOs;
 namespace Horr.Controllers.Authentication
 {
@@ -18,6 +20,19 @@ namespace Horr.Controllers.Authentication
         {
             _authService = authService;
             _signInManager = signInManager;
+        }
+
+
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDTO dto)
+        {
+            var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            if (userId == null)
+                return Unauthorized(new { Message = "User ID claim is missing." });
+            var result = await _authService.ChangePasswordAsync(userId, dto);
+            if (!result.Succeeded)
+                return BadRequest(result);
+            return Ok(result); // Password changed successfully
         }
 
         [HttpPost("register")]
@@ -53,6 +68,7 @@ namespace Horr.Controllers.Authentication
                 return BadRequest(result);
             return Ok(result); // Confirmation email resent successfully
         }
+
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDTO dto)
         {

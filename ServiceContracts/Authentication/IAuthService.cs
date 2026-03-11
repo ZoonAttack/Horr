@@ -1,4 +1,5 @@
 using ServiceContracts.DTOs.Responses;
+using Services.DTOs.Authentication;
 using Services.DTOs.UserDTOs;
 
 namespace Services.Authentication
@@ -13,5 +14,6 @@ namespace Services.Authentication
 
         Task<Result<AuthResponse>> ResendConfirmationEmailAsync(string email);
         Task<Result<AuthResponse>> RefreshTokenAsync(string refreshToken);
+        Task<Result<AuthResponse>> ChangePasswordAsync(string userId, ChangePasswordRequestDTO dto);
     }
 }

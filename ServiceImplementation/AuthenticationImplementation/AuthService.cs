@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using ServiceContracts.DTOs.Responses;
 using Services.Authentication;
+using Services.DTOs.Authentication;
 using Services.DTOs.UserDTOs;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -295,6 +296,28 @@ namespace ServiceImplementation.Authentication
             };
         }
 
+        public async Task<Result<AuthResponse>> ChangePasswordAsync(string userId, ChangePasswordRequestDTO dto)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if(user == null || user.IsDeleted) return new Result<AuthResponse>
+            {
+                Succeeded = false,
+                Message = "User not found."
+            };
+            var result = await _userManager.ChangePasswordAsync(user, dto.OldPassword, dto.NewPassword);
+
+            return result.Succeeded ? new Result<AuthResponse>
+            {
+                Succeeded = true,
+                Message = "Password changed successfully."
+            } : new Result<AuthResponse>
+            {
+                Succeeded = false,
+                Message = "Failed to change password. make sure you wrote the current password correctly",
+                Errors = result.Errors.Select(e => e.Description).ToList()
+            };
+        }
+
         #region helper
 
         private async Task<bool> SendEmailHelperAsync(Entities.Users.User user)
@@ -345,6 +368,7 @@ namespace ServiceImplementation.Authentication
                 RefreshToken = refreshToken
             };
         }
+
         #endregion
     }
 }
