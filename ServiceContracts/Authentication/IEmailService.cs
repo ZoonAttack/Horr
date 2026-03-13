@@ -9,5 +9,6 @@ namespace Services.Authentication
     public interface IEmailService
     {
         Task<bool> SendEmailAsync(string toEmail, string subject, string htmlMessage);
+        Task<bool> SendConfirmationEmailAsync(string userId, string to, string token);
     }
 }

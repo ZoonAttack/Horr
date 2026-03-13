@@ -15,20 +15,33 @@ namespace Horr.Controllers.UserProfile
     [Authorize]
     public class UserProfileController : ControllerBase
     {
-        private readonly IProfileSettings _settingsService;
+        private readonly IProfileSettings _profileSettingsService;
 
-        public UserProfileController(IProfileSettings settingsService)
+        public UserProfileController(IProfileSettings profileSettingsService)
         {
-            _settingsService = settingsService;
+            _profileSettingsService = profileSettingsService;
         }
         [HttpPatch("name")]
         public async Task<IActionResult> UpdateName([FromBody] string fullname)
         {
+            if (!ModelState.IsValid) return BadRequest(ModelState);//This is for MVC. For API, another validation is required
+            var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            var response = await _profileSettingsService.UpdateFullNameAsync(userId, fullname);
+            if (!response.Succeeded) return NotFound(response.Errors);
+            return Ok(new { message = "Name updated successfully.",  data = response });
+        }
+
+        [HttpPatch("email")]
+        public async Task<IActionResult> UpdateEmail([FromBody] string email)
+        {
+            //Feels like the name is misleading.. gotta change it later!
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
-            var success = await _settingsService.UpdateFullNameAsync(userId, fullname);
-            //if (!success) return NotFound("User not found.");
-            return Ok(new { message = "Name updated successfully.",  data = success });
+
+            var response = await _profileSettingsService.UpdateEmailAsync(userId, email);
+            //Changing the actual email is an Authentication concern. so this service only sends the confirmation email
+            if (!response.Succeeded) return NotFound(response.Errors);
+            return Ok(new { message = response.Message, data = response });
         }
 
         [HttpPost("payment-method")]
@@ -36,23 +49,23 @@ namespace Horr.Controllers.UserProfile
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
-            var response = await _settingsService.CreateBillingAsync(userId, dto);
+            var response = await _profileSettingsService.CreateBillingAsync(userId, dto);
             if (!response.Succeeded) return NotFound("User not found.");
             return Ok(new { message = "Billing information created successfully." });
         }
 
-        [HttpPatch("account")]
-        public async Task<IActionResult> UpdateAccount([FromBody] AccountUpdateDto dto)
-        {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+        //[HttpPatch("account")]
+        //public async Task<IActionResult> UpdateAccount([FromBody] AccountUpdateDto dto)
+        //{
+        //    if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
-            //var success = await _settingsService.UpdateAccountAsync(userId, dto);
+        //    var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+        //    //var success = await _settingsService.UpdateAccountAsync(userId, dto);
 
-            //if (!success) return NotFound("User not found.");
+        //    //if (!success) return NotFound("User not found.");
 
-            return Ok(new { message = "Account updated successfully." });
-        }
+        //    return Ok(new { message = "Account updated successfully." });
+        //}
 
         [HttpPatch("location")]
         public async Task<IActionResult> UpdateLocation([FromBody] LocationUpdateDto dto)
@@ -60,7 +73,7 @@ namespace Horr.Controllers.UserProfile
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
-            var response = await _settingsService.UpdateLocationAsync(userId, dto);
+            var response = await _profileSettingsService.UpdateLocationAsync(userId, dto);
 
             if (!response.Succeeded) return NotFound("User not found.");
 
@@ -71,7 +84,7 @@ namespace Horr.Controllers.UserProfile
         public async Task<IActionResult> GetPrivacy()
         {
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
-            var response = await _settingsService.GetPrivacySettingsAsync(userId);
+            var response = await _profileSettingsService.GetPrivacySettingsAsync(userId);
 
             if (response.Data == null) return NotFound("Freelancer profile not found for user.");
 
@@ -84,7 +97,7 @@ namespace Horr.Controllers.UserProfile
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
-            var response = await _settingsService.UpdatePrivacySettingsAsync(userId, dto);
+            var response = await _profileSettingsService.UpdatePrivacySettingsAsync(userId, dto);
 
             if (!response.Succeeded) return NotFound("Freelancer profile not found.");
 

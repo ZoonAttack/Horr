@@ -10,6 +10,8 @@ namespace Services.Authentication
 
         Task<Result<AuthResponse>> RegisterAsync(RegisterRequestDto registerRequestDto);
 
+        Task<Result<AuthResponse>> ChangeEmailAsync(string userId, string newEmail, string token);
+
         Task<Result<AuthResponse>> ConfirmEmailAsync(string userId, string token);
 
         Task<Result<AuthResponse>> ResendConfirmationEmailAsync(string email);

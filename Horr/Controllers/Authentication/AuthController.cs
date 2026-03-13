@@ -3,9 +3,11 @@ using Entities.Users;
 using Horr.Extentions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Services.Authentication;
 using Services.DTOs.Authentication;
 using Services.DTOs.UserDTOs;
+using System.Text;
 namespace Horr.Controllers.Authentication
 {
 
@@ -48,6 +50,21 @@ namespace Horr.Controllers.Authentication
             }
             //Email confirmation is handled in the service
             return Ok(result);// Meaning the email was sent successfully
+        }
+
+        [HttpPatch("change-email")]
+        public async Task<IActionResult> ChangeEmail(string userId,string newEmail, string token)
+        {
+            var user = await _signInManager.UserManager.FindByIdAsync(userId);
+            if (user == null || user.IsDeleted)
+                return Unauthorized(new { Message = "User not found." });
+
+            var decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(token));
+            var result = await _authService.ChangeEmailAsync(user.Id, newEmail, decodedToken);
+
+            if(!result.Succeeded)
+                return BadRequest(result);
+            return Ok(result); 
         }
 
         [HttpPost("confirm-email")]

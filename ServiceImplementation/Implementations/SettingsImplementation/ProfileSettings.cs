@@ -1,13 +1,17 @@
-using System;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using Entities; // Using the AppDbContext directly for simplicity if a specific UserRepository doesn't encompass all updates
-using ServiceContracts.DTOs.Settings;
-using ServiceContracts.Settings;
 using Entities.Users;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Asn1.X509;
 using ServiceContracts.DTOs.Responses;
+using ServiceContracts.DTOs.Settings;
 using ServiceContracts.DTOs.Wallet.PaymentMethods;
+using ServiceContracts.Settings;
+using Services.Implementations;
+using System;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace ServiceImplementation.Implementations.Settings
 {
@@ -15,14 +19,14 @@ namespace ServiceImplementation.Implementations.Settings
     {
         private readonly AppDbContext _context;
         private readonly UserManager<User> _userManager;
+        private readonly EmailService _emailService; 
 
-        public ProfileSettings(UserManager<User> userManager, AppDbContext context)
+        public ProfileSettings(UserManager<User> userManager, EmailService emailService, AppDbContext context)
         {
             _userManager = userManager;
+            _emailService = emailService;
             _context = context;
         }
-
-
         public async Task<Result<User>> UpdateFullNameAsync(string userId, string newName)
         {
             var user = _userManager.FindByIdAsync(userId).Result;
@@ -48,7 +52,7 @@ namespace ServiceImplementation.Implementations.Settings
 
         public async Task<Result<User>> UpdateEmailAsync(string userId, string newEmail)
         {
-            var user = _userManager.FindByIdAsync(userId).Result;
+            var user = await _userManager.FindByIdAsync(userId);
             if (user == null || user.IsDeleted) return new Result<User>
             {
                 Succeeded = false,
@@ -57,20 +61,26 @@ namespace ServiceImplementation.Implementations.Settings
                 Data = null
             };
 
-            _userManager.SetEmailAsync(user, newEmail).Wait();
-            //The above line should be changed later(I kept it like this for now to avoid breaking changes
-            //In a real implementation. a token should be gnerated and sent to the new email
-            //The user then clicks on the link sent to the new email to confirm the change
-            //Then using the ChangeEmailAsync method to update the email after confirmation
+            var confirmationToken = await _userManager.GenerateChangeEmailTokenAsync(user, newEmail);
+            var emailSent = await _emailService.SendConfirmationEmailAsync(userId, newEmail, confirmationToken);
 
-            return new Result<User>
-            {
-                Succeeded = true,
-                Errors = { },
-                Message = "Email updated successfully",
-                Data = user
-            };
+            return emailSent
+                ? new Result<User>
+                {
+                    Succeeded = true,
+                    Errors = { },
+                    Message = "Confirmation email sent to new address. Please confirm to complete the update.",
+                    Data = user
+                }
+                : new Result<User>
+                {
+                    Succeeded = false,
+                    Errors = { "Failed to send confirmation email." },
+                    Message = "Failed to update email.",
+                    Data = null
+                };
         }
+
 
         public async Task<Result<User>> UpdateAccountAsync(string userId, AccountUpdateDto dto)
         {
