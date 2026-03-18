@@ -173,7 +173,17 @@ namespace Entities.Enums
         Active,
         Completed,
         Terminated,
-        Disputed
+        Disputed,
+        Closed
+    }
+
+    /// <summary>
+    /// Represents the review action status of a work delivery.
+    /// </summary>
+    public enum ActionStatus
+    {
+        NeedsAttention,
+        Reviewed
     }
 
     /// <summary>

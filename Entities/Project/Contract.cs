@@ -1,4 +1,6 @@
+using Entities.Common;
 using Entities.Enums;
+using Entities.Review;
 using Entities.Users;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
@@ -7,45 +9,60 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Entities.Project
 {
     /// <summary>
-    /// Represents a formal contract for a project between a client and freelancer.
+    /// Represents a formal contract created when a Proposal is accepted.
+    /// One-to-one with Proposal. Supports soft-delete via ISoftDeletable.
     /// </summary>
     [Table("contracts")]
-    [Index(nameof(ProjectId))]
+    [Index(nameof(ProposalId), IsUnique = true)]
     [Index(nameof(ClientId))]
     [Index(nameof(FreelancerId))]
     [Index(nameof(Status))]
-    public class Contract
+    [Index(nameof(IsDeleted))]
+    public class Contract : ISoftDeletable
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public string Id { get; set; }
+        public int Id { get; set; }
 
+        // ── One-to-one: Contract → Proposal ──────────────────────────────
         [Required]
-        [ForeignKey("Project")]
-        public string ProjectId { get; set; }
-        public virtual ClientProject Project { get; set; }
+        public int ProposalId { get; set; }
 
+        [ForeignKey(nameof(ProposalId))]
+        public virtual Proposal Proposal { get; set; } = null!;
+
+        // ── FK: Client (User) ─────────────────────────────────────────────
         [Required]
-        [ForeignKey("Client")]
-        public string ClientId { get; set; }
-        public virtual Client Client { get; set; }
+        public string ClientId { get; set; } = string.Empty;
 
+        [ForeignKey(nameof(ClientId))]
+        public virtual User Client { get; set; } = null!;
+
+        // ── FK: Freelancer (User) ─────────────────────────────────────────
         [Required]
-        [ForeignKey("Freelancer")]
-        public string FreelancerId { get; set; }
-        public virtual Freelancer Freelancer { get; set; }
+        public string FreelancerId { get; set; } = string.Empty;
 
-        [Column(TypeName = "text")]
-        public string Terms { get; set; }
+        [ForeignKey(nameof(FreelancerId))]
+        public virtual User Freelancer { get; set; } = null!;
 
-        public ContractStatus Status { get; set; } = ContractStatus.Draft;
+        // ── Financial ────────────────────────────────────────────────────
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal AgreedRate { get; set; }
 
-        public DateTime? SignedAt { get; set; }
+        // ── State ─────────────────────────────────────────────────────────
+        public ContractStatus Status { get; set; } = ContractStatus.Active;
 
-        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
-        public DateTime CreatedAt { get; set; }
+        public DateTime StartedAt { get; set; } = DateTime.UtcNow;
 
-        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
-        public DateTime UpdatedAt { get; set; }
+        public DateTime? ClosedAt { get; set; }
+
+        // ── Timestamps ────────────────────────────────────────────────────
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // ── Soft Delete (ISoftDeletable) ──────────────────────────────────
+        public bool IsDeleted { get; set; } = false;
+
+        // ── Navigation ────────────────────────────────────────────────────
+        public virtual ICollection<WorkDelivery> WorkDeliveries { get; set; } = new List<WorkDelivery>();
+        public virtual ICollection<ContractReview> ContractReviews { get; set; } = new List<ContractReview>();
     }
 }
