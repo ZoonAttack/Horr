@@ -35,6 +35,7 @@ namespace ServiceContracts.DTOs.Contract
         public DateTime? ClosedAt { get; set; }
 
         public DateTime CreatedAt { get; set; }
+        public string? LatestDeliverySummary { get; set; }
 
     }
 }

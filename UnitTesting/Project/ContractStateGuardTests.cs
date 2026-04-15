@@ -13,10 +13,10 @@ namespace UnitTesting.Project
     public class ContractStateGuardTests
     {
         [Fact]
-        public void EnsureCanAcceptOffer_ShouldPass_WhenStatusIsOffer()
+        public void EnsureCanAcceptOffer_ShouldPass_WhenStatusIsSubmitted()
         {
             // ARRANGE
-            var proposal = new Proposal { Status = ProposalStatus.Offer };
+            var proposal = new Proposal { Status = ProposalStatus.Submitted };
 
             // ACT
             var act = () => ContractStateGuard.EnsureCanAcceptOffer(proposal);
@@ -26,10 +26,10 @@ namespace UnitTesting.Project
         }
 
         [Fact]
-        public void EnsureCanAcceptOffer_ShouldThrow_WhenStatusIsNotOffer()
+        public void EnsureCanAcceptOffer_ShouldThrow_WhenStatusIsNotSubmitted()
         {
             // ARRANGE
-            var proposal = new Proposal { Status = ProposalStatus.Submitted };
+            var proposal = new Proposal { Status = ProposalStatus.Active };
 
             // ACT
             var act = () => ContractStateGuard.EnsureCanAcceptOffer(proposal);

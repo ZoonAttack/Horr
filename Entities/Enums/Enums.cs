@@ -174,7 +174,8 @@ namespace Entities.Enums
         Completed,
         Terminated,
         Disputed,
-        Closed
+        Closed,
+        Rejected
     }
 
     /// <summary>

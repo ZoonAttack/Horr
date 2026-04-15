@@ -36,13 +36,13 @@ namespace ServiceImplementation.Implementations.Proposals
                 throw new UnauthorizedAccessException("Unauthorized: You can only accept offers sent to you.");
             }
 
-            // State Guard
+            // State Guard: Assert Proposal.Status = Submitted
             ContractStateGuard.EnsureCanAcceptOffer(proposal);
 
-            // 1. Update Proposal Status to Active (or accepted)
-            proposal.Status = ProposalStatus.Active;
+            // 1. Update Proposal Status to Offer
+            proposal.Status = ProposalStatus.Offer;
 
-            // 2. Create Contract
+            // 2. Create Contract from Proposal data
             var contract = new Contract
             {
                 ProposalId = proposal.Id,

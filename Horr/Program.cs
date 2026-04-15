@@ -1,5 +1,6 @@
 using Entities;
 using Entities.Users;
+using Horr.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -20,8 +21,11 @@ namespace Horr
             // ==========================================
             // 1. DATABASE & IDENTITY SETUP
             // ==========================================
-            builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            if (!builder.Environment.IsEnvironment("IntegrationTest"))
+            {
+                builder.Services.AddDbContext<AppDbContext>(options =>
+                    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            }
 
             builder.Services.AddIdentity<User, IdentityRole>(options =>
             {
@@ -122,6 +126,9 @@ namespace Horr
                 app.UseOpenApi();
                 app.UseSwaggerUi();
             }
+
+            // B.0 Global exception → ProblemDetails
+            app.UseMiddleware<ExceptionMiddleware>();
 
             app.UseHttpsRedirection();
 

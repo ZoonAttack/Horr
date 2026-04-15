@@ -1,9 +1,11 @@
 using System;
+using System.Linq;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Entities;
 using Entities.Project;
 using Entities.Review;
+using Entities.Enums;
 using ServiceContracts.DTOs.Review;
 using ServiceImplementation.Exceptions;
 using ServiceImplementation.Helpers;
@@ -31,6 +33,16 @@ namespace ServiceImplementation.Implementations.Reviews
                 throw new NotFoundException($"Contract with ID {request.ContractId} not found.");
             }
 
+            var errors = new System.Collections.Generic.List<string>();
+            if (request.Dto.Rating < 1 || request.Dto.Rating > 5)
+            {
+                errors.Add("Rating must be between 1 and 5.");
+            }
+            if (errors.Any())
+            {
+                throw new ValidationException("Validation failed", errors);
+            }
+
             // Check if reviewer is part of the contract
             if (contract.ClientId != request.ReviewerId && contract.FreelancerId != request.ReviewerId)
             {
@@ -51,6 +63,17 @@ namespace ServiceImplementation.Implementations.Reviews
             };
 
             _context.ContractReviews.Add(review);
+            
+            // Per EARS: Transition to Completed if both parties have reviewed
+            // We check the existing reviews plus the one being added.
+            bool clientReviewExists = contract.ContractReviews.Any(r => r.ReviewerId == contract.ClientId) || request.ReviewerId == contract.ClientId;
+            bool freelancerReviewExists = contract.ContractReviews.Any(r => r.ReviewerId == contract.FreelancerId) || request.ReviewerId == contract.FreelancerId;
+
+            if (clientReviewExists && freelancerReviewExists)
+            {
+                contract.Status = ContractStatus.Completed;
+            }
+
             await _context.SaveChangesAsync(cancellationToken);
 
             return new ContractReviewReadDTO
