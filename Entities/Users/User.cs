@@ -24,25 +24,25 @@ public class User : IdentityUser
     public bool IsVerified { get; set; } = false;
 
     [MaxLength(200)]
-    public string Address { get; set; }
+    public string? Address { get; set; }
     
     [MaxLength(50)]
-    public string City { get; set; }
+    public string? City { get; set; }
     
     [MaxLength(50)]
-    public string StateProvince { get; set; }
+    public string? StateProvince { get; set; }
     
     [MaxLength(20)]
-    public string ZipCode { get; set; }
+    public string? ZipCode { get; set; }
     
     [MaxLength(50)]
-    public string Country { get; set; }
+    public string? Country { get; set; }
     
     [MaxLength(50)]
-    public string TimeZone { get; set; } = "UTC+02:00";
+    public string? TimeZone { get; set; } = "UTC+02:00";
 
     [Column(TypeName = "text")]
-    public string Bio { get; set; }
+    public string? Bio { get; set; }
 
     //public string ProfilePicturePath { get; set; }
 

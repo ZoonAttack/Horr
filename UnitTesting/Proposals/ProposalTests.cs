@@ -26,6 +26,7 @@ namespace UnitTesting.Proposals
             // ARRANGE
             using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
             
+            context.Freelancers.Add(new Freelancer { UserId = "f1", Availability = "Full-time", PortfolioUrl = "https://example.com" });
             var job = new JobPost { Id = 1, Title = "Job", Description = "Desc", ClientId = "c1" };
             context.JobPosts.Add(job);
             await context.SaveChangesAsync();
@@ -51,6 +52,8 @@ namespace UnitTesting.Proposals
         {
             // ARRANGE
             using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+            context.Freelancers.Add(new Freelancer { UserId = "f1", Availability = "Full-time", PortfolioUrl = "https://example.com" });
+            await context.SaveChangesAsync();
             var handler = new CreateProposalCommandHandler(context);
             var dto = new ProposalCreateDTO
             {
@@ -104,6 +107,7 @@ namespace UnitTesting.Proposals
             // ARRANGE
             using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
             
+            context.Freelancers.Add(new Freelancer { UserId = "f1", Availability = "Full-time", PortfolioUrl = "https://example.com" });
             context.Proposals.Add(new Entities.Project.Proposal
             {
                 Id = 1,

@@ -6,7 +6,6 @@ using Entities.Review;
 using Entities.Skill;
 using Entities.Token;
 using Entities.Common;
-using Entities.Project;
 using Entities.Users;
 using Entities.Users.FreelancerHelpers;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -57,6 +56,9 @@ namespace Entities
         public DbSet<Review.Review> Reviews { get; set; }
         public DbSet<SpecialistReviewRequest> SpecialistReviewRequests { get; set; }
         public DbSet<Contract> Contracts { get; set; }
+        public DbSet<ContractReview> ContractReviews { get; set; }
+        public DbSet<WorkDelivery> WorkDeliveries { get; set; }
+        public DbSet<DeliveryAttachment> DeliveryAttachments { get; set; }
 
         // Job Management DbSets
         public DbSet<JobPost> JobPosts { get; set; }
@@ -73,6 +75,7 @@ namespace Entities
             // ---------------------------------------------------------
             modelBuilder.Entity<JobPost>().HasQueryFilter(j => !j.IsDeleted);
             modelBuilder.Entity<Proposal>().HasQueryFilter(p => !p.IsDeleted);
+            modelBuilder.Entity<Contract>().HasQueryFilter(c => !c.IsDeleted);
 
 
             // ---------------------------------------------------------
@@ -125,6 +128,15 @@ namespace Entities
                 .WithOne()
                 .HasForeignKey<ClientProject>(p => p.AcceptedProposalId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Contract>()
+                .HasOne(c => c.Proposal)
+                .WithOne()
+                .HasForeignKey<Contract>(c => c.ProposalId);
+
+            modelBuilder.Entity<ContractReview>()
+                .HasIndex(r => new { r.ContractId, r.ReviewerId })
+                .IsUnique();
 
             // CHECK Constraints (PascalCase Fixed)
             modelBuilder.Entity<Order>()
