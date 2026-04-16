@@ -2,5 +2,5 @@ using MediatR;
 
 namespace ServiceImplementation.Implementations.JobManagement
 {
-    public record ToggleSavedJobCommand(int JobPostId, string FreelancerId) : IRequest;
+    public record ToggleSavedJobCommand(string JobPostId, string FreelancerId) : IRequest;
 }

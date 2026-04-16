@@ -6,7 +6,7 @@ namespace Entities.Skill
     [Table("job_skills")]
     public class JobSkill
     {
-        public int JobPostId { get; set; }
+        public string JobPostId { get; set; } = string.Empty;
 
         [ForeignKey(nameof(JobPostId))]
         public virtual JobPost JobPost { get; set; } = null!;

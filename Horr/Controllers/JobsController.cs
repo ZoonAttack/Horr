@@ -27,7 +27,7 @@ namespace Horr.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<JobDetailsDto>> GetJob(int id)
+        public async Task<ActionResult<JobDetailsDto>> GetJob(string id)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var result = await _mediator.Send(new GetJobDetailsQuery(id, userId));
@@ -36,7 +36,7 @@ namespace Horr.Controllers
 
         [HttpPost("{id}/save")]
         [Authorize(Policy ="FreelancerOnly")]
-        public async Task<IActionResult> SaveJob(int id)
+        public async Task<IActionResult> SaveJob(string id)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
@@ -47,7 +47,7 @@ namespace Horr.Controllers
 
         [HttpDelete("{id}/save")]
         [Authorize(Policy = "FreelancerOnly")]
-        public async Task<IActionResult> UnsaveJob(int id)
+        public async Task<IActionResult> UnsaveJob(string id)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId)) return Unauthorized();

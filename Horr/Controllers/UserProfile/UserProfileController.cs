@@ -12,7 +12,6 @@ namespace Horr.Controllers.UserProfile
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
     public class UserProfileController : ControllerBase
     {
         private readonly IProfileSettings _profileSettingsService;

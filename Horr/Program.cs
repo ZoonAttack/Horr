@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using ServiceContracts.Settings;
 using ServiceImplementation.Authentication;
+using ServiceImplementation.Implementations.Settings;
 using Services.Authentication;
 using Services.Implementations;
 using System.Text;
@@ -41,6 +43,7 @@ namespace Horr
             // This tells ASP.NET: "When a controller asks for IAuthService, give them AuthService"
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<ITokenService, TokenService>();
+            builder.Services.AddScoped<IProfileSettings, ProfileSettings>();
             builder.Services.AddTransient<IEmailService, EmailService>();
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
