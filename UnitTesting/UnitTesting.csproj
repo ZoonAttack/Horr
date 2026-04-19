@@ -22,6 +22,7 @@
     <ProjectReference Include="..\Entities\Entities.csproj" />
     <ProjectReference Include="..\ServiceContracts\Services.csproj" />
     <ProjectReference Include="..\ServiceImplementation\ServiceImplementation.csproj" />
+    <ProjectReference Include="..\Horr\Horr.csproj" />
   </ItemGroup>
 
   <ItemGroup>

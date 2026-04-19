@@ -4,11 +4,12 @@ namespace ServiceContracts.DTOs.JobManagement
 {
     public class JobSummaryDto
     {
-        public int Id { get; set; }
+        public string Id { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
-        public decimal BudgetMin { get; set; }
-        public decimal BudgetMax { get; set; }
-        public string BudgetFormatted { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public ProjectComplexity Scope { get; set; }
+        public ExperienceLevel ExperienceLevel { get; set; }
+        public decimal Budget { get; set; }
         public JobType JobType { get; set; }
         public DateTime PostedAt { get; set; }
         public string ClientName { get; set; } = string.Empty;

@@ -1,4 +1,4 @@
-﻿using Xunit;
+using Xunit;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Entities.Project;
@@ -38,9 +38,9 @@ public class JobManagementTests
 
             var jobs = new List<JobPost>
             {
-                new JobPost { Id = 1, Title = "A", Description = "Desc A", BudgetMax = 100, PostedAt = DateTime.UtcNow.AddDays(-2), ClientId = "client1" },
-                new JobPost { Id = 2, Title = "B", Description = "Desc B", BudgetMax = 500, PostedAt = DateTime.UtcNow.AddDays(-1), ClientId = "client1" },
-                new JobPost { Id = 3, Title = "C", Description = "Desc C", BudgetMax = 300, PostedAt = DateTime.UtcNow, ClientId = "client1" }
+                new JobPost { Id = "1", Title = "A", Description = "Desc A", Category = "Test", Budget = 100, PostedAt = DateTime.UtcNow.AddDays(-2), ClientId = "client1" },
+                new JobPost { Id = "2", Title = "B", Description = "Desc B", Category = "Test", Budget = 500, PostedAt = DateTime.UtcNow.AddDays(-1), ClientId = "client1" },
+                new JobPost { Id = "3", Title = "C", Description = "Desc C", Category = "Test", Budget = 300, PostedAt = DateTime.UtcNow, ClientId = "client1" }
             };
             context.JobPosts.AddRange(jobs);
             await context.SaveChangesAsync();
@@ -50,17 +50,17 @@ public class JobManagementTests
             // ACT - Newest
             var newest = await handler.Handle(new SearchJobsQuery(SortBy: JobSortEnum.Newest), CancellationToken.None);
             // ASSERT
-            newest.Items.First().Id.Should().Be(3);
+            newest.Items.First().Id.Should().Be("3");
 
             // ACT - Oldest
             var oldest = await handler.Handle(new SearchJobsQuery(SortBy: JobSortEnum.Oldest), CancellationToken.None);
             // ASSERT
-            oldest.Items.First().Id.Should().Be(1);
+            oldest.Items.First().Id.Should().Be("1");
 
             // ACT - Budget
             var budget = await handler.Handle(new SearchJobsQuery(SortBy: JobSortEnum.Budget), CancellationToken.None);
             // ASSERT
-            budget.Items.First().Id.Should().Be(2);
+            budget.Items.First().Id.Should().Be("2");
         }
 
         [Fact]
@@ -95,12 +95,12 @@ public class JobManagementTests
             };
             context.Users.AddRange(client, freelancer);
             
-            var job = new JobPost { Id = 1, Title = "Job 1", Description = "Desc", ClientId = "client1" };
+            var job = new JobPost { Id = "1", Title = "Job 1", Description = "Desc", Category = "Test", ClientId = "client1" };
             context.JobPosts.Add(job);
             await context.SaveChangesAsync();
 
             var handler = new ToggleSavedJobCommandHandler(context);
-            var cmd = new ToggleSavedJobCommand(1, "free1");
+            var cmd = new ToggleSavedJobCommand("1", "free1");
 
             // ACT - Save
             await handler.Handle(cmd, CancellationToken.None);
@@ -140,8 +140,8 @@ public class JobManagementTests
             };
             context.Users.Add(client);
 
-            context.JobPosts.Add(new JobPost { Id = 1, Title = "Visible", Description = "Desc", IsDeleted = false, ClientId = "client1" });
-            context.JobPosts.Add(new JobPost { Id = 2, Title = "Hidden", Description = "Desc", IsDeleted = true, ClientId = "client1" });
+            context.JobPosts.Add(new JobPost { Id = "1", Title = "Visible", Description = "Desc", Category = "Test", IsDeleted = false, ClientId = "client1" });
+            context.JobPosts.Add(new JobPost { Id = "2", Title = "Hidden", Description = "Desc", Category = "Test", IsDeleted = true, ClientId = "client1" });
             await context.SaveChangesAsync();
 
             var handler = new SearchJobsQueryHandler(context);
@@ -151,6 +151,6 @@ public class JobManagementTests
 
             // ASSERT
             result.Items.Should().HaveCount(1);
-            result.Items.First().Id.Should().Be(1);
+            result.Items.First().Id.Should().Be("1");
         }
     }

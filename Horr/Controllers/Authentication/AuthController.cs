@@ -1,9 +1,13 @@
 using Entities.Enums;
 using Entities.Users;
+using Horr.Extentions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Services.Authentication;
+using Services.DTOs.Authentication;
 using Services.DTOs.UserDTOs;
+using System.Text;
 namespace Horr.Controllers.Authentication
 {
 
@@ -20,6 +24,19 @@ namespace Horr.Controllers.Authentication
             _signInManager = signInManager;
         }
 
+
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDTO dto)
+        {
+            var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            if (userId == null)
+                return Unauthorized(new { Message = "User ID claim is missing." });
+            var result = await _authService.ChangePasswordAsync(userId, dto);
+            if (!result.Succeeded)
+                return BadRequest(result);
+            return Ok(result); // Password changed successfully
+        }
+
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto dto)
         {
@@ -33,6 +50,21 @@ namespace Horr.Controllers.Authentication
             }
             //Email confirmation is handled in the service
             return Ok(result);// Meaning the email was sent successfully
+        }
+
+        [HttpPatch("change-email")]
+        public async Task<IActionResult> ChangeEmail(string userId,string newEmail, string token)
+        {
+            var user = await _signInManager.UserManager.FindByIdAsync(userId);
+            if (user == null || user.IsDeleted)
+                return Unauthorized(new { Message = "User not found." });
+
+            var decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(token));
+            var result = await _authService.ChangeEmailAsync(user.Id, newEmail, decodedToken);
+
+            if(!result.Succeeded)
+                return BadRequest(result);
+            return Ok(result); 
         }
 
         [HttpPost("confirm-email")]
@@ -53,6 +85,7 @@ namespace Horr.Controllers.Authentication
                 return BadRequest(result);
             return Ok(result); // Confirmation email resent successfully
         }
+
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDTO dto)
         {

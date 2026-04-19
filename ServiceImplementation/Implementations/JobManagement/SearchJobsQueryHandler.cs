@@ -39,7 +39,7 @@ namespace ServiceImplementation.Implementations.JobManagement
             query = request.SortBy switch
             {
                 JobSortEnum.Oldest => query.OrderBy(j => j.PostedAt),
-                JobSortEnum.Budget => query.OrderByDescending(j => j.BudgetMax),
+                JobSortEnum.Budget => query.OrderByDescending(j => j.Budget),
                 _ => query.OrderByDescending(j => j.PostedAt)
             };
 

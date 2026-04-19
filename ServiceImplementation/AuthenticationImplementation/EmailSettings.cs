@@ -7,5 +7,7 @@ namespace Services.Implementations
         public int Port { get; set; }
         public string Username { get; set; }
         public string Password { get; set; }
+
+        public string FrontendBaseUrl { get; set; } // Base URL for constructing links in emails
     }
 }

@@ -65,6 +65,7 @@ public class User : IdentityUser
     public virtual Freelancer Freelancer { get; set; }
     public virtual Client Client { get; set; }
     public virtual Wallet Wallet { get; set; }
+    public virtual ICollection<PaymentMethod> PaymentMethods { get; set; }
     public virtual ICollection<Message> SentMessages { get; set; } = new List<Message>();
     [InverseProperty("Reviewer")]
     public virtual ICollection<Entities.Review.Review> ReviewsGiven { get; set; } = new List<Entities.Review.Review>();

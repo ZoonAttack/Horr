@@ -6,7 +6,7 @@ namespace ServiceContracts.DTOs.Proposal
     public class ProposalCreateDTO
     {
         [Required]
-        public int JobPostId { get; set; }
+        public string JobPostId { get; set; } = string.Empty;
 
         public SubmitAsType SubmitAsType { get; set; }
 
