@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ServiceContracts.DTOs.JobManagement;
 using ServiceImplementation.Implementations.JobManagement;
+using Services.Client;
 using System.Security.Claims;
 
 namespace Horr.Controllers
@@ -12,10 +13,12 @@ namespace Horr.Controllers
     public class JobsController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly IJobService _jobService;
 
-        public JobsController(IMediator mediator)
+        public JobsController(IMediator mediator, IJobService jobService)
         {
             _mediator = mediator;
+            _jobService = jobService;
         }
 
         [HttpGet]
@@ -24,6 +27,21 @@ namespace Horr.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var result = await _mediator.Send(query with { CurrentUserId = userId });
             return Ok(result);
+        }
+
+        [HttpPost]
+        [Authorize(Policy = "ClientOnly")]
+        public async Task<IActionResult> CreateJob([FromBody] JobDetailsDto jobDetails)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var result = await _jobService.CreateJobAsync(userId, jobDetails);
+            if (result.Succeeded)
+            {
+                return CreatedAtAction(nameof(GetJob), new { id = result.Data.Id }, result.Data);
+            }
+            return BadRequest(result.Errors);
         }
 
         [HttpGet("{id}")]
