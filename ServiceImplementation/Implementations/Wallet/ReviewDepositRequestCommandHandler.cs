@@ -21,9 +21,8 @@ namespace ServiceImplementation.Implementations.Wallet
 
         public async Task<DepositRequestDto> Handle(ReviewDepositRequestCommand request, CancellationToken cancellationToken)
         {
-            var requestIdStr = request.RequestId.ToString();
             var depositRequest = await _context.DepositRequests
-                .FirstOrDefaultAsync(r => r.Id == requestIdStr, cancellationToken);
+                .FirstOrDefaultAsync(r => r.Id == request.RequestId, cancellationToken);
 
             if (depositRequest == null)
             {

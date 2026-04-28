@@ -22,8 +22,16 @@ namespace Horr
             // ==========================================
             // 1. DATABASE & IDENTITY SETUP
             // ==========================================
-            builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            if (builder.Environment.IsEnvironment("Testing"))
+            {
+                builder.Services.AddDbContext<AppDbContext>(options =>
+                    options.UseInMemoryDatabase("IntegrationTestsDb"));
+            }
+            else
+            {
+                builder.Services.AddDbContext<AppDbContext>(options =>
+                    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            }
 
             builder.Services.AddIdentity<User, IdentityRole>(options =>
             {
@@ -120,6 +128,8 @@ namespace Horr
             // 5. THE MIDDLEWARE PIPELINE (Order Matters!)
             // ==========================================
 
+            app.UseMiddleware<Horr.Middleware.ExceptionHandlingMiddleware>();
+
             if (app.Environment.IsDevelopment())
             {
                 app.UseOpenApi();
@@ -162,3 +172,5 @@ namespace Horr
         }
     }
 }
+
+public partial class Program { }

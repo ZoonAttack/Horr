@@ -5,7 +5,7 @@ using Entities.Enums;
 namespace ServiceImplementation.Implementations.Wallet
 {
     public record ReviewWithdrawalRequestCommand(
-        Guid RequestId,
+        string RequestId,
         WithdrawalStatus Status,
         string? AdminNote
     ) : IRequest<WithdrawalRequestDto>;

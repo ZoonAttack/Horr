@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Http;
 namespace ServiceImplementation.Implementations.Wallet
 {
     public record SubmitDepositRequestCommand(
-        string ClientId,
+        string? ClientId,
         decimal Amount,
         string ReceiptNumber,
         IFormFile? ReceiptPhoto

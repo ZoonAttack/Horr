@@ -57,7 +57,7 @@ namespace UnitTesting.Wallet
             await _context.SaveChangesAsync();
 
             var handler = new ReviewDepositRequestCommandHandler(_context);
-            var command = new ReviewDepositRequestCommand(Guid.Parse(deposit.Id), DepositStatus.Approved, "Good");
+            var command = new ReviewDepositRequestCommand(deposit.Id, DepositStatus.Approved, "Good");
 
             // Act
             await handler.Handle(command, CancellationToken.None);
@@ -86,7 +86,7 @@ namespace UnitTesting.Wallet
             await _context.SaveChangesAsync();
 
             var handler = new ReviewDepositRequestCommandHandler(_context);
-            var command = new ReviewDepositRequestCommand(Guid.Parse(deposit.Id), DepositStatus.Rejected, "Fake");
+            var command = new ReviewDepositRequestCommand(deposit.Id, DepositStatus.Rejected, "Fake");
 
             // Act
             await handler.Handle(command, CancellationToken.None);
@@ -108,7 +108,7 @@ namespace UnitTesting.Wallet
             await _context.SaveChangesAsync();
 
             var handler = new ReviewDepositRequestCommandHandler(_context);
-            var command = new ReviewDepositRequestCommand(Guid.Parse(deposit.Id), DepositStatus.Approved, "Again");
+            var command = new ReviewDepositRequestCommand(deposit.Id, DepositStatus.Approved, "Again");
 
             // Act & Assert
             var ex = await Assert.ThrowsAsync<InvalidStateException>(() => handler.Handle(command, CancellationToken.None));
@@ -153,7 +153,7 @@ namespace UnitTesting.Wallet
             await _context.SaveChangesAsync();
 
             var handler = new ReviewWithdrawalRequestCommandHandler(_context);
-            var command = new ReviewWithdrawalRequestCommand(Guid.Parse(withdrawal.Id), WithdrawalStatus.Approved, "Sent");
+            var command = new ReviewWithdrawalRequestCommand(withdrawal.Id, WithdrawalStatus.Approved, "Sent");
 
             // Act
             await handler.Handle(command, CancellationToken.None);
@@ -178,7 +178,7 @@ namespace UnitTesting.Wallet
             await _context.SaveChangesAsync();
 
             var handler = new ReviewWithdrawalRequestCommandHandler(_context);
-            var command = new ReviewWithdrawalRequestCommand(Guid.Parse(withdrawal.Id), WithdrawalStatus.Rejected, "Invalid");
+            var command = new ReviewWithdrawalRequestCommand(withdrawal.Id, WithdrawalStatus.Rejected, "Invalid");
 
             // Act
             await handler.Handle(command, CancellationToken.None);
@@ -200,7 +200,7 @@ namespace UnitTesting.Wallet
             await _context.SaveChangesAsync();
 
             var handler = new ReviewWithdrawalRequestCommandHandler(_context);
-            var command = new ReviewWithdrawalRequestCommand(Guid.Parse(withdrawal.Id), WithdrawalStatus.Approved, "Oops");
+            var command = new ReviewWithdrawalRequestCommand(withdrawal.Id, WithdrawalStatus.Approved, "Oops");
 
             // Act & Assert
             var ex = await Assert.ThrowsAsync<InvalidStateException>(() => handler.Handle(command, CancellationToken.None));
