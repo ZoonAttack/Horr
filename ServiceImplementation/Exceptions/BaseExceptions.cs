@@ -24,4 +24,9 @@ namespace ServiceImplementation.Exceptions
     {
         public ConflictException(string message) : base(message) { }
     }
+
+    public class InvalidStateException : Exception
+    {
+        public InvalidStateException(string message) : base(message) { }
+    }
 }
