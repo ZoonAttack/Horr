@@ -1,8 +1,12 @@
 using MediatR;
 using Entities;
+using Entities.Payment;
+using Entities.Enums;
 using ServiceContracts.DTOs.Wallet;
 using ServiceImplementation.Exceptions;
+using ServiceImplementation.Mappings;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
 
 namespace ServiceImplementation.Implementations.Wallet
 {
@@ -19,8 +23,24 @@ namespace ServiceImplementation.Implementations.Wallet
         {
             Validate(request);
 
-            // Implementation will follow in next subtasks
-            throw new NotImplementedException();
+            // Mock file upload since no existing convention was found
+            // In a real scenario, this would use a dedicated IFileService
+            string photoUrl = await MockUploadAsync(request.ReceiptPhoto!);
+
+            var depositRequest = new DepositRequest
+            {
+                ClientId = request.ClientId,
+                Amount = request.Amount,
+                ReceiptNumber = request.ReceiptNumber,
+                ReceiptPhotoUrl = photoUrl,
+                Status = DepositStatus.Pending,
+                SubmittedAt = DateTime.UtcNow
+            };
+
+            _context.DepositRequests.Add(depositRequest);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return depositRequest.ToDto();
         }
 
         private void Validate(SubmitDepositRequestCommand request)
@@ -46,6 +66,13 @@ namespace ServiceImplementation.Implementations.Wallet
             {
                 throw new ValidationException("Validation failed", errors);
             }
+        }
+
+        private async Task<string> MockUploadAsync(IFormFile file)
+        {
+            // Simulating a file upload process
+            await Task.Delay(10); 
+            return $"/uploads/receipts/{Guid.NewGuid()}_{file.FileName}";
         }
     }
 }

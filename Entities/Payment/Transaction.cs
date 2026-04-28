@@ -22,6 +22,7 @@ namespace Entities.Payment
         public decimal Amount { get; set; }
 
         public TransactionDirection Direction { get; set; }
+        public TransactionType Type { get; set; }
 
         [Required]
         public string Description { get; set; }

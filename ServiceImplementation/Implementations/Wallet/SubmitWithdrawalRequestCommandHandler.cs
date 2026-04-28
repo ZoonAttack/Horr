@@ -1,9 +1,11 @@
 using MediatR;
 using Entities;
+using Entities.Payment;
+using Entities.Enums;
 using ServiceContracts.DTOs.Wallet;
 using ServiceImplementation.Exceptions;
+using ServiceImplementation.Mappings;
 using Microsoft.EntityFrameworkCore;
-using Entities.Enums;
 
 namespace ServiceImplementation.Implementations.Wallet
 {
@@ -20,13 +22,32 @@ namespace ServiceImplementation.Implementations.Wallet
         {
             await ValidateAsync(request, cancellationToken);
 
-            // Implementation will follow in next subtasks
-            throw new NotImplementedException();
+            var withdrawalRequest = new WithdrawalRequest
+            {
+                FreelancerId = request.FreelancerId,
+                Amount = request.Amount,
+                Method = request.Method,
+                InstapayUsername = request.InstapayUsername,
+                BankAccountDetails = request.BankAccountDetails,
+                EWalletNumber = request.EWalletNumber,
+                Status = WithdrawalStatus.Pending,
+                SubmittedAt = DateTime.UtcNow
+            };
+
+            _context.WithdrawalRequests.Add(withdrawalRequest);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return withdrawalRequest.ToDto();
         }
 
         private async Task ValidateAsync(SubmitWithdrawalRequestCommand request, CancellationToken cancellationToken)
         {
             var errors = new List<string>();
+
+            if (request.Amount <= 0)
+            {
+                errors.Add("Amount must be greater than zero.");
+            }
 
             if (request.Method == WithdrawalMethod.InstaPay && string.IsNullOrWhiteSpace(request.InstapayUsername))
             {
@@ -43,7 +64,6 @@ namespace ServiceImplementation.Implementations.Wallet
                 errors.Add("E-wallet number is required.");
             }
 
-            // Check balance
             var wallet = await _context.WalletBalances
                 .FirstOrDefaultAsync(w => w.UserId == request.FreelancerId, cancellationToken);
             
