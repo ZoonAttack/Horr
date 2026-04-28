@@ -11,15 +11,17 @@ namespace ServiceContracts.DTOs.Wallet.Withdrawls
 
             return new WithdrawalRequestReadDTO
             {
-                Id = request.Id.ToString(),
-                UserId = request.UserId,
+                Id = request.Id,
+                FreelancerId = request.FreelancerId,
                 Amount = request.Amount,
-                Status = Enum.Parse<RequestStatus>(request.Status),
-                ApprovedByUserId = request.ApprovedByUserId,
-                ProcessedAt = request.ProcessedAt,
-                PaymentMethodId = request.PaymentMethodId.ToString(),
-                TransactionId = request.TransactionId,
-                RequestedAt = request.RequestedAt
+                Status = request.Status,
+                Method = request.Method,
+                InstapayUsername = request.InstapayUsername,
+                BankAccountDetails = request.BankAccountDetails,
+                EWalletNumber = request.EWalletNumber,
+                AdminNote = request.AdminNote,
+                SubmittedAt = request.SubmittedAt,
+                ReviewedAt = request.ReviewedAt
             };
         }
 
@@ -29,18 +31,17 @@ namespace ServiceContracts.DTOs.Wallet.Withdrawls
 
             return new WithdrawalRequest
             {
-                UserId = userId,
-                PaymentMethodId = createDto.PaymentMethodId,
-                Amount = createDto.Amount
+                FreelancerId = userId,
+                Amount = createDto.Amount,
+                // Additional fields would be mapped from DTO in a full implementation
             };
         }
 
-        public static void ApplyUpdate(this WithdrawalRequest request, RequestStatus status, string adminId, string? transactionId = null)
+        public static void ApplyUpdate(this WithdrawalRequest request, WithdrawalStatus status, string? adminNote = null)
         {
-            request.Status = status.ToString();
-            request.ApprovedByUserId = adminId;
-            request.ProcessedAt = DateTime.UtcNow;
-            if (!String.IsNullOrEmpty(transactionId)) request.TransactionId = transactionId;
+            request.Status = status;
+            request.AdminNote = adminNote;
+            request.ReviewedAt = DateTime.UtcNow;
         }
     }
 }

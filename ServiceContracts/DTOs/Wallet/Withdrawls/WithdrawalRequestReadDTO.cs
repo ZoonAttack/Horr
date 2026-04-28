@@ -5,13 +5,15 @@ namespace ServiceContracts.DTOs.Wallet.Withdrawls
     public class WithdrawalRequestReadDTO
     {
         public string Id { get; set; }
-        public string UserId { get; set; }
+        public string FreelancerId { get; set; }
         public decimal Amount { get; set; }
-        public RequestStatus Status { get; set; }
-        public string? ApprovedByUserId { get; set; }
-        public DateTime? ProcessedAt { get; set; }
-        public string? PaymentMethodId { get; set; }
-        public string? TransactionId { get; set; }
-        public DateTime RequestedAt { get; set; }
+        public WithdrawalStatus Status { get; set; }
+        public WithdrawalMethod Method { get; set; }
+        public string? InstapayUsername { get; set; }
+        public string? BankAccountDetails { get; set; }
+        public string? EWalletNumber { get; set; }
+        public string? AdminNote { get; set; }
+        public DateTime SubmittedAt { get; set; }
+        public DateTime? ReviewedAt { get; set; }
     }
 }
