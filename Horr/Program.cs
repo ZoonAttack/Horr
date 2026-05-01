@@ -11,6 +11,7 @@ using ServiceImplementation.Implementations.Settings;
 using Services.Authentication;
 using Services.Implementations;
 using System.Text;
+using ServiceImplementation.Hubs;
 
 namespace Horr
 {
@@ -108,6 +109,8 @@ namespace Horr
                           .AllowAnyHeader());
             });
 
+            builder.Services.AddControllers();
+            builder.Services.AddSignalR();
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>
                 {
@@ -160,6 +163,7 @@ namespace Horr
             app.UseAuthorization();
 
             app.MapControllers();
+            app.MapHub<ChatHub>("/chatHub");
             await SeedRolesAsync(app.Services);
             app.Run();
         }

@@ -44,8 +44,10 @@ namespace Entities.Enums
     /// </summary>
     public enum ServiceStatus
     {
-        ACTIVE,
-        INACTIVE
+        Active,
+        Inactive,
+        UnderReview,
+        Approved
     }
 
     /// <summary>
@@ -248,6 +250,24 @@ namespace Entities.Enums
         Expert
     }
 
+    /// <summary>
+    /// Represents the status of a message.
+    /// </summary>
+    public enum MessageStatus
+    {
+        Unread,
+        Read
+    }
+
+    /// <summary>
+    /// Represents the type of a file in the service gallery.
+    /// </summary>
+    public enum ServiceGalleryFileType
+    {
+        Image,
+        Video,
+        Document
+    }
     public enum DepositStatus
     {
         Pending,

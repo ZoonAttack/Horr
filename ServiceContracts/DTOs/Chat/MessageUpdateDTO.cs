@@ -1,3 +1,5 @@
+using Entities.Enums;
+
 namespace ServiceContracts.DTOs.Chat
 {
     /// <summary>
@@ -5,6 +7,6 @@ namespace ServiceContracts.DTOs.Chat
     /// </summary>
     public class MessageUpdateDTO
     {
-        public bool IsRead { get; set; }
+        public MessageStatus Status { get; set; }
     }
 }

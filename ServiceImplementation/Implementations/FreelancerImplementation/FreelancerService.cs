@@ -281,7 +281,7 @@ namespace ServiceImplementation.Implementations.FreelancerImplementation
                 user.DeletedAt = DateTime.UtcNow;
 
                 // soft delete their services
-                await _db.Services
+                await _db.ServiceCatalogItems
                     .Where(s => s.FreelancerId == idString && !s.IsDeleted)
                     .ExecuteUpdateAsync(s => s
                         .SetProperty(service => service.IsDeleted, true)

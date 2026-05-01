@@ -1,51 +1,47 @@
-using Entities.Project;
-using Microsoft.EntityFrameworkCore;
+using Entities.Common;
+using Entities.Enums;
+using Entities.Users;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-
- 
 
 namespace Entities.Communication
 {
     /// <summary>
-    /// An individual message within a Chat.
+    /// Represents an individual message within a Conversation.
+    /// Supports soft-delete via ISoftDeletable.
     /// </summary>
     [Table("messages")]
-    [Index(nameof(ChatId))]
-    [Index(nameof(SenderId))]
-    [Index(nameof(IsRead))]
-    public class Message
+    public class Message : ISoftDeletable
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public string Id { get; set; }
+        public string Id { get; set; } = string.Empty;
 
         [Required]
-        [ForeignKey("Chat")]
-        public string ChatId { get; set; }
-        public virtual Chat Chat { get; set; }
+        public string ConversationId { get; set; } = string.Empty;
+
+        [ForeignKey(nameof(ConversationId))]
+        public virtual Conversation Conversation { get; set; } = null!;
 
         [Required]
-        [ForeignKey("Sender")]
-        public string SenderId { get; set; }
-        public virtual Entities.Users.User Sender { get; set; }
+        public string SenderId { get; set; } = string.Empty;
 
+        [ForeignKey(nameof(SenderId))]
+        public virtual User Sender { get; set; } = null!;
+
+        [Required]
         [Column(TypeName = "text")]
-        public string Content { get; set; }
+        public string Body { get; set; } = string.Empty;
 
-        // File Attachment Support (PCR-02)
-        [MaxLength(255)]
-        public string AttachmentUrl { get; set; }
+        public MessageStatus Status { get; set; } = MessageStatus.Unread;
 
-        [MaxLength(50)]
-        public string AttachmentType { get; set; }
+        public DateTime SentAt { get; set; } = DateTime.UtcNow;
 
-        public bool IsRead { get; set; } = false;
+        // ── Soft Delete (ISoftDeletable) ──────────────────────────────────
+        public bool IsDeleted { get; set; } = false;
 
-        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
-        public DateTime SentAt { get; set; }
-
-        // --- Navigation Properties ---
-        public virtual ICollection<Delivery> Deliveries { get; set; } = new List<Delivery>();
+        // ── Navigation Properties ─────────────────────────────────────────
+        public virtual ICollection<Attachment> Attachments { get; set; } = new List<Attachment>();
+        public virtual ICollection<Entities.Project.Delivery> Deliveries { get; set; } = new List<Entities.Project.Delivery>();
     }
 }

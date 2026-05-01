@@ -38,12 +38,20 @@ namespace Entities
         // Project, Proposal, and Service DbSets
         public DbSet<ClientProject> ClientProjects { get; set; }
         public DbSet<Proposal> Proposals { get; set; }
-        public DbSet<Service> Services { get; set; }
+        public DbSet<ServiceCatalogItem> ServiceCatalogItems { get; set; }
+        public DbSet<ServicePricing> ServicePricings { get; set; }
+        public DbSet<ServiceGalleryFile> ServiceGalleryFiles { get; set; }
+        public DbSet<ServiceRequirement> ServiceRequirements { get; set; }
+        public DbSet<ServiceStep> ServiceSteps { get; set; }
+        public DbSet<ServiceFaq> ServiceFaqs { get; set; }
+        public DbSet<ServiceAttribute> ServiceAttributes { get; set; }
 
         // Order, Chat, and Delivery DbSets
         public DbSet<Order> Orders { get; set; }
-        public DbSet<Chat> Chats { get; set; }
+        public DbSet<Conversation> Conversations { get; set; }
+        public DbSet<ConversationParticipant> ConversationParticipants { get; set; }
         public DbSet<Message> Messages { get; set; }
+        public DbSet<Attachment> Attachments { get; set; }
         public DbSet<Delivery> Deliveries { get; set; }
 
         // Payment, Wallet, and Transaction DbSets
@@ -79,6 +87,10 @@ namespace Entities
             // ---------------------------------------------------------
             modelBuilder.Entity<JobPost>().HasQueryFilter(j => !j.IsDeleted);
             modelBuilder.Entity<Proposal>().HasQueryFilter(p => !p.IsDeleted);
+            modelBuilder.Entity<Contract>().HasQueryFilter(c => !c.IsDeleted);
+            modelBuilder.Entity<Conversation>().HasQueryFilter(c => !c.IsDeleted);
+            modelBuilder.Entity<Message>().HasQueryFilter(m => !m.IsDeleted && !m.Conversation.IsDeleted);
+            modelBuilder.Entity<ServiceCatalogItem>().HasQueryFilter(s => !s.IsDeleted);
             modelBuilder.Entity<DepositRequest>().HasQueryFilter(d => !d.IsDeleted);
             modelBuilder.Entity<WithdrawalRequest>().HasQueryFilter(w => !w.IsDeleted);
 
@@ -104,11 +116,16 @@ namespace Entities
                     .HasDefaultValueSql("CURRENT_TIMESTAMP");
             }
 
-            modelBuilder.Entity<Service>(entity =>
+            modelBuilder.Entity<ServiceCatalogItem>(entity =>
             {
                 entity.Property(e => e.CreatedAt).ValueGeneratedNever();
                 entity.Property(e => e.UpdatedAt).ValueGeneratedNever();
             });
+
+            modelBuilder.Entity<ServicePricing>()
+                .HasOne(p => p.Service)
+                .WithOne(s => s.Pricing)
+                .HasForeignKey<ServicePricing>(p => p.ServiceId);
 
             // Composite Keys
             modelBuilder.Entity<FreelancerSkill>()
@@ -119,6 +136,9 @@ namespace Entities
 
             modelBuilder.Entity<JobSkill>()
                 .HasKey(js => new { js.JobPostId, js.SkillId });
+
+            modelBuilder.Entity<ConversationParticipant>()
+                .HasKey(cp => new { cp.ConversationId, cp.UserId });
 
             modelBuilder.Entity<Proposal>()
                 .HasIndex(p => new { p.FreelancerId, p.JobPostId })
