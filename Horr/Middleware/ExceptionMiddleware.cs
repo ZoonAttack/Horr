@@ -31,10 +31,10 @@ namespace Horr.Middleware
             }
             catch (ValidationException ex)
             {
-                // 422 Unprocessable Entity — includes field-level errors
+                // 400 Bad Request — includes field-level errors
                 var problem = new ValidationProblemDetails
                 {
-                    Status = StatusCodes.Status422UnprocessableEntity,
+                    Status = StatusCodes.Status400BadRequest,
                     Title = "Validation Failed",
                     Detail = ex.Message
                 };
@@ -46,7 +46,7 @@ namespace Horr.Middleware
                         ? current.Append(error).ToArray()
                         : new[] { error };
                 }
-                await WriteResponse(context, StatusCodes.Status422UnprocessableEntity, problem);
+                await WriteResponse(context, StatusCodes.Status400BadRequest, problem);
             }
             catch (ConflictException ex)
             {

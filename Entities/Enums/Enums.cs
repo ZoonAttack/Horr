@@ -44,8 +44,10 @@ namespace Entities.Enums
     /// </summary>
     public enum ServiceStatus
     {
-        ACTIVE,
-        INACTIVE
+        Active,
+        Inactive,
+        UnderReview,
+        Approved
     }
 
     /// <summary>

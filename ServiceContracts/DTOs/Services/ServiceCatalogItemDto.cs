@@ -13,6 +13,7 @@ namespace ServiceContracts.DTOs.Services
         public decimal? Price { get; set; }
         public string? DeliveryTime { get; set; }
         public bool IsActive { get; set; }
+        public string Status { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 
