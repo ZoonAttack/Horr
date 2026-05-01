@@ -247,4 +247,23 @@ namespace Entities.Enums
         Advanced,
         Expert
     }
+
+    /// <summary>
+    /// Represents the status of a message.
+    /// </summary>
+    public enum MessageStatus
+    {
+        Unread,
+        Read
+    }
+
+    /// <summary>
+    /// Represents the type of a file in the service gallery.
+    /// </summary>
+    public enum ServiceGalleryFileType
+    {
+        Image,
+        Video,
+        Document
+    }
 }

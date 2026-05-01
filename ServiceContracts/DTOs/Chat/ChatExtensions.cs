@@ -55,12 +55,10 @@ namespace ServiceContracts.DTOs.Chat
             return new MessageReadDTO
             {
                 Id = message.Id.ToString(),
-                ChatId = message.ChatId.ToString(),
+                ConversationId = message.ConversationId.ToString(),
                 SenderId = message.SenderId,
-                Content = message.Content,
-                AttachmentUrl = message.AttachmentUrl,
-                AttachmentType = message.AttachmentType,
-                IsRead = message.IsRead,
+                Body = message.Body,
+                Status = message.Status,
                 SentAt = message.SentAt
             };
         }
@@ -77,11 +75,9 @@ namespace ServiceContracts.DTOs.Chat
 
             return new Message
             {
-                ChatId = createDto.ChatId,
+                ConversationId = createDto.ConversationId,
                 SenderId = createDto.SenderId,
-                Content = createDto.Content,
-                AttachmentUrl = createDto.AttachmentUrl,
-                AttachmentType = createDto.AttachmentType
+                Body = createDto.Body
             };
         }
 
@@ -95,7 +91,7 @@ namespace ServiceContracts.DTOs.Chat
                 return;
             }
 
-            message.IsRead = updateDto.IsRead;
+            message.Status = updateDto.Status;
         }
     }
 }

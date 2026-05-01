@@ -29,7 +29,6 @@ namespace Entities.Users
         public virtual User User { get; set; }
         public virtual ICollection<ClientProject> ClientProjects { get; set; } = new List<ClientProject>();
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
-        public virtual ICollection<Chat> Chats { get; set; } = new List<Chat>();
         public virtual ICollection<SpecialistReviewRequest> SpecialistReviewRequests { get; set; } = new List<SpecialistReviewRequest>();
         public virtual ICollection<Contract> Contracts { get; set; } = new List<Contract>();
     }

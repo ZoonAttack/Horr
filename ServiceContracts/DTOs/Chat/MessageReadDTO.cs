@@ -1,3 +1,5 @@
+using Entities.Enums;
+
 namespace ServiceContracts.DTOs.Chat
 {
     /// <summary>
@@ -7,17 +9,13 @@ namespace ServiceContracts.DTOs.Chat
     {
         public string Id { get; set; }
 
-        public string ChatId { get; set; }
+        public string ConversationId { get; set; }
 
         public string SenderId { get; set; }
 
-        public string Content { get; set; }
+        public string Body { get; set; }
 
-        public string AttachmentUrl { get; set; }
-
-        public string AttachmentType { get; set; }
-
-        public bool IsRead { get; set; }
+        public MessageStatus Status { get; set; }
 
         public DateTime SentAt { get; set; }
     }
