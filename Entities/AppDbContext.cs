@@ -23,6 +23,7 @@ namespace Entities
         public DbSet<Specialist> SpecialistProfiles { get; set; }
         public DbSet<Freelancer> Freelancers { get; set; }
         public DbSet<Client> Clients { get; set; }
+        public DbSet<SavedFreelancer> SavedFreelancers { get; set; }
 
         // --- NEW FREELANCER PROFILE COLLECTIONS DbSets ---
         public DbSet<FreelancerLanguage> FreelancerLanguages { get; set; }
@@ -133,6 +134,9 @@ namespace Entities
 
             modelBuilder.Entity<SavedJob>()
                 .HasKey(sj => new { sj.FreelancerId, sj.JobPostId });
+
+            modelBuilder.Entity<SavedFreelancer>()
+                .HasKey(sf => new { sf.ClientId, sf.FreelancerId });
 
             modelBuilder.Entity<JobSkill>()
                 .HasKey(js => new { js.JobPostId, js.SkillId });
