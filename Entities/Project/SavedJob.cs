@@ -11,7 +11,7 @@ namespace Entities.Project
         [ForeignKey(nameof(FreelancerId))]
         public virtual User Freelancer { get; set; } = null!;
 
-        public int JobPostId { get; set; }
+        public string JobPostId { get; set; } = string.Empty;
 
         [ForeignKey(nameof(JobPostId))]
         public virtual JobPost JobPost { get; set; } = null!;

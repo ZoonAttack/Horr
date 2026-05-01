@@ -253,15 +253,15 @@ namespace ServiceImplementation.Implementations.FreelancerImplementation
             return await Task.FromResult(user.Freelancer_To_FreelancerRead());
         }
 
-        public async Task<bool> DeleteFreelancerAsync(Guid freelancerId)
+        public async Task<bool> DeleteFreelancerAsync(string freelancerId)
         {
-            if (freelancerId == Guid.Empty)
+            if (string.IsNullOrEmpty(freelancerId))
             {
                 throw new ArgumentException("Freelancer ID cannot be empty.", nameof(freelancerId));
             }
 
             // fetch the User entity
-            var idString = freelancerId.ToString();
+            var idString = freelancerId;
             var user = await _db.Users
                 .FirstOrDefaultAsync(u => u.Id == idString && u.Role == Entities.Enums.UserRole.Freelancer);
 
@@ -376,13 +376,13 @@ namespace ServiceImplementation.Implementations.FreelancerImplementation
             };
         }
 
-        public async Task<FreelancerReadDTO?> GetFreelancerProfileByIdAsync(Guid freelancerId)
+        public async Task<FreelancerReadDTO?> GetFreelancerProfileByIdAsync(string freelancerId)
         {
-            if (freelancerId == Guid.Empty)
+            if (string.IsNullOrEmpty(freelancerId))
             {
                 throw new ArgumentException("Freelancer ID cannot be empty.", nameof(freelancerId));        
             }
-            var idString = freelancerId.ToString();
+            var idString = freelancerId;
 
             var freelancer = await _db.Freelancers
                 .Include(f => f.User)
@@ -401,13 +401,13 @@ namespace ServiceImplementation.Implementations.FreelancerImplementation
             return freelancer.User.Freelancer_To_FreelancerRead();
         }
 
-        public async Task<FreelancerPublicReadDTO?> GetFreelancerPublicProfileByIdAsync(Guid freelancerId)
+        public async Task<FreelancerPublicReadDTO?> GetFreelancerPublicProfileByIdAsync(string freelancerId)
         {
-            if (freelancerId == Guid.Empty)
+            if (string.IsNullOrEmpty(freelancerId))
             {
                 throw new ArgumentException("Freelancer ID cannot be empty.", nameof(freelancerId));
             }
-            var idString = freelancerId.ToString();
+            var idString = freelancerId;
 
             var freelancer = await _db.Freelancers
                 .Include(f => f.User)

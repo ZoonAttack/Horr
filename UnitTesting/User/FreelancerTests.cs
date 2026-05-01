@@ -760,7 +760,7 @@ namespace UnitTesting.User
 
         await Assert.ThrowsAsync<ArgumentException>(async () =>
         {
-            await service.DeleteFreelancerAsync(Guid.Empty);
+            await service.DeleteFreelancerAsync(string.Empty);
         });
     }
 
@@ -770,7 +770,7 @@ namespace UnitTesting.User
         using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
         var service = new FreelancerService(context, null);
 
-        var result = await service.DeleteFreelancerAsync(Guid.NewGuid());
+        var result = await service.DeleteFreelancerAsync(Guid.NewGuid().ToString());
 
         result.Should().BeFalse();
     }
@@ -829,7 +829,7 @@ namespace UnitTesting.User
 
         var service = new FreelancerService(context, null);
 
-        var result = await service.DeleteFreelancerAsync(Guid.Parse(freelancerId));
+        var result = await service.DeleteFreelancerAsync(freelancerId);
 
         result.Should().BeTrue();
 
@@ -870,7 +870,7 @@ namespace UnitTesting.User
 
         var service = new FreelancerService(context, null);
 
-        var result = await service.DeleteFreelancerAsync(Guid.Parse(freelancerId));
+        var result = await service.DeleteFreelancerAsync(freelancerId);
 
         result.Should().BeTrue();
 
@@ -890,7 +890,7 @@ namespace UnitTesting.User
 
         await Assert.ThrowsAsync<ArgumentException>(async () =>
         {
-            await service.GetFreelancerProfileByIdAsync(Guid.Empty);
+            await service.GetFreelancerProfileByIdAsync(string.Empty);
         });
     }
 
@@ -900,7 +900,7 @@ namespace UnitTesting.User
         using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
         var service = new FreelancerService(context, null);
 
-        var result = await service.GetFreelancerProfileByIdAsync(Guid.NewGuid());
+        var result = await service.GetFreelancerProfileByIdAsync(Guid.NewGuid().ToString());
 
         result.Should().BeNull();
     }
@@ -941,7 +941,7 @@ namespace UnitTesting.User
 
         var service = new FreelancerService(context, null);
 
-        var result = await service.GetFreelancerProfileByIdAsync(Guid.Parse(userId));
+        var result = await service.GetFreelancerProfileByIdAsync(userId);
 
         result.Should().NotBeNull();
         result!.Id.Should().Be(userId);
@@ -987,7 +987,7 @@ namespace UnitTesting.User
 
         var service = new FreelancerService(context, null);
 
-        var result = await service.GetFreelancerProfileByIdAsync(Guid.Parse(userId));
+        var result = await service.GetFreelancerProfileByIdAsync(userId);
 
         result.Should().BeNull();
     }
@@ -1004,7 +1004,7 @@ namespace UnitTesting.User
 
         await Assert.ThrowsAsync<ArgumentException>(async () =>
         {
-            await service.GetFreelancerPublicProfileByIdAsync(Guid.Empty);
+            await service.GetFreelancerPublicProfileByIdAsync(string.Empty);
         });
     }
 
@@ -1014,7 +1014,7 @@ namespace UnitTesting.User
         using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
         var service = new FreelancerService(context, null);
 
-        var result = await service.GetFreelancerPublicProfileByIdAsync(Guid.NewGuid());
+        var result = await service.GetFreelancerPublicProfileByIdAsync(Guid.NewGuid().ToString());
 
         result.Should().BeNull();
     }
@@ -1058,7 +1058,7 @@ namespace UnitTesting.User
 
         var service = new FreelancerService(context, null);
 
-        var result = await service.GetFreelancerPublicProfileByIdAsync(Guid.Parse(userId));
+        var result = await service.GetFreelancerPublicProfileByIdAsync(userId);
 
         result.Should().BeNull();
     }
@@ -1103,7 +1103,7 @@ namespace UnitTesting.User
 
         var service = new FreelancerService(context, null);
 
-        var result = await service.GetFreelancerPublicProfileByIdAsync(Guid.Parse(userId));
+        var result = await service.GetFreelancerPublicProfileByIdAsync(userId);
 
         result.Should().NotBeNull();
         result!.Id.Should().Be(userId);

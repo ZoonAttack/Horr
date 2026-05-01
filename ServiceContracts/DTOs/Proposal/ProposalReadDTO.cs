@@ -5,7 +5,7 @@ namespace ServiceContracts.DTOs.Proposal
     public class ProposalReadDTO
     {
         public int Id { get; set; }
-        public int JobPostId { get; set; }
+        public string JobPostId { get; set; } = string.Empty;
         public string JobPostTitle { get; set; } = string.Empty;
         public string FreelancerId { get; set; } = string.Empty;
         public string FreelancerName { get; set; } = string.Empty;

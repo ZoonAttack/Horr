@@ -29,12 +29,13 @@ namespace UnitTesting.Proposals
             context.Freelancers.Add(new Freelancer { UserId = "f1", Availability = "Full-time", PortfolioUrl = "https://example.com" });
             var job = new JobPost { Id = 1, Title = "Job", Description = "Desc", ClientId = "c1" };
             context.JobPosts.Add(job);
+            context.Freelancers.Add(new Entities.Users.Freelancer { UserId = "f1", Availability = "Full-time", PortfolioUrl = "http://test.com" });
             await context.SaveChangesAsync();
 
             var handler = new CreateProposalCommandHandler(context);
             var dto = new ProposalCreateDTO
             {
-                JobPostId = 1,
+                JobPostId = "1",
                 BidRate = bidRate,
                 CoverLetter = new string('a', 60),
                 SubmitAsType = SubmitAsType.Freelancer
@@ -57,7 +58,7 @@ namespace UnitTesting.Proposals
             var handler = new CreateProposalCommandHandler(context);
             var dto = new ProposalCreateDTO
             {
-                JobPostId = 1,
+                JobPostId = "1",
                 BidRate = 100,
                 CoverLetter = "", // Missing
                 SubmitAsType = SubmitAsType.Freelancer
@@ -80,7 +81,7 @@ namespace UnitTesting.Proposals
             var proposal = new Entities.Project.Proposal
             {
                 Id = 1,
-                JobPostId = 1,
+                JobPostId = "1",
                 FreelancerId = "f1",
                 Status = ProposalStatus.Active,
                 BidRate = 100,
@@ -88,6 +89,7 @@ namespace UnitTesting.Proposals
                 CoverLetter = new string('a', 60)
             };
             context.Proposals.Add(proposal);
+            context.Freelancers.Add(new Entities.Users.Freelancer { UserId = "f1", Availability = "Full-time", PortfolioUrl = "http://test.com" });
             await context.SaveChangesAsync();
 
             var handler = new WithdrawProposalCommandHandler(context);
@@ -111,16 +113,17 @@ namespace UnitTesting.Proposals
             context.Proposals.Add(new Entities.Project.Proposal
             {
                 Id = 1,
-                JobPostId = 1,
+                JobPostId = "1",
                 FreelancerId = "f1",
                 CoverLetter = new string('a', 60)
             });
+            context.Freelancers.Add(new Entities.Users.Freelancer { UserId = "f1", Availability = "Full-time", PortfolioUrl = "http://test.com" });
             await context.SaveChangesAsync();
 
             var handler = new CreateProposalCommandHandler(context);
             var dto = new ProposalCreateDTO
             {
-                JobPostId = 1,
+                JobPostId = "1",
                 BidRate = 100,
                 CoverLetter = new string('a', 60)
             };

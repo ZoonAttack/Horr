@@ -7,13 +7,13 @@ namespace Services.Freelancer.FreelancerProfile
 {
     public interface IPortfolioService
     {
-        Task<IEnumerable<PortfolioResponseDto>> GetUserPortfolioAsync(Guid userId);
-        Task<PortfolioResponseDto> CreatePortfolioItemAsync(Guid userId, PortfolioCreateDto dto);
+        Task<IEnumerable<PortfolioResponseDto>> GetUserPortfolioAsync(string userId);
+        Task<PortfolioResponseDto> CreatePortfolioItemAsync(string userId, PortfolioCreateDto dto);
     }
 
     public interface IExperienceService
     {
-        Task<IEnumerable<ExperienceResponseDto>> GetUserExperienceAsync(Guid userId);
-        Task<bool> SoftDeleteExperienceAsync(Guid id);
+        Task<IEnumerable<ExperienceResponseDto>> GetUserExperienceAsync(string userId);
+        Task<bool> SoftDeleteExperienceAsync(string id);
     }
 }

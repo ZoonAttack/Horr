@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using ServiceContracts.Settings;
 using ServiceImplementation.Authentication;
+using ServiceImplementation.Implementations.Settings;
 using Services.Authentication;
 using Services.Implementations;
 using System.Text;
@@ -22,7 +24,12 @@ namespace Horr
             // ==========================================
             // 1. DATABASE & IDENTITY SETUP
             // ==========================================
-            if (!builder.Environment.IsEnvironment("IntegrationTest"))
+            if (builder.Environment.IsEnvironment("Testing"))
+            {
+                builder.Services.AddDbContext<AppDbContext>(options =>
+                    options.UseInMemoryDatabase("IntegrationTestsDb"));
+            }
+            else
             {
                 builder.Services.AddDbContext<AppDbContext>(options =>
                     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -46,6 +53,7 @@ namespace Horr
             // This tells ASP.NET: "When a controller asks for IAuthService, give them AuthService"
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<ITokenService, TokenService>();
+            builder.Services.AddScoped<IProfileSettings, ProfileSettings>();
             builder.Services.AddTransient<IEmailService, EmailService>();
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
@@ -99,6 +107,11 @@ namespace Horr
 
             builder.Services.AddControllers();
             builder.Services.AddSignalR();
+            builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+                });
             // builder.Services.AddOpenApiDocument();
 
             builder.Services.AddOpenApiDocument(config =>
@@ -122,6 +135,8 @@ namespace Horr
             // ==========================================
             // 5. THE MIDDLEWARE PIPELINE (Order Matters!)
             // ==========================================
+
+            app.UseMiddleware<Horr.Middleware.ExceptionHandlingMiddleware>();
 
             if (app.Environment.IsDevelopment())
             {
@@ -169,3 +184,5 @@ namespace Horr
         }
     }
 }
+
+public partial class Program { }

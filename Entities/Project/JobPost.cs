@@ -11,7 +11,7 @@ namespace Entities.Project
     public class JobPost : ISoftDeletable
     {
         [Key]
-        public int Id { get; set; }
+        public string Id { get; set; } = Guid.NewGuid().ToString();
 
         [Required]
         [MaxLength(200)]
@@ -20,13 +20,15 @@ namespace Entities.Project
         [Required]
         public string Description { get; set; } = string.Empty;
 
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal BudgetMin { get; set; }
+        [Required]
+        public string Category { get; set; } = string.Empty;
 
         [Column(TypeName = "decimal(18,2)")]
-        public decimal BudgetMax { get; set; }
+        public decimal Budget { get; set; }
 
         public JobType JobType { get; set; }
+        public ProjectComplexity Scope { get; set; }
+        public ExperienceLevel ExperienceLevel { get; set; }
 
         public DateTime PostedAt { get; set; } = DateTime.UtcNow;
 

@@ -21,8 +21,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Implementations\ClientImplementation\ClientProfileImplementation\" />
-    <Folder Include="Implementations\ClientImplementation\" />
     <Folder Include="Implementations\User\" />
   </ItemGroup>
 

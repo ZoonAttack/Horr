@@ -10,7 +10,7 @@ namespace ServiceImplementation.Repositories.FreelancerProfile
     {
         private readonly List<PortfolioItem> _mockDb = new List<PortfolioItem>();
 
-        public async Task<IEnumerable<PortfolioItem>> GetByUserIdAsync(Guid userId)
+        public async Task<IEnumerable<PortfolioItem>> GetByUserIdAsync(string userId)
         {
             return await Task.FromResult(_mockDb.Where(p => p.UserId == userId && !p.IsDeleted));
         }
@@ -26,12 +26,12 @@ namespace ServiceImplementation.Repositories.FreelancerProfile
     {
         private readonly List<ProfessionalExperience> _mockDb = new List<ProfessionalExperience>();
 
-        public async Task<IEnumerable<ProfessionalExperience>> GetByUserIdAsync(Guid userId)
+        public async Task<IEnumerable<ProfessionalExperience>> GetByUserIdAsync(string userId)
         {
             return await Task.FromResult(_mockDb.Where(e => e.UserId == userId && !e.IsDeleted));
         }
 
-        public async Task<ProfessionalExperience> GetByIdAsync(Guid id)
+        public async Task<ProfessionalExperience> GetByIdAsync(string id)
         {
             return await Task.FromResult(_mockDb.FirstOrDefault(e => e.Id == id && !e.IsDeleted));
         }

@@ -3,5 +3,5 @@ using ServiceContracts.DTOs.JobManagement;
 
 namespace ServiceImplementation.Implementations.JobManagement
 {
-    public record GetJobDetailsQuery(int Id, string? CurrentUserId = null) : IRequest<JobDetailsDto>;
+    public record GetJobDetailsQuery(string Id, string? CurrentUserId = null) : IRequest<JobDetailsDto>;
 }

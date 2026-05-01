@@ -267,5 +267,30 @@ namespace Entities.Enums
         Image,
         Video,
         Document
+    public enum DepositStatus
+    {
+        Pending,
+        Approved,
+        Rejected
+    }
+
+    public enum WithdrawalStatus
+    {
+        Pending,
+        Approved,
+        Rejected
+    }
+
+    public enum WithdrawalMethod
+    {
+        InstaPay,
+        BankTransfer,
+        EWallet
+    }
+
+    public enum TransactionDirection
+    {
+        Credit,
+        Debit
     }
 }
