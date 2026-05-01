@@ -1,4 +1,4 @@
-using Horr.Hubs;
+using ServiceImplementation.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using ServiceContracts.DTOs.Chat;
 using UnitTesting.Integration;
@@ -58,13 +58,13 @@ namespace UnitTesting.Communication
         public void OnConnectedAsync_ContainsVerbatimTodoComment()
         {
             // Arrange
-            var hubFilePath = Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "..", "..", "Horr", "Hubs", "ChatHub.cs");
+            var hubFilePath = Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "..", "..", "ServiceImplementation", "Hubs", "ChatHub.cs");
             
             // Fallback for different test execution paths
             if (!File.Exists(hubFilePath))
             {
                 // Try absolute path if relative fails (assuming H: drive)
-                hubFilePath = @"H:\.NET\Grad\Horr\Horr\Hubs\ChatHub.cs";
+                hubFilePath = @"H:\.NET\Grad\Horr\ServiceImplementation\Hubs\ChatHub.cs";
             }
 
             // Act

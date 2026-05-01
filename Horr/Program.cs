@@ -9,7 +9,7 @@ using ServiceImplementation.Authentication;
 using Services.Authentication;
 using Services.Implementations;
 using System.Text;
-using Horr.Hubs;
+using ServiceImplementation.Hubs;
 
 namespace Horr
 {
