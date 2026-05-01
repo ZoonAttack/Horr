@@ -1,9 +1,112 @@
+using System.Linq;
+using System.Collections.Generic;
 using Entities.Marketplace;
 
 namespace ServiceContracts.DTOs.Services
 {
     public static class ServiceExtensions
     {
+        public static ServiceCatalogItemDto ToDto(this ServiceCatalogItem service)
+        {
+            if (service == null) return null;
+
+            return new ServiceCatalogItemDto
+            {
+                Id = service.Id,
+                FreelancerId = service.FreelancerId,
+                Title = service.Title,
+                Description = service.Description,
+                CoverImageUrl = service.CoverImageUrl,
+                Price = service.Price,
+                DeliveryTime = service.DeliveryTime,
+                IsActive = service.IsActive,
+                CreatedAt = service.CreatedAt,
+                UpdatedAt = service.UpdatedAt,
+                Pricing = service.Pricing?.ToDto(),
+                GalleryFiles = service.GalleryFiles?.Select(g => g.ToDto()).ToList() ?? new List<ServiceGalleryFileDto>(),
+                Requirements = service.Requirements?.Select(r => r.ToDto()).ToList() ?? new List<ServiceRequirementDto>(),
+                Steps = service.Steps?.Select(s => s.ToDto()).ToList() ?? new List<ServiceStepDto>(),
+                Faqs = service.Faqs?.Select(f => f.ToDto()).ToList() ?? new List<ServiceFaqDto>(),
+                Attributes = service.Attributes?.Select(a => a.ToDto()).ToList() ?? new List<ServiceAttributeDto>()
+            };
+        }
+
+        public static ServicePricingDto ToDto(this ServicePricing pricing)
+        {
+            if (pricing == null) return null;
+
+            return new ServicePricingDto
+            {
+                Id = pricing.Id,
+                PriceFrom = pricing.PriceFrom,
+                PriceTo = pricing.PriceTo,
+                DeliveryDays = pricing.DeliveryDays,
+                RevisionsIncluded = pricing.RevisionsIncluded
+            };
+        }
+
+        public static ServiceGalleryFileDto ToDto(this ServiceGalleryFile file)
+        {
+            if (file == null) return null;
+
+            return new ServiceGalleryFileDto
+            {
+                Id = file.Id,
+                FileUrl = file.FileUrl,
+                FileType = file.FileType,
+                IsCover = file.IsCover,
+                UploadedAt = file.UploadedAt
+            };
+        }
+
+        public static ServiceRequirementDto ToDto(this ServiceRequirement req)
+        {
+            if (req == null) return null;
+
+            return new ServiceRequirementDto
+            {
+                Id = req.Id,
+                Question = req.Question,
+                IsRequired = req.IsRequired
+            };
+        }
+
+        public static ServiceStepDto ToDto(this ServiceStep step)
+        {
+            if (step == null) return null;
+
+            return new ServiceStepDto
+            {
+                Id = step.Id,
+                StepNumber = step.StepNumber,
+                Title = step.Title,
+                Description = step.Description
+            };
+        }
+
+        public static ServiceFaqDto ToDto(this ServiceFaq faq)
+        {
+            if (faq == null) return null;
+
+            return new ServiceFaqDto
+            {
+                Id = faq.Id,
+                Question = faq.Question,
+                Answer = faq.Answer
+            };
+        }
+
+        public static ServiceAttributeDto ToDto(this ServiceAttribute attr)
+        {
+            if (attr == null) return null;
+
+            return new ServiceAttributeDto
+            {
+                Id = attr.Id,
+                Value = attr.Value
+            };
+        }
+
         /// <summary>
         /// Converts ServiceCatalogItem entity to ServiceReadDTO
         /// </summary>
