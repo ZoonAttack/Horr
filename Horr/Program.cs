@@ -9,6 +9,7 @@ using ServiceImplementation.Authentication;
 using Services.Authentication;
 using Services.Implementations;
 using System.Text;
+using Horr.Hubs;
 
 namespace Horr
 {
@@ -97,6 +98,7 @@ namespace Horr
             });
 
             builder.Services.AddControllers();
+            builder.Services.AddSignalR();
             // builder.Services.AddOpenApiDocument();
 
             builder.Services.AddOpenApiDocument(config =>
@@ -142,6 +144,7 @@ namespace Horr
             app.UseAuthorization();
 
             app.MapControllers();
+            app.MapHub<ChatHub>("/chatHub");
             await SeedRolesAsync(app.Services);
             app.Run();
         }
