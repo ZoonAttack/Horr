@@ -22,12 +22,12 @@ namespace Horr.Controllers.FreelancerProfile
             _experienceService = experienceService;
         }
 
-        private Guid GetCurrentUserId()
+        private string GetCurrentUserId()
         {
             var userIdVal = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (Guid.TryParse(userIdVal, out Guid userId))
+            if (!string.IsNullOrEmpty(userIdVal))
             {
-                return userId;
+                return userIdVal;
             }
             throw new UnauthorizedAccessException("Invalid User ID");
         }
@@ -47,7 +47,7 @@ namespace Horr.Controllers.FreelancerProfile
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteExperience(Guid id)
+        public async Task<IActionResult> DeleteExperience(string id)
         {
             var success = await _experienceService.SoftDeleteExperienceAsync(id);
             if (!success)

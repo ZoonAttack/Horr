@@ -247,4 +247,31 @@ namespace Entities.Enums
         Advanced,
         Expert
     }
+
+    public enum DepositStatus
+    {
+        Pending,
+        Approved,
+        Rejected
+    }
+
+    public enum WithdrawalStatus
+    {
+        Pending,
+        Approved,
+        Rejected
+    }
+
+    public enum WithdrawalMethod
+    {
+        InstaPay,
+        BankTransfer,
+        EWallet
+    }
+
+    public enum TransactionDirection
+    {
+        Credit,
+        Debit
+    }
 }

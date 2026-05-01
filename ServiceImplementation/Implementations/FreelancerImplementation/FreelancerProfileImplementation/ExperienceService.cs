@@ -18,13 +18,13 @@ namespace ServiceImplementation.Implementations.FreelancerImplementation.Freelan
             _experienceRepository = experienceRepository;
         }
 
-        public async Task<IEnumerable<ExperienceResponseDto>> GetUserExperienceAsync(Guid userId)
+        public async Task<IEnumerable<ExperienceResponseDto>> GetUserExperienceAsync(string userId)
         {
             var experiences = await _experienceRepository.GetByUserIdAsync(userId);
             return experiences.ToDtoList();
         }
 
-        public async Task<bool> SoftDeleteExperienceAsync(Guid id)
+        public async Task<bool> SoftDeleteExperienceAsync(string id)
         {
             var experience = await _experienceRepository.GetByIdAsync(id);
             if (experience == null) return false;

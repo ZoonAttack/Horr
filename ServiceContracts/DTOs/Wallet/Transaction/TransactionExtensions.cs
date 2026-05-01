@@ -14,15 +14,13 @@ namespace Horr.DTOs.Wallet.Transactions
 
             return new TransactionReadDTO
             {
-                Id = transaction.Id.ToString(),
-                SenderWalletId = transaction.SenderWalletId,
-                ReceiverWalletId = transaction.ReceiverWalletId,
+                Id = transaction.Id,
+                UserId = transaction.UserId,
                 Amount = transaction.Amount,
-                TransactionType = Enum.Parse<TransactionType>(transaction.TransactionType),
-                Status = Enum.Parse<TransactionStatus>(transaction.Status),
+                Direction = transaction.Direction,
                 Description = transaction.Description,
-                CreatedAt = transaction.CreatedAt,
-                CompletedAt = transaction.CompletedAt
+                RelatedDepositRequestId = transaction.RelatedDepositRequestId,
+                CreatedAt = transaction.CreatedAt
             };
         }
 
@@ -35,31 +33,17 @@ namespace Horr.DTOs.Wallet.Transactions
 
             return new Transaction
             {
-                SenderWalletId = string.IsNullOrWhiteSpace(createDto.SenderWalletId) ? null : createDto.SenderWalletId,
-                ReceiverWalletId = string.IsNullOrWhiteSpace(createDto.ReceiverWalletId) ? null : createDto.ReceiverWalletId,
                 Amount = createDto.Amount,
-                TransactionType = createDto.TransactionType.ToString(),
                 Description = createDto.Description,
+                // Direction and UserId would be set by the service
             };
         }
 
         public static void TransactionStatusUpdate_To_Transaction(this Transaction transaction, TransactionStatusUpdateDTO updateDto)
         {
-            if (transaction == null || updateDto == null)
-            {
-                return;
-            }
-
-            // Only update the Status and set CompletedAt if the transaction is moving from Pending/Processing to Finalized
-            if (transaction.Status.ToString() != updateDto.Status.ToString())
-            {
-                transaction.Status = updateDto.Status.ToString();
-
-                if (updateDto.Status == TransactionStatus.Completed || updateDto.Status == TransactionStatus.Failed)
-                {
-                    transaction.CompletedAt = DateTime.UtcNow;
-                }
-            }
+            // The new Transaction entity doesn't have a Status field directly, 
+            // but we might update it via a service. For now, this is a placeholder 
+            // to maintain build integrity if the DTO is still used.
         }
     }
 }

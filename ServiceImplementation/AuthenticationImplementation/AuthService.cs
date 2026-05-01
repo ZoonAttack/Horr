@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using ServiceContracts.DTOs.Responses;
 using Services.Authentication;
+using Services.DTOs.Authentication;
 using Services.DTOs.UserDTOs;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -147,6 +148,52 @@ namespace ServiceImplementation.Authentication
                 };
             }
         }
+
+
+        public async Task<Result<AuthResponse>> ChangeEmailAsync(string userId, string newEmail, string token)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null || user.IsDeleted)
+            {
+                return new Result<AuthResponse>
+                {
+                    Succeeded = false,
+                    Message = "User not found."
+                };
+            }
+
+            var changeEmailResult = await _userManager.ChangeEmailAsync(user, newEmail, token);
+
+            if (!changeEmailResult.Succeeded)
+            {
+                return new Result<AuthResponse>
+                {
+                    Succeeded = false,
+                    Message = "Failed to update email.",
+                    Errors = changeEmailResult.Errors.Select(e => e.Description).ToList()
+                };
+            }
+
+            // Confirm the new email immediately
+            var confirmationToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            var confirmationResult = await _userManager.ConfirmEmailAsync(user, confirmationToken);
+
+            return new Result<AuthResponse>
+            {
+                Succeeded = true,
+                Message = confirmationResult.Succeeded
+                    ? "Email updated and confirmed successfully."
+                    : "Email updated but confirmation failed.",
+                Data = new AuthResponse
+                {
+                    Id = user.Id,
+                    Email = newEmail,
+                    isEmailConfirmed = confirmationResult.Succeeded
+                }
+            };
+        }
+
 
         public async Task<Result<AuthResponse>> ConfirmEmailAsync(string userId, string token)
         {
@@ -295,21 +342,35 @@ namespace ServiceImplementation.Authentication
             };
         }
 
+        public async Task<Result<AuthResponse>> ChangePasswordAsync(string userId, ChangePasswordRequestDTO dto)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if(user == null || user.IsDeleted) return new Result<AuthResponse>
+            {
+                Succeeded = false,
+                Message = "User not found."
+            };
+            var result = await _userManager.ChangePasswordAsync(user, dto.OldPassword, dto.NewPassword);
+
+            return result.Succeeded ? new Result<AuthResponse>
+            {
+                Succeeded = true,
+                Message = "Password changed successfully."
+            } : new Result<AuthResponse>
+            {
+                Succeeded = false,
+                Message = "Failed to change password.current password may be incorrect",
+                Errors = result.Errors.Select(e => e.Description).ToList()
+            };
+        }
+
         #region helper
 
         private async Task<bool> SendEmailHelperAsync(Entities.Users.User user)
         {
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
 
-            var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
-
-            // 3. Build URL
-            var baseUrl = _configuration["AppURL"];
-            var confirmationLink = $"{baseUrl}/api/Auth/confirm-email?userId={user.Id}&token={encodedToken}";
-
-            // 4. Send Email
-            var message = $"<h1>Welcome!</h1><p>Please <a href='{confirmationLink}'>click here</a> to confirm your email.</p>";
-            bool result = await _emailService.SendEmailAsync(user.Email, "Confirm your email", message);
+            bool result = await _emailService.SendConfirmationEmailAsync(user.Id, user.Email, token);
             return result;
         }
 
@@ -345,6 +406,7 @@ namespace ServiceImplementation.Authentication
                 RefreshToken = refreshToken
             };
         }
+
         #endregion
     }
 }

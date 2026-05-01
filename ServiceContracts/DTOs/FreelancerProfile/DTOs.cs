@@ -12,7 +12,7 @@ namespace ServiceContracts.DTOs.FreelancerProfile
 
     public class PortfolioResponseDto
     {
-        public Guid Id { get; set; }
+        public string Id { get; set; }
         public string Title { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -21,7 +21,7 @@ namespace ServiceContracts.DTOs.FreelancerProfile
 
     public class ExperienceResponseDto
     {
-        public Guid Id { get; set; }
+        public string Id { get; set; }
         public string Title { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
     }

@@ -1,5 +1,7 @@
+using Entities.Users;
 using MailKit.Net.Smtp;
 using MailKit.Security;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using MimeKit;
@@ -15,10 +17,12 @@ namespace Services.Implementations
     public class EmailService : IEmailService
     {
         private readonly EmailSettings _settings;
+        private readonly IConfiguration _configuration;
 
-        public EmailService(IOptions<EmailSettings> settings)
+        public EmailService(IOptions<EmailSettings> settings, IConfiguration configuration)
         {
             _settings = settings.Value;
+            _configuration = configuration;
         }
 
         public async Task<bool> SendEmailAsync(string to, string subject, string htmlMessage)
@@ -56,5 +60,56 @@ namespace Services.Implementations
                 return false; // Failure
             }
         }
+
+        public async Task<bool> SendConfirmationEmailAsync(string userId, string to, string token)
+        {
+            try
+            {
+                var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+                // Build the confirmation link here
+                var baseUrl = _configuration["FrontendBaseUrl"];
+                var link = $"{baseUrl}/api/Auth/confirm-email?userId={userId}&token={encodedToken}";
+
+                string subject = "Confirm your email";
+                string body = $@"
+                                <h2>Email Confirmation</h2>
+                                <p>Please confirm your account:</p>
+                                <a href='{link}'>Confirm Email</a>";
+
+                await SendEmailAsync(to, subject, body);
+                return true;
+            }
+            catch(Exception ex)
+            {
+                // Log the error
+                Console.WriteLine($"Failed to send confirmation email: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> SendChangeEmailAsync(string userId, string to, string token)
+        {
+            try
+            {
+                var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+                // Build the confirmation link here
+                var baseUrl = _configuration["FrontendBaseUrl"];
+                var link = $"{baseUrl}/api/Auth/change-email?userId={userId}&newEmail={to}&token={encodedToken}";
+                string subject = "Confirm your new email";
+                string body = $@"
+                                <h2>Email Change Confirmation</h2>
+                                <p>Please confirm your new email address:</p>
+                                <a href='{link}'>Confirm Email Change</a>";
+                await SendEmailAsync(to, subject, body);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Log the error
+                Console.WriteLine($"Failed to send change email: {ex.Message}");
+                return false;
+            }
+        }
+
     }
 }

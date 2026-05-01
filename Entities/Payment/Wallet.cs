@@ -30,12 +30,5 @@ namespace Entities.Payment
 
         [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         public DateTime UpdatedAt { get; set; }
-
-        // --- Navigation Properties ---
-        [InverseProperty("SenderWallet")]
-        public virtual ICollection<Transaction> SentTransactions { get; set; } = new List<Transaction>();
-
-        [InverseProperty("ReceiverWallet")]
-        public virtual ICollection<Transaction> ReceivedTransactions { get; set; } = new List<Transaction>();
     }
 }
