@@ -58,6 +58,6 @@ namespace UnitTesting.Integration
             var identity = new ClaimsIdentity(claims, "Test");
             var principal = new ClaimsPrincipal(identity);
             var ticket = new AuthenticationTicket(principal, "TestScheme");
-
+        }
     }
 }
