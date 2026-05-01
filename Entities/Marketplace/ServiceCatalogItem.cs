@@ -1,5 +1,6 @@
 using Entities.Users;
 using Entities.Common;
+using Entities.Enums;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -44,6 +45,7 @@ namespace Entities.Marketplace
         public string? DeliveryTime { get; set; }
 
         public bool IsActive { get; set; } = true;
+        public ServiceStatus Status { get; set; } = ServiceStatus.UnderReview;
 
         // Soft Delete
         public bool IsDeleted { get; set; } = false;

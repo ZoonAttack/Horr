@@ -20,6 +20,7 @@ namespace ServiceContracts.DTOs.Services
                 Price = service.Price,
                 DeliveryTime = service.DeliveryTime,
                 IsActive = service.IsActive,
+                Status = service.Status.ToString(),
                 CreatedAt = service.CreatedAt,
                 UpdatedAt = service.UpdatedAt,
                 Pricing = service.Pricing?.ToDto(),
@@ -150,6 +151,7 @@ namespace ServiceContracts.DTOs.Services
                 Price = createDto.Price,
                 DeliveryTime = createDto.DeliveryTime,
                 IsActive = true,
+                Status = Entities.Enums.ServiceStatus.UnderReview,
                 Pricing = createDto.Pricing != null ? new ServicePricing
                 {
                     PriceFrom = createDto.Pricing.PriceFrom,
