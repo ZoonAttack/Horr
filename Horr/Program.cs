@@ -1,5 +1,6 @@
 using Entities;
 using Entities.Users;
+using Horr.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +11,7 @@ using ServiceImplementation.Implementations.Settings;
 using Services.Authentication;
 using Services.Implementations;
 using System.Text;
+using ServiceImplementation.Hubs;
 
 namespace Horr
 {
@@ -103,6 +105,8 @@ namespace Horr
                           .AllowAnyHeader());
             });
 
+            builder.Services.AddControllers();
+            builder.Services.AddSignalR();
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>
                 {
@@ -140,6 +144,9 @@ namespace Horr
                 app.UseSwaggerUi();
             }
 
+            // B.0 Global exception → ProblemDetails
+            app.UseMiddleware<ExceptionMiddleware>();
+
             app.UseHttpsRedirection();
 
             // A. Use CORS before Auth
@@ -152,6 +159,7 @@ namespace Horr
             app.UseAuthorization();
 
             app.MapControllers();
+            app.MapHub<ChatHub>("/chatHub");
             await SeedRolesAsync(app.Services);
             app.Run();
         }

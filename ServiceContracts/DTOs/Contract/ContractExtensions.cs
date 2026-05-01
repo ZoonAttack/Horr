@@ -17,14 +17,14 @@ namespace ServiceContracts.DTOs.Contract
             return new ContractReadDTO
             {
                 Id = contract.Id,
-                ProjectId = contract.ProjectId,
+                ProposalId = contract.ProposalId,
                 ClientId = contract.ClientId,
                 FreelancerId = contract.FreelancerId,
-                Terms = contract.Terms,
+                AgreedRate = contract.AgreedRate,
                 Status = contract.Status,
-                SignedAt = contract.SignedAt,
-                CreatedAt = contract.CreatedAt,
-                UpdatedAt = contract.UpdatedAt
+                StartedAt = contract.StartedAt,
+                ClosedAt = contract.ClosedAt,
+                CreatedAt = contract.CreatedAt
             };
         }
 
@@ -40,11 +40,12 @@ namespace ServiceContracts.DTOs.Contract
 
             return new Entities.Project.Contract
             {
-                ProjectId = createDto.ProjectId,
+                ProposalId = createDto.ProposalId,
                 ClientId = createDto.ClientId,
                 FreelancerId = createDto.FreelancerId,
-                Terms = createDto.Terms,
-                Status = ContractStatus.Draft
+                AgreedRate = createDto.AgreedRate,
+                Status = ContractStatus.Active,
+                StartedAt = DateTime.UtcNow
             };
         }
 
@@ -58,16 +59,37 @@ namespace ServiceContracts.DTOs.Contract
                 return;
             }
 
-            if (!string.IsNullOrEmpty(updateDto.Terms))
-                contract.Terms = updateDto.Terms;
-
             contract.Status = updateDto.Status;
 
-            // Set SignedAt when contract becomes active (signed)
-            if (updateDto.Status == ContractStatus.Active && contract.SignedAt == null)
+            if (updateDto.AgreedRate.HasValue)
             {
-                contract.SignedAt = DateTime.UtcNow;
+                contract.AgreedRate = updateDto.AgreedRate.Value;
             }
+
+            if (updateDto.Status == ContractStatus.Closed && contract.ClosedAt == null)
+            {
+                contract.ClosedAt = DateTime.UtcNow;
+            }
+        }
+
+        /// <summary>
+        /// Converts Contract entity to ContractDto
+        /// </summary>
+        public static ContractDto ToDto(this Entities.Project.Contract contract)
+        {
+            if (contract == null) return null!;
+
+            return new ContractDto
+            {
+                Id = contract.Id,
+                ProposalId = contract.ProposalId,
+                ClientId = contract.ClientId,
+                FreelancerId = contract.FreelancerId,
+                AgreedRate = contract.AgreedRate,
+                Status = contract.Status,
+                StartedAt = contract.StartedAt,
+                ClosedAt = contract.ClosedAt
+            };
         }
     }
 }

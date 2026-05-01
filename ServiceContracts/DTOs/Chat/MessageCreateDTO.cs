@@ -8,17 +8,12 @@ namespace ServiceContracts.DTOs.Chat
     public class MessageCreateDTO
     {
         [Required]
-        public string ChatId { get; set; }
+        public string ConversationId { get; set; }
 
         [Required]
         public string SenderId { get; set; }
 
-        public string Content { get; set; }
-
-        [MaxLength(255)]
-        public string AttachmentUrl { get; set; }
-
-        [MaxLength(50)]
-        public string AttachmentType { get; set; }
+        [Required]
+        public string Body { get; set; }
     }
 }

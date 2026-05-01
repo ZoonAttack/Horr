@@ -281,7 +281,7 @@ namespace ServiceImplementation.Implementations.FreelancerImplementation
                 user.DeletedAt = DateTime.UtcNow;
 
                 // soft delete their services
-                await _db.Services
+                await _db.ServiceCatalogItems
                     .Where(s => s.FreelancerId == idString && !s.IsDeleted)
                     .ExecuteUpdateAsync(s => s
                         .SetProperty(service => service.IsDeleted, true)
@@ -301,7 +301,7 @@ namespace ServiceImplementation.Implementations.FreelancerImplementation
         }
         
 
-        public async Task<PagedResult<FreelancerReadDTO>> GetAllFreelancersAsync(List<string>? skillIds = null, decimal? minHourlyRate = null, decimal? maxHourlyRate = null, int? minYearsExperience = null, decimal? minTrustScore = null, bool? isVerified = null, string? sortBy = "TrustScore", bool sortDescending = true, int page = 1, int pageSize = 10)
+        public async Task<Services.PagedResult<FreelancerReadDTO>> GetAllFreelancersAsync(List<string>? skillIds = null, decimal? minHourlyRate = null, decimal? maxHourlyRate = null, int? minYearsExperience = null, decimal? minTrustScore = null, bool? isVerified = null, string? sortBy = "TrustScore", bool sortDescending = true, int page = 1, int pageSize = 10)
         {
             // 1. get all non-deleted freelancers
             IQueryable<User> query = _db.Users
@@ -367,7 +367,7 @@ namespace ServiceImplementation.Implementations.FreelancerImplementation
                 .Select(f => f.Freelancer_To_FreelancerRead()).ToListAsync();
 
             // 6. return paged result
-            return new PagedResult<FreelancerReadDTO>
+            return new Services.PagedResult<FreelancerReadDTO>
             {
                 Items = freelancersReadDtos,
                 TotalCount = totalCount,
@@ -429,7 +429,7 @@ namespace ServiceImplementation.Implementations.FreelancerImplementation
             return freelancer.User.ToPublicReadDto();
         }
 
-        public async Task<PagedResult<FreelancerReadDTO>> SearchFreelancersAsync(string searchQuery, List<string>? skillIds = null, decimal? minHourlyRate = null, decimal? maxHourlyRate = null, int? minYearsExperience = null, decimal? minTrustScore = null, bool? isVerified = null, string? sortBy = "TrustScore", bool sortDescending = true, int page = 1, int pageSize = 10)
+        public async Task<Services.PagedResult<FreelancerReadDTO>> SearchFreelancersAsync(string searchQuery, List<string>? skillIds = null, decimal? minHourlyRate = null, decimal? maxHourlyRate = null, int? minYearsExperience = null, decimal? minTrustScore = null, bool? isVerified = null, string? sortBy = "TrustScore", bool sortDescending = true, int page = 1, int pageSize = 10)
         {
             // 1. get all non-deleted freelancers
             IQueryable<User> query = _db.Users
@@ -508,7 +508,7 @@ namespace ServiceImplementation.Implementations.FreelancerImplementation
                 .Select(f => f.Freelancer_To_FreelancerRead()).ToListAsync();
 
             // 6. return paged result
-            return new PagedResult<FreelancerReadDTO>
+            return new Services.PagedResult<FreelancerReadDTO>
             {
                 Items = freelancersReadDtos,
                 TotalCount = totalCount,

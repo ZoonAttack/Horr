@@ -1,65 +1,48 @@
-using Entities;
-using Horr;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using System.Net.Http.Headers;
-using System.Security.Claims;
-using System.Text.Encodings.Web;
+using Microsoft.AspNetCore.Authentication;
+using Entities;
+using Horr;
 
-namespace UnitTesting.Integration
+namespace UnitTesting.Integration;
+
+using Microsoft.AspNetCore.TestHost;
+
+public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
-    public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProgram> where TProgram : class
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        protected override void ConfigureWebHost(IWebHostBuilder builder)
+        builder.UseEnvironment("IntegrationTest");
+        builder.UseSetting("JwtSettings:Key", "SuperSecretKeyForIntegrationTestingWowSoSecure!");
+        builder.UseSetting("JwtSettings:Issuer", "TestIssuer");
+        builder.UseSetting("JwtSettings:Audience", "TestAudience");
+        builder.ConfigureTestServices(services =>
         {
-            builder.UseEnvironment("Testing");
 
-            builder.ConfigureTestServices(services =>
+
+            // Add AppDbContext using an in-memory database for testing
+            services.AddDbContext<AppDbContext>(options =>
             {
-                // Add Mock Auth
-                services.AddAuthentication(options =>
-                {
-                    options.DefaultAuthenticateScheme = "TestScheme";
-                    options.DefaultChallengeScheme = "TestScheme";
-                }).AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("TestScheme", options => { });
+                options.UseInMemoryDatabase("InMemoryDbForTesting");
+                options.EnableSensitiveDataLogging();
+                options.ConfigureWarnings(x => x.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning));
             });
-        }
-    }
 
-    public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
-    {
-        public TestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options,
-            ILoggerFactory logger, UrlEncoder encoder)
-            : base(options, logger, encoder)
-        {
-        }
-
-        protected override Task<AuthenticateResult> HandleAuthenticateAsync()
-        {
-            var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, "test-user-id") };
-
-            if (Context.Request.Headers.TryGetValue("X-Role", out var role))
+            // Force the default authentication scheme to Test Scheme
+            services.Configure<AuthenticationOptions>(options =>
             {
-                claims.Add(new Claim(ClaimTypes.Role, role.ToString()));
-            }
+                options.DefaultAuthenticateScheme = TestAuthHandler.AuthenticationScheme;
+                options.DefaultChallengeScheme = TestAuthHandler.AuthenticationScheme;
+                options.DefaultScheme = TestAuthHandler.AuthenticationScheme;
+            });
 
-            if (Context.Request.Headers.TryGetValue("X-UserId", out var userId))
-            {
-                claims.Remove(claims.First(c => c.Type == ClaimTypes.NameIdentifier));
-                claims.Add(new Claim(ClaimTypes.NameIdentifier, userId.ToString()));
-            }
-
-            var identity = new ClaimsIdentity(claims, "Test");
-            var principal = new ClaimsPrincipal(identity);
-            var ticket = new AuthenticationTicket(principal, "TestScheme");
-
-            return Task.FromResult(AuthenticateResult.Success(ticket));
-        }
+            // Add the Test Authentication Handler
+            services.AddAuthentication(TestAuthHandler.AuthenticationScheme)
+                .AddScheme<TestAuthHandlerOptions, TestAuthHandler>(
+                    TestAuthHandler.AuthenticationScheme, options => { });
+        });
     }
 }

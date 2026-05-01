@@ -21,7 +21,7 @@ namespace Services.Freelancer
         /// <summary>
         /// Get all freelancers with optional filters 
         /// </summary>
-        public Task<PagedResult<FreelancerReadDTO>> GetAllFreelancersAsync(
+        public Task<Services.PagedResult<FreelancerReadDTO>> GetAllFreelancersAsync(
             List<string>? skillIds = null,
             decimal? minHourlyRate = null,
             decimal? maxHourlyRate = null,
@@ -36,7 +36,7 @@ namespace Services.Freelancer
         /// <summary>
         /// Search freelancers by query string
         /// </summary>
-        public Task<PagedResult<FreelancerReadDTO>> SearchFreelancersAsync(
+        public Task<Services.PagedResult<FreelancerReadDTO>> SearchFreelancersAsync(
             string searchQuery,
             List<string>? skillIds = null,
             decimal? minHourlyRate = null,

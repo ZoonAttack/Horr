@@ -33,7 +33,7 @@ namespace Entities.Marketplace
 
         [ForeignKey("Service")]
         public string? ServiceId { get; set; }
-        public virtual Service Service { get; set; }
+        public virtual ServiceCatalogItem Service { get; set; }
 
         [ForeignKey("Project")]
         public string? ProjectId { get; set; }
