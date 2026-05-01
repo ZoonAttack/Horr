@@ -1,9 +1,9 @@
 using System;
 using Entities.Enums;
 
-namespace Horr.DTOs.Wallet.Transactions
+namespace ServiceContracts.DTOs.Wallet
 {
-    public class TransactionReadDTO
+    public class TransactionDto
     {
         public string Id { get; set; }
         public string UserId { get; set; }
