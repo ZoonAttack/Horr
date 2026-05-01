@@ -60,7 +60,6 @@ namespace Entities.Project
         public virtual Proposal? AcceptedProposal { get; set; }
 
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
-        public virtual ICollection<Chat> Chats { get; set; } = new List<Chat>();
         public virtual ICollection<Delivery> Deliveries { get; set; } = new List<Delivery>();
         public virtual ICollection<Entities.Payment.Payment> Payments { get; set; } = new List<Entities.Payment.Payment>();
         public virtual ICollection<Entities.Review.Review> Reviews { get; set; } = new List<Entities.Review.Review>();

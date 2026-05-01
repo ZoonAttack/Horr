@@ -247,4 +247,13 @@ namespace Entities.Enums
         Advanced,
         Expert
     }
+
+    /// <summary>
+    /// Represents the status of a message.
+    /// </summary>
+    public enum MessageStatus
+    {
+        Unread,
+        Read
+    }
 }

@@ -46,7 +46,6 @@ namespace Entities.Users
         public virtual ICollection<Proposal> Proposals { get; set; } = new List<Proposal>();
         public virtual ICollection<Service> Services { get; set; } = new List<Service>();
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
-        public virtual ICollection<Chat> Chats { get; set; } = new List<Chat>();
         public virtual ICollection<Entities.Payment.Payment> Payments { get; set; } = new List<Entities.Payment.Payment>();
         public virtual ICollection<Contract> Contracts { get; set; } = new List<Contract>();
 
