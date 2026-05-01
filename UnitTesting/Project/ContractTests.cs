@@ -32,8 +32,7 @@ namespace UnitTesting.Project
                 Title = "Test Job",
                 Description = "Test Description",
                 ClientId = client.Id,
-                BudgetMin = 100,
-                BudgetMax = 500,
+                Budget = 500,
                 PostedAt = DateTime.UtcNow,
                 JobType = JobType.FixedPrice
             };

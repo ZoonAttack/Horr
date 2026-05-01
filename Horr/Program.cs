@@ -70,28 +70,32 @@ namespace Horr
                 options.AddPolicy("FreelancerOnly", policy => policy.RequireRole("Freelancer"));
                 options.AddPolicy("SpecialistOnly", policy => policy.RequireRole("Specialist"));
             });
-            builder.Services.AddAuthentication(options =>
+            if (!builder.Environment.IsEnvironment("Testing"))
             {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(options =>
-            {
-                options.SaveToken = true;
-                options.RequireHttpsMetadata = false; // Set to true in production
-                options.TokenValidationParameters = new TokenValidationParameters()
+                builder.Services.AddAuthentication(options =>
                 {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-                    ValidAudience = builder.Configuration["JwtSettings:Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"]))
-                };
-            });
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddJwtBearer(options =>
+                {
+                    options.SaveToken = true;
+                    options.RequireHttpsMetadata = false; // Set to true in production
+                    options.TokenValidationParameters = new TokenValidationParameters()
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+                        ValidAudience = builder.Configuration["JwtSettings:Audience"],
+                        IssuerSigningKey = new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"]))
+                    };
+                });
+            }
+
 
             // ==========================================
             // 4. CORS SETUP (Crucial for React)

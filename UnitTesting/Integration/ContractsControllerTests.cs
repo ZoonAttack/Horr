@@ -18,12 +18,12 @@ using AppUser = Entities.Users.User;
 
 namespace UnitTesting.Integration;
 
-public class ContractsControllerTests : IClassFixture<CustomWebApplicationFactory>
+public class ContractsControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
 {
-    private readonly CustomWebApplicationFactory _factory;
+    private readonly CustomWebApplicationFactory<Program> _factory;
     private readonly HttpClient _client;
 
-    public ContractsControllerTests(CustomWebApplicationFactory factory)
+    public ContractsControllerTests(CustomWebApplicationFactory<Program> factory)
     {
         _factory = factory;
         _client = _factory.CreateClient();
@@ -370,7 +370,6 @@ public class ContractsControllerTests : IClassFixture<CustomWebApplicationFactor
         request.Headers.Add("X-Test-UserRole", "Client");
 
         var response = await _client.SendAsync(request);
-
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
 
