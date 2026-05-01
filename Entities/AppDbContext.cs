@@ -6,7 +6,6 @@ using Entities.Review;
 using Entities.Skill;
 using Entities.Token;
 using Entities.Common;
-using Entities.Project;
 using Entities.Users;
 using Entities.Users.FreelancerHelpers;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -51,7 +50,10 @@ namespace Entities
         public DbSet<Payment.Payment> Payments { get; set; }
         public DbSet<PaymentMethod> PaymentMethods { get; set; }
         public DbSet<Wallet> Wallets { get; set; }
+        public DbSet<WalletBalance> WalletBalances { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<DepositRequest> DepositRequests { get; set; }
+        public DbSet<WithdrawalRequest> WithdrawalRequests { get; set; }
         public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
 
         // Review and Contract DbSets
@@ -74,6 +76,8 @@ namespace Entities
             // ---------------------------------------------------------
             modelBuilder.Entity<JobPost>().HasQueryFilter(j => !j.IsDeleted);
             modelBuilder.Entity<Proposal>().HasQueryFilter(p => !p.IsDeleted);
+            modelBuilder.Entity<DepositRequest>().HasQueryFilter(d => !d.IsDeleted);
+            modelBuilder.Entity<WithdrawalRequest>().HasQueryFilter(w => !w.IsDeleted);
 
 
             // ---------------------------------------------------------
@@ -142,11 +146,9 @@ namespace Entities
                     "([ProjectId] IS NOT NULL AND [OrderId] IS NULL) OR " +
                     "([ProjectId] IS NULL AND [OrderId] IS NOT NULL)"));
 
-            modelBuilder.Entity<Transaction>()
-                .ToTable(t => t.HasCheckConstraint("CHK_transactions_wallets",
-                    "([TransactionType] = 0 AND [ReceiverWalletId] IS NOT NULL AND [SenderWalletId] IS NULL) OR " +
-                    "([TransactionType] = 1 AND [SenderWalletId] IS NOT NULL AND [ReceiverWalletId] IS NULL) OR " +
-                    "([TransactionType] IN (2, 3, 4, 5) AND [SenderWalletId] IS NOT NULL AND [ReceiverWalletId] IS NOT NULL)"));
+            modelBuilder.Entity<WalletBalance>()
+                .HasIndex(wb => wb.UserId)
+                .IsUnique();
             modelBuilder.Entity<User>()
                 .HasMany(u => u.RefreshTokens)
                 .WithOne(t => t.User)
