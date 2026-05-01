@@ -38,7 +38,7 @@ namespace Entities
         // Project, Proposal, and Service DbSets
         public DbSet<ClientProject> ClientProjects { get; set; }
         public DbSet<Proposal> Proposals { get; set; }
-        public DbSet<ServiceCatalogItem> Services { get; set; }
+        public DbSet<ServiceCatalogItem> ServiceCatalogItems { get; set; }
         public DbSet<ServicePricing> ServicePricings { get; set; }
         public DbSet<ServiceGalleryFile> ServiceGalleryFiles { get; set; }
         public DbSet<ServiceRequirement> ServiceRequirements { get; set; }

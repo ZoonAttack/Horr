@@ -146,9 +146,43 @@ namespace ServiceContracts.DTOs.Services
                 FreelancerId = createDto.FreelancerId,
                 Title = createDto.Title,
                 Description = createDto.Description,
+                CoverImageUrl = createDto.CoverImageUrl,
                 Price = createDto.Price,
                 DeliveryTime = createDto.DeliveryTime,
-                IsActive = true
+                IsActive = true,
+                Pricing = createDto.Pricing != null ? new ServicePricing
+                {
+                    PriceFrom = createDto.Pricing.PriceFrom,
+                    PriceTo = createDto.Pricing.PriceTo,
+                    DeliveryDays = createDto.Pricing.DeliveryDays,
+                    RevisionsIncluded = createDto.Pricing.RevisionsIncluded
+                } : null,
+                GalleryFiles = createDto.GalleryFiles?.Select(g => new ServiceGalleryFile
+                {
+                    FileUrl = g.FileUrl,
+                    FileType = g.FileType,
+                    IsCover = g.IsCover
+                }).ToList() ?? new List<ServiceGalleryFile>(),
+                Requirements = createDto.Requirements?.Select(r => new ServiceRequirement
+                {
+                    Question = r.Question,
+                    IsRequired = r.IsRequired
+                }).ToList() ?? new List<ServiceRequirement>(),
+                Steps = createDto.Steps?.Select(s => new ServiceStep
+                {
+                    StepNumber = s.StepNumber,
+                    Title = s.Title,
+                    Description = s.Description
+                }).ToList() ?? new List<ServiceStep>(),
+                Faqs = createDto.Faqs?.Select(f => new ServiceFaq
+                {
+                    Question = f.Question,
+                    Answer = f.Answer
+                }).ToList() ?? new List<ServiceFaq>(),
+                Attributes = createDto.Attributes?.Select(a => new ServiceAttribute
+                {
+                    Value = a.Value
+                }).ToList() ?? new List<ServiceAttribute>()
             };
         }
 

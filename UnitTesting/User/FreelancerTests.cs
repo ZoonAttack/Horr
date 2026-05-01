@@ -810,7 +810,7 @@ namespace UnitTesting.User
 
         context.Users.Add(user);
 
-        context.Services.Add(new Entities.Marketplace.ServiceCatalogItem
+        context.ServiceCatalogItems.Add(new Entities.Marketplace.ServiceCatalogItem
         {
             FreelancerId = freelancerId,
             Title = "Test Service",
@@ -837,7 +837,7 @@ namespace UnitTesting.User
         reloadedUser.IsDeleted.Should().BeTrue();
         reloadedUser.DeletedAt.Should().NotBeNull();
 
-        var relatedServices = await context.Services
+        var relatedServices = await context.ServiceCatalogItems
             .IgnoreQueryFilters()
             .AsNoTracking()
             .Where(s => s.FreelancerId == freelancerId)
