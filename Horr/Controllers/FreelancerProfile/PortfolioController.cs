@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Horr.Extentions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ServiceContracts.DTOs.FreelancerProfile;
@@ -18,20 +19,10 @@ namespace Horr.Controllers.FreelancerProfile
             _portfolioService = portfolioService;
         }
 
-        private Guid GetCurrentUserId()
-        {
-            var userIdVal = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (Guid.TryParse(userIdVal, out Guid userId))
-            {
-                return userId;
-            }
-            throw new UnauthorizedAccessException("Invalid User ID");
-        }
-
-        [HttpGet]
+        [HttpGet("portfolio")]
         public async Task<IActionResult> GetPortfolio()
         {
-            var userId = GetCurrentUserId();
+            var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
             var result = await _portfolioService.GetUserPortfolioAsync(userId);
             return Ok(result);
         }
@@ -39,7 +30,7 @@ namespace Horr.Controllers.FreelancerProfile
         [HttpPost]
         public async Task<IActionResult> CreatePortfolioItem([FromBody] PortfolioCreateDto dto)
         {
-            var userId = GetCurrentUserId();
+            var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
             var result = await _portfolioService.CreatePortfolioItemAsync(userId, dto);
             return CreatedAtAction(nameof(GetPortfolio), new { id = result.Id }, result);
         }

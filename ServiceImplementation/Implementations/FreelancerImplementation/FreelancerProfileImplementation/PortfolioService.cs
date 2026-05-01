@@ -14,13 +14,13 @@ namespace ServiceImplementation.Implementations.FreelancerImplementation.Freelan
             _portfolioRepository = portfolioRepository;
         }
 
-        public async Task<IEnumerable<PortfolioResponseDto>> GetUserPortfolioAsync(Guid userId)
+        public async Task<IEnumerable<PortfolioResponseDto>> GetUserPortfolioAsync(string userId)
         {
             var items = await _portfolioRepository.GetByUserIdAsync(userId);
             return items.ToDtoList();
         }
 
-        public async Task<PortfolioResponseDto> CreatePortfolioItemAsync(Guid userId, PortfolioCreateDto dto)
+        public async Task<PortfolioResponseDto> CreatePortfolioItemAsync(string userId, PortfolioCreateDto dto)
         {
             var entity = dto.ToEntity(userId);
             var result = await _portfolioRepository.AddAsync(entity);

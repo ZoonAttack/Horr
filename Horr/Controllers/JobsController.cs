@@ -1,3 +1,5 @@
+using Entities.Users;
+using Horr.Extentions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,19 +23,19 @@ namespace Horr.Controllers
             _jobService = jobService;
         }
 
-        [HttpGet]
+        [HttpGet("jobs")]
         public async Task<ActionResult<SearchJobsQueryResponse>> GetJobs([FromQuery] SearchJobsQuery query)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            string userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
             var result = await _mediator.Send(query with { CurrentUserId = userId });
             return Ok(result);
         }
 
-        [HttpPost]
+        [HttpPost("create-job")]
         [Authorize(Policy = "ClientOnly")]
         public async Task<IActionResult> CreateJob([FromBody] JobDetailsDto jobDetails)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            string userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             var result = await _jobService.CreateJobAsync(userId, jobDetails);
@@ -44,30 +46,30 @@ namespace Horr.Controllers
             return BadRequest(result.Errors);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("jobs/{id}")]
         public async Task<ActionResult<JobDetailsDto>> GetJob(string id)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            string userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
             var result = await _mediator.Send(new GetJobDetailsQuery(id, userId));
             return Ok(result);
         }
 
-        [HttpPost("{id}/save")]
+        [HttpPost("{id}/save-job")]
         [Authorize(Policy ="FreelancerOnly")]
         public async Task<IActionResult> SaveJob(string id)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            string userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             await _mediator.Send(new ToggleSavedJobCommand(id, userId));
             return NoContent();
         }
 
-        [HttpDelete("{id}/save")]
+        [HttpDelete("{id}/unsave-job")]
         [Authorize(Policy = "FreelancerOnly")]
         public async Task<IActionResult> UnsaveJob(string id)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            string userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             await _mediator.Send(new ToggleSavedJobCommand(id, userId));
