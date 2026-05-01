@@ -3,5 +3,10 @@ using ServiceContracts.DTOs.Services;
 
 namespace ServiceImplementation.Implementations.Marketplace
 {
-    public record UpdateServiceCommand(ServiceUpdateDTO Dto) : IRequest<ServiceCatalogItemDto>;
+    public record UpdateServiceCommand(
+        ServiceUpdateDTO Dto,
+        List<Microsoft.AspNetCore.Http.IFormFile>? Images = null,
+        Microsoft.AspNetCore.Http.IFormFile? Video = null,
+        List<Microsoft.AspNetCore.Http.IFormFile>? Documents = null,
+        string? CoverImageFileName = null) : IRequest<ServiceCatalogItemDto>;
 }

@@ -9,13 +9,12 @@ namespace ServiceContracts.DTOs.Services
     /// </summary>
     public class ServiceUpdateDTO
     {
-        public string Id { get; set; }
-        public string FreelancerId { get; set; }
+        public string? Id { get; set; }
+        public string? FreelancerId { get; set; }
 
         [MaxLength(255)]
-        public string Title { get; set; }
-
-        public string Description { get; set; }
+        public string? Title { get; set; }
+        public string? Description { get; set; }
 
         public string? CoverImageUrl { get; set; }
 
@@ -26,7 +25,7 @@ namespace ServiceContracts.DTOs.Services
 
         public bool IsActive { get; set; }
 
-        public ServicePricingDto Pricing { get; set; }
+        public ServicePricingDto? Pricing { get; set; }
         public List<ServiceGalleryFileDto> GalleryFiles { get; set; } = new List<ServiceGalleryFileDto>();
         public List<ServiceRequirementDto> Requirements { get; set; } = new List<ServiceRequirementDto>();
         public List<ServiceStepDto> Steps { get; set; } = new List<ServiceStepDto>();

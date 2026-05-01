@@ -154,25 +154,25 @@ namespace ServiceContracts.DTOs.Services
                 Status = Entities.Enums.ServiceStatus.UnderReview,
                 Pricing = createDto.Pricing != null ? new ServicePricing
                 {
-                    PriceFrom = createDto.Pricing.PriceFrom,
+                    PriceFrom = createDto.Pricing.PriceFrom.GetValueOrDefault(),
                     PriceTo = createDto.Pricing.PriceTo,
-                    DeliveryDays = createDto.Pricing.DeliveryDays,
-                    RevisionsIncluded = createDto.Pricing.RevisionsIncluded
+                    DeliveryDays = createDto.Pricing.DeliveryDays.GetValueOrDefault(),
+                    RevisionsIncluded = createDto.Pricing.RevisionsIncluded.GetValueOrDefault()
                 } : null,
                 GalleryFiles = createDto.GalleryFiles?.Select(g => new ServiceGalleryFile
                 {
                     FileUrl = g.FileUrl,
-                    FileType = g.FileType,
-                    IsCover = g.IsCover
+                    FileType = g.FileType.GetValueOrDefault(),
+                    IsCover = g.IsCover.GetValueOrDefault()
                 }).ToList() ?? new List<ServiceGalleryFile>(),
                 Requirements = createDto.Requirements?.Select(r => new ServiceRequirement
                 {
                     Question = r.Question,
-                    IsRequired = r.IsRequired
+                    IsRequired = r.IsRequired.GetValueOrDefault()
                 }).ToList() ?? new List<ServiceRequirement>(),
                 Steps = createDto.Steps?.Select(s => new ServiceStep
                 {
-                    StepNumber = s.StepNumber,
+                    StepNumber = s.StepNumber.GetValueOrDefault(),
                     Title = s.Title,
                     Description = s.Description
                 }).ToList() ?? new List<ServiceStep>(),
