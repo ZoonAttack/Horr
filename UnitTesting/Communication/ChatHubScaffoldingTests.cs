@@ -9,11 +9,11 @@ using FluentAssertions;
 
 namespace UnitTesting.Communication
 {
-    public class ChatHubScaffoldingTests : IClassFixture<CustomWebApplicationFactory>
+    public class ChatHubScaffoldingTests : IClassFixture<CustomWebApplicationFactory<Program>>
     {
-        private readonly CustomWebApplicationFactory _factory;
+        private readonly CustomWebApplicationFactory<Program> _factory;
 
-        public ChatHubScaffoldingTests(CustomWebApplicationFactory factory)
+        public ChatHubScaffoldingTests(CustomWebApplicationFactory<Program> factory)
         {
             _factory = factory;
         }

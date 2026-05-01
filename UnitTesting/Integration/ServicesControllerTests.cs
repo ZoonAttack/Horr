@@ -12,19 +12,27 @@ using Entities.Enums;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using ServiceContracts.DTOs.Services;
+using System.Text.Json.Serialization;
 using Xunit;
 
 namespace UnitTesting.Integration
 {
-    public class ServicesControllerTests : IClassFixture<CustomWebApplicationFactory>
+    public class ServicesControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
     {
         private readonly HttpClient _client;
-        private readonly CustomWebApplicationFactory _factory;
+        private readonly CustomWebApplicationFactory<Program> _factory;
 
-        public ServicesControllerTests(CustomWebApplicationFactory factory)
+        private readonly JsonSerializerOptions _jsonOptions;
+
+        public ServicesControllerTests(CustomWebApplicationFactory<Program> factory)
         {
             _factory = factory;
             _client = factory.CreateClient();
+            _jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                Converters = { new JsonStringEnumConverter() }
+            };
         }
 
         private void SetUser(string userId, string role = "Freelancer")
@@ -75,7 +83,7 @@ namespace UnitTesting.Integration
                 throw new Xunit.Sdk.XunitException($"Expected 201, but got {response.StatusCode}. Body: {errorBody}");
             }
 
-            var dto = await response.Content.ReadFromJsonAsync<ServiceCatalogItemDto>();
+            var dto = await response.Content.ReadFromJsonAsync<ServiceCatalogItemDto>(_jsonOptions);
             dto.Should().NotBeNull();
             dto.Title.Should().Be("High Quality Logo Design");
             dto.Status.Should().Be("UnderReview");
@@ -136,21 +144,25 @@ namespace UnitTesting.Integration
             // Arrange - Create first
             SetUser("freelancer-update");
             var createContent = new MultipartFormDataContent();
-            createContent.Add(new StringContent("Update Test Service"), "Title");
+            createContent.Add(new StringContent("High Quality Logo Design"), "Title");
             createContent.Add(new StringContent(new string('a', 130)), "Description");
-            createContent.Add(new StringContent("Q"), "Requirements[0].Question");
+            createContent.Add(new StringContent("100"), "Price");
+            createContent.Add(new StringContent("3 days"), "DeliveryTime");
+            createContent.Add(new StringContent("What are your requirements for this project?"), "Requirements[0].Question");
+            createContent.Add(new StringContent("true"), "Requirements[0].IsRequired");
             createContent.Add(new StringContent("1"), "Steps[0].StepNumber");
-            createContent.Add(new StringContent("Initial Step"), "Steps[0].Title");
+            createContent.Add(new StringContent("Initial Step Title"), "Steps[0].Title");
+            createContent.Add(new StringContent("Initial Step Description"), "Steps[0].Description");
             
             var createResponse = await _client.PostAsync("/api/services", createContent);
-            var initialDto = await createResponse.Content.ReadFromJsonAsync<ServiceCatalogItemDto>();
+            var initialDto = await createResponse.Content.ReadFromJsonAsync<ServiceCatalogItemDto>(_jsonOptions);
 
             // Act - Update with 3 steps
             var updateContent = new MultipartFormDataContent();
             updateContent.Add(new StringContent(initialDto.Id), "Id");
             updateContent.Add(new StringContent("Update Test Service"), "Title");
             updateContent.Add(new StringContent(new string('a', 130)), "Description");
-            updateContent.Add(new StringContent("Q"), "Requirements[0].Question");
+            updateContent.Add(new StringContent("What are your updated requirements?"), "Requirements[0].Question");
 
             for (int i = 1; i <= 3; i++)
             {
@@ -168,7 +180,7 @@ namespace UnitTesting.Integration
                 throw new Xunit.Sdk.XunitException($"Expected 200, but got {response.StatusCode}. Body: {errorBody}");
             }
 
-            var updatedDto = await response.Content.ReadFromJsonAsync<ServiceCatalogItemDto>();
+            var updatedDto = await response.Content.ReadFromJsonAsync<ServiceCatalogItemDto>(_jsonOptions);
             updatedDto.Steps.Should().HaveCount(3);
             updatedDto.Steps.Select(s => s.Title).Should().Contain(new[] { "New Step 1", "New Step 2", "New Step 3" });
         }
@@ -181,12 +193,16 @@ namespace UnitTesting.Integration
             var createContent = new MultipartFormDataContent();
             createContent.Add(new StringContent("Delete Test Service"), "Title");
             createContent.Add(new StringContent(new string('a', 130)), "Description");
-            createContent.Add(new StringContent("Q"), "Requirements[0].Question");
+            createContent.Add(new StringContent("100"), "Price");
+            createContent.Add(new StringContent("3 days"), "DeliveryTime");
+            createContent.Add(new StringContent("What are your requirements for this project?"), "Requirements[0].Question");
+            createContent.Add(new StringContent("true"), "Requirements[0].IsRequired");
             createContent.Add(new StringContent("1"), "Steps[0].StepNumber");
-            createContent.Add(new StringContent("Title"), "Steps[0].Title");
+            createContent.Add(new StringContent("Initial Step Title"), "Steps[0].Title");
+            createContent.Add(new StringContent("Initial Step Description"), "Steps[0].Description");
             
             var createResponse = await _client.PostAsync("/api/services", createContent);
-            var dto = await createResponse.Content.ReadFromJsonAsync<ServiceCatalogItemDto>();
+            var dto = await createResponse.Content.ReadFromJsonAsync<ServiceCatalogItemDto>(_jsonOptions);
 
             // Act - Delete
             var deleteResponse = await _client.DeleteAsync($"/api/services/{dto.Id}");
@@ -194,7 +210,7 @@ namespace UnitTesting.Integration
 
             // Assert - Excluded from list
             var listResponse = await _client.GetAsync("/api/services/my-services");
-            var grouped = await listResponse.Content.ReadFromJsonAsync<ServiceGroupedDto>();
+            var grouped = await listResponse.Content.ReadFromJsonAsync<ServiceGroupedDto>(_jsonOptions);
             grouped.UnderReview.Should().NotContain(s => s.Id == dto.Id);
             grouped.Approved.Should().NotContain(s => s.Id == dto.Id);
         }
@@ -223,9 +239,13 @@ namespace UnitTesting.Integration
             var content1 = new MultipartFormDataContent();
             content1.Add(new StringContent("Service 1"), "Title");
             content1.Add(new StringContent(new string('a', 130)), "Description");
-            content1.Add(new StringContent("Q"), "Requirements[0].Question");
+            content1.Add(new StringContent("100"), "Price");
+            content1.Add(new StringContent("3 days"), "DeliveryTime");
+            content1.Add(new StringContent("What are your requirements for this project?"), "Requirements[0].Question");
+            content1.Add(new StringContent("true"), "Requirements[0].IsRequired");
             content1.Add(new StringContent("1"), "Steps[0].StepNumber");
-            content1.Add(new StringContent("Title"), "Steps[0].Title");
+            content1.Add(new StringContent("Initial Step Title"), "Steps[0].Title");
+            content1.Add(new StringContent("Initial Step Description"), "Steps[0].Description");
             await _client.PostAsync("/api/services", content1);
 
             // Act
@@ -233,7 +253,7 @@ namespace UnitTesting.Integration
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            var grouped = await response.Content.ReadFromJsonAsync<ServiceGroupedDto>();
+            var grouped = await response.Content.ReadFromJsonAsync<ServiceGroupedDto>(_jsonOptions);
             grouped.Should().NotBeNull();
             grouped.UnderReview.Should().NotBeNull();
             grouped.Approved.Should().NotBeNull();

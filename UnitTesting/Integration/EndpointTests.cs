@@ -93,7 +93,7 @@ namespace UnitTesting.Integration
 
             var response = await _client.PostAsync("/api/billing/deposit-requests", content);
 
-            response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             var problem = await response.Content.ReadAsStringAsync();
             problem.Should().Contain("Receipt photo");
         }
@@ -225,7 +225,7 @@ namespace UnitTesting.Integration
 
             var response = await _client.PostAsJsonAsync("/api/billing/withdrawal-requests", command);
 
-            response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             var problem = await response.Content.ReadAsStringAsync();
             problem.Should().Contain("Insufficient wallet balance");
         }

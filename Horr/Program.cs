@@ -99,17 +99,17 @@ namespace Horr
 
 
             // ==========================================
-            // 4. CORS SETUP (Crucial for React)
+            // 4. CORS SETUP (Crucial for React & SignalR)
             // ==========================================
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowReactApp",
-                    b => b.WithOrigins("http://localhost:3000") // Your React URL
+                    b => b.SetIsOriginAllowed(origin => true) // More flexible for dev
                           .AllowAnyMethod()
-                          .AllowAnyHeader());
+                          .AllowAnyHeader()
+                          .AllowCredentials()); // Required for SignalR
             });
 
-            builder.Services.AddControllers();
             builder.Services.AddSignalR();
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>
