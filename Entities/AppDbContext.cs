@@ -38,7 +38,13 @@ namespace Entities
         // Project, Proposal, and Service DbSets
         public DbSet<ClientProject> ClientProjects { get; set; }
         public DbSet<Proposal> Proposals { get; set; }
-        public DbSet<Service> Services { get; set; }
+        public DbSet<ServiceCatalogItem> Services { get; set; }
+        public DbSet<ServicePricing> ServicePricings { get; set; }
+        public DbSet<ServiceGalleryFile> ServiceGalleryFiles { get; set; }
+        public DbSet<ServiceRequirement> ServiceRequirements { get; set; }
+        public DbSet<ServiceStep> ServiceSteps { get; set; }
+        public DbSet<ServiceFaq> ServiceFaqs { get; set; }
+        public DbSet<ServiceAttribute> ServiceAttributes { get; set; }
 
         // Order, Chat, and Delivery DbSets
         public DbSet<Order> Orders { get; set; }
@@ -80,6 +86,7 @@ namespace Entities
             modelBuilder.Entity<Contract>().HasQueryFilter(c => !c.IsDeleted);
             modelBuilder.Entity<Conversation>().HasQueryFilter(c => !c.IsDeleted);
             modelBuilder.Entity<Message>().HasQueryFilter(m => !m.IsDeleted && !m.Conversation.IsDeleted);
+            modelBuilder.Entity<ServiceCatalogItem>().HasQueryFilter(s => !s.IsDeleted);
 
 
             // ---------------------------------------------------------
@@ -103,11 +110,16 @@ namespace Entities
                     .HasDefaultValueSql("CURRENT_TIMESTAMP");
             }
 
-            modelBuilder.Entity<Service>(entity =>
+            modelBuilder.Entity<ServiceCatalogItem>(entity =>
             {
                 entity.Property(e => e.CreatedAt).ValueGeneratedNever();
                 entity.Property(e => e.UpdatedAt).ValueGeneratedNever();
             });
+
+            modelBuilder.Entity<ServicePricing>()
+                .HasOne(p => p.Service)
+                .WithOne(s => s.Pricing)
+                .HasForeignKey<ServicePricing>(p => p.ServiceId);
 
             // Composite Keys
             modelBuilder.Entity<FreelancerSkill>()

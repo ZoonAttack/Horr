@@ -5,9 +5,9 @@ namespace ServiceContracts.DTOs.Services
     public static class ServiceExtensions
     {
         /// <summary>
-        /// Converts Service entity to ServiceReadDTO
+        /// Converts ServiceCatalogItem entity to ServiceReadDTO
         /// </summary>
-        public static ServiceReadDTO Service_To_ServiceRead(this Service service)
+        public static ServiceReadDTO Service_To_ServiceRead(this ServiceCatalogItem service)
         {
             if (service == null)
             {
@@ -29,16 +29,16 @@ namespace ServiceContracts.DTOs.Services
         }
 
         /// <summary>
-        /// Converts ServiceCreateDTO to Service entity
+        /// Converts ServiceCreateDTO to ServiceCatalogItem entity
         /// </summary>
-        public static Service ServiceCreate_To_Service(this ServiceCreateDTO createDto)
+        public static ServiceCatalogItem ServiceCreate_To_Service(this ServiceCreateDTO createDto)
         {
             if (createDto == null)
             {
                 return null;
             }
 
-            return new Service
+            return new ServiceCatalogItem
             {
                 FreelancerId = createDto.FreelancerId,
                 Title = createDto.Title,
@@ -50,9 +50,9 @@ namespace ServiceContracts.DTOs.Services
         }
 
         /// <summary>
-        /// Applies ServiceUpdateDTO to an existing Service entity
+        /// Applies ServiceUpdateDTO to an existing ServiceCatalogItem entity
         /// </summary>
-        public static void ServiceUpdate_To_Service(this Service service, ServiceUpdateDTO updateDto)
+        public static void ServiceUpdate_To_Service(this ServiceCatalogItem service, ServiceUpdateDTO updateDto)
         {
             if (service == null || updateDto == null)
             {

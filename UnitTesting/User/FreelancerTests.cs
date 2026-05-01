@@ -1,4 +1,4 @@
-﻿using Xunit;
+using Xunit;
 using FluentAssertions;
 using System;
 using System.Threading.Tasks;
@@ -810,7 +810,7 @@ namespace UnitTesting.User
 
         context.Users.Add(user);
 
-        context.Services.Add(new Entities.Marketplace.Service
+        context.Services.Add(new Entities.Marketplace.ServiceCatalogItem
         {
             FreelancerId = freelancerId,
             Title = "Test Service",
@@ -838,6 +838,7 @@ namespace UnitTesting.User
         reloadedUser.DeletedAt.Should().NotBeNull();
 
         var relatedServices = await context.Services
+            .IgnoreQueryFilters()
             .AsNoTracking()
             .Where(s => s.FreelancerId == freelancerId)
             .ToListAsync();

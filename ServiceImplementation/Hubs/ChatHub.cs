@@ -3,7 +3,7 @@ using Entities;
 using Microsoft.EntityFrameworkCore;
 using ServiceContracts.DTOs.Chat;
 
-namespace Horr.Hubs
+namespace ServiceImplementation.Hubs
 {
     public class ChatHub : Hub
     {
