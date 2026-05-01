@@ -7,14 +7,14 @@ namespace ServiceImplementation.Repositories.FreelancerProfile
 {
     public interface IPortfolioRepository
     {
-        Task<IEnumerable<PortfolioItem>> GetByUserIdAsync(Guid userId);
+        Task<IEnumerable<PortfolioItem>> GetByUserIdAsync(string userId);
         Task<PortfolioItem> AddAsync(PortfolioItem item);
     }
     
     public interface IExperienceRepository
     {
-        Task<IEnumerable<ProfessionalExperience>> GetByUserIdAsync(Guid userId);
-        Task<ProfessionalExperience> GetByIdAsync(Guid id);
+        Task<IEnumerable<ProfessionalExperience>> GetByUserIdAsync(string userId);
+        Task<ProfessionalExperience> GetByIdAsync(string id);
         Task UpdateAsync(ProfessionalExperience experience);
     }
 }

@@ -11,12 +11,12 @@ namespace Services.Freelancer
         /// <summary>
         /// Freelancer viewing their own profile (full data)
         /// </summary>
-        public Task<FreelancerReadDTO?> GetFreelancerProfileByIdAsync(Guid freelancerId);
+        public Task<FreelancerReadDTO?> GetFreelancerProfileByIdAsync(string freelancerId);
 
         /// <summary>
         /// Viewing Freelancer public profile (limited data)
         /// </summary>
-        public Task<FreelancerPublicReadDTO?> GetFreelancerPublicProfileByIdAsync(Guid freelancerId);
+        public Task<FreelancerPublicReadDTO?> GetFreelancerPublicProfileByIdAsync(string freelancerId);
 
         /// <summary>
         /// Get all freelancers with optional filters 
@@ -49,6 +49,6 @@ namespace Services.Freelancer
             int page = 1,
             int pageSize = 10);
 
-        public Task<bool> DeleteFreelancerAsync(Guid freelancerId);
+        public Task<bool> DeleteFreelancerAsync(string freelancerId);
     }
 }

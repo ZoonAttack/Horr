@@ -27,13 +27,13 @@ namespace ServiceImplementation.Mappings.FreelancerProfile
             return items.Select(i => i.ToDto());
         }
 
-        public static PortfolioItem ToEntity(this PortfolioCreateDto dto, Guid userId)
+        public static PortfolioItem ToEntity(this PortfolioCreateDto dto, string userId)
         {
             if (dto == null) return null;
 
             return new PortfolioItem
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.NewGuid().ToString(),
                 UserId = userId,
                 Title = dto.Title,
                 Role = dto.Role,
