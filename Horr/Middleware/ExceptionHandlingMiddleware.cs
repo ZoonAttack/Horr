@@ -70,6 +70,7 @@ namespace Horr.Middleware
                     context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
                     problemDetails.Title = "Internal Server Error";
                     problemDetails.Status = (int)HttpStatusCode.InternalServerError;
+                    problemDetails.Detail = exception.ToString();
                     break;
             }
 

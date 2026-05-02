@@ -411,8 +411,10 @@ namespace ServiceImplementation.Authentication
             var userRoles   = await _userManager.GetRolesAsync(user);
             var authClaims  = new List<Claim>
             {
-                new Claim(ClaimTypes.Name,           user.UserName),
+                new Claim(ClaimTypes.Name, user.FullName ?? "User"), // Use FullName
+                new Claim(ClaimTypes.Email, user.Email), // Add Email claim
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim("name", user.FullName ?? "User"), // Custom claim for frontend
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             };
             authClaims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
@@ -429,11 +431,11 @@ namespace ServiceImplementation.Authentication
 
             return new AuthResponse
             {
-                Id               = user.Id,
-                Email            = user.Email,
-                Token            = accessToken,
-                RefreshToken     = refreshToken,
-                isEmailConfirmed = user.EmailConfirmed
+                Id = user.Id,
+                Email = user.Email,
+                Token = accessToken,
+                RefreshToken = refreshToken,
+                isEmailConfirmed = true // Always true here since login already verified this
             };
         }
 

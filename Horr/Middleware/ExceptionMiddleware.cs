@@ -64,7 +64,7 @@ namespace Horr.Middleware
             {
                 _logger.LogError(ex, "Unhandled exception");
                 await WriteProblemDetails(context, StatusCodes.Status500InternalServerError, "Server Error",
-                    "An unexpected error occurred.");
+                    ex.ToString());
             }
         }
 
