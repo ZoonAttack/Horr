@@ -56,6 +56,17 @@ namespace ServiceImplementation.Authentication
                 };
             }
 
+            // Check email confirmation
+            if (!user.EmailConfirmed)
+            {
+                return new Result<AuthResponse>
+                {
+                    Succeeded = false,
+                    Message = "Email not confirmed.",
+                    Errors = new List<string> { "Please confirm your email before logging in." }
+                };
+            }
+
             // ONE LINE to generate tokens now!
             var authResponse = await GenerateAuthResponseAsync(user);
 
@@ -379,8 +390,10 @@ namespace ServiceImplementation.Authentication
             var userRoles = await _userManager.GetRolesAsync(user);
             var authClaims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, user.UserName),
+                new Claim(ClaimTypes.Name, user.FullName ?? "User"), // Use FullName
+                new Claim(ClaimTypes.Email, user.Email), // Add Email claim
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim("name", user.FullName ?? "User"), // Custom claim for frontend
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             };
             // Add role claims
@@ -403,7 +416,8 @@ namespace ServiceImplementation.Authentication
                 Id = user.Id,
                 Email = user.Email,
                 Token = accessToken,
-                RefreshToken = refreshToken
+                RefreshToken = refreshToken,
+                isEmailConfirmed = true // Always true here since login already verified this
             };
         }
 
