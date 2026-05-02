@@ -6,7 +6,7 @@ namespace ServiceContracts.DTOs.Contract
     public class ContractDto
     {
         public int Id { get; set; }
-        public int ProposalId { get; set; }
+        public int? ProposalId { get; set; }
         public string ClientId { get; set; } = string.Empty;
         public string FreelancerId { get; set; } = string.Empty;
         public decimal AgreedRate { get; set; }

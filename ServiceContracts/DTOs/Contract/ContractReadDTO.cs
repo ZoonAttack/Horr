@@ -12,7 +12,7 @@ namespace ServiceContracts.DTOs.Contract
         // Primary identifiers
         public int Id { get; set; }
 
-        public int ProposalId { get; set; }
+        public int? ProposalId { get; set; }
 
         public string ClientId { get; set; }
 

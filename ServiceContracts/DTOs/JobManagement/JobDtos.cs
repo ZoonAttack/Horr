@@ -1,4 +1,5 @@
 using Entities.Enums;
+using ServiceContracts.DTOs.Contract;
 
 namespace ServiceContracts.DTOs.JobManagement
 {
@@ -20,6 +21,12 @@ namespace ServiceContracts.DTOs.JobManagement
     public class JobDetailsDto : JobSummaryDto
     {
         public string Description { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Milestones submitted by the client when posting the job.
+        /// Each milestone represents a deliverable with a title, amount, and due date.
+        /// </summary>
+        public List<ContractMilestoneDto> Milestones { get; set; } = new();
     }
 
     public class SearchJobsQueryResponse
