@@ -36,6 +36,7 @@ namespace UnitTesting.Integration
             db.Database.EnsureDeleted();
             db.Database.EnsureCreated();
 
+
             // Seed a user
             var user = new Entities.Users.User
             {
@@ -65,7 +66,7 @@ namespace UnitTesting.Integration
         public async Task SubmitDeposit_ValidPayload_Returns201()
         {
             await PrepareDatabaseAsync();
-            _client.DefaultRequestHeaders.Add("X-Role", "Client");
+            _client.DefaultRequestHeaders.Add("X-Test-UserRole", "Client");
 
             var content = new MultipartFormDataContent();
             content.Add(new StringContent("500"), "Amount");
@@ -87,7 +88,7 @@ namespace UnitTesting.Integration
         public async Task SubmitDeposit_MissingPhoto_Returns400()
         {
             await PrepareDatabaseAsync();
-            _client.DefaultRequestHeaders.Add("X-Role", "Client");
+            _client.DefaultRequestHeaders.Add("X-Test-UserRole", "Client");
 
             var content = new MultipartFormDataContent();
             content.Add(new StringContent("500"), "Amount");
@@ -116,12 +117,14 @@ namespace UnitTesting.Integration
                 depositId = dep.Id;
             }
 
-            _client.DefaultRequestHeaders.Add("X-Role", "Admin");
+            _client.DefaultRequestHeaders.Add("X-Test-UserRole", "Admin");
             var reviewDto = new { Status = DepositStatus.Approved, AdminNote = "Approved!" };
 
             var response = await _client.PatchAsJsonAsync($"/api/admin/billing/deposit-requests/{depositId}/review", reviewDto, _jsonOptions);
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+
 
             using (var scope = _factory.Services.CreateScope())
             {
@@ -146,7 +149,7 @@ namespace UnitTesting.Integration
                 depositId = dep.Id;
             }
 
-            _client.DefaultRequestHeaders.Add("X-Role", "Admin");
+            _client.DefaultRequestHeaders.Add("X-Test-UserRole", "Admin");
             var reviewDto = new { Status = DepositStatus.Rejected, AdminNote = "Bad receipt" };
 
             var response = await _client.PatchAsJsonAsync($"/api/admin/billing/deposit-requests/{depositId}/review", reviewDto, _jsonOptions);
@@ -165,7 +168,7 @@ namespace UnitTesting.Integration
         public async Task AdminEndpoint_NonAdmin_Returns403()
         {
             await PrepareDatabaseAsync();
-            _client.DefaultRequestHeaders.Add("X-Role", "Client");
+            _client.DefaultRequestHeaders.Add("X-Test-UserRole", "Client");
 
             var response = await _client.GetAsync("/api/admin/billing/deposit-requests/pending");
 
@@ -187,7 +190,7 @@ namespace UnitTesting.Integration
                 depositId = dep.Id;
             }
 
-            _client.DefaultRequestHeaders.Add("X-Role", "Admin");
+            _client.DefaultRequestHeaders.Add("X-Test-UserRole", "Admin");
             var reviewDto = new { Status = DepositStatus.Approved, AdminNote = "Duplicate" };
 
             var response = await _client.PatchAsJsonAsync($"/api/admin/billing/deposit-requests/{depositId}/review", reviewDto, _jsonOptions);
@@ -199,8 +202,8 @@ namespace UnitTesting.Integration
         public async Task GetWalletBalance_ReturnsCorrectBalance()
         {
             await PrepareDatabaseAsync();
-            _client.DefaultRequestHeaders.Add("X-Role", "Client");
-            _client.DefaultRequestHeaders.Add("X-UserId", "test-user-id");
+            _client.DefaultRequestHeaders.Add("X-Test-UserRole", "Client");
+            _client.DefaultRequestHeaders.Add("X-Test-UserId", "test-user-id");
 
             var response = await _client.GetAsync("/api/billing/wallet-balance");
 
@@ -213,8 +216,8 @@ namespace UnitTesting.Integration
         public async Task SubmitWithdrawal_InsufficientBalance_Returns400()
         {
             await PrepareDatabaseAsync();
-            _client.DefaultRequestHeaders.Add("X-Role", "Freelancer");
-            _client.DefaultRequestHeaders.Add("X-UserId", "test-user-id");
+            _client.DefaultRequestHeaders.Add("X-Test-UserRole", "Freelancer");
+            _client.DefaultRequestHeaders.Add("X-Test-UserId", "test-user-id");
 
             var command = new
             {

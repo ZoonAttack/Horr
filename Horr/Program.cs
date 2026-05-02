@@ -1,5 +1,6 @@
 using Entities;
 using Entities.Users;
+using Horr.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +11,7 @@ using ServiceImplementation.Implementations.Settings;
 using Services.Authentication;
 using Services.Implementations;
 using System.Text;
+using ServiceImplementation.Hubs;
 
 namespace Horr
 {
@@ -69,40 +71,46 @@ namespace Horr
                 options.AddPolicy("FreelancerOnly", policy => policy.RequireRole("Freelancer"));
                 options.AddPolicy("SpecialistOnly", policy => policy.RequireRole("Specialist"));
             });
-            builder.Services.AddAuthentication(options =>
+            if (!builder.Environment.IsEnvironment("Testing"))
             {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(options =>
-            {
-                options.SaveToken = true;
-                options.RequireHttpsMetadata = false; // Set to true in production
-                options.TokenValidationParameters = new TokenValidationParameters()
+                builder.Services.AddAuthentication(options =>
                 {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-                    ValidAudience = builder.Configuration["JwtSettings:Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"]))
-                };
-            });
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddJwtBearer(options =>
+                {
+                    options.SaveToken = true;
+                    options.RequireHttpsMetadata = false; // Set to true in production
+                    options.TokenValidationParameters = new TokenValidationParameters()
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+                        ValidAudience = builder.Configuration["JwtSettings:Audience"],
+                        IssuerSigningKey = new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"]))
+                    };
+                });
+            }
+
 
             // ==========================================
-            // 4. CORS SETUP (Crucial for React)
+            // 4. CORS SETUP (Crucial for React & SignalR)
             // ==========================================
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowReactApp",
-                    b => b.WithOrigins("http://localhost:3000") // Your React URL
+                    b => b.SetIsOriginAllowed(origin => true) // More flexible for dev
                           .AllowAnyMethod()
-                          .AllowAnyHeader());
+                          .AllowAnyHeader()
+                          .AllowCredentials()); // Required for SignalR
             });
 
+            builder.Services.AddSignalR();
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>
                 {
@@ -140,6 +148,9 @@ namespace Horr
                 app.UseSwaggerUi();
             }
 
+            // B.0 Global exception → ProblemDetails
+            app.UseMiddleware<ExceptionMiddleware>();
+
             app.UseHttpsRedirection();
 
             // A. Use CORS before Auth
@@ -152,6 +163,7 @@ namespace Horr
             app.UseAuthorization();
 
             app.MapControllers();
+            app.MapHub<ChatHub>("/chatHub");
             await SeedRolesAsync(app.Services);
             app.Run();
         }

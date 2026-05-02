@@ -7,8 +7,8 @@ namespace ServiceContracts.DTOs.Contract
     /// </summary>
     public class ContractUpdateDTO
     {
-        public string Terms { get; set; }
-
         public ContractStatus Status { get; set; }
+
+        public decimal? AgreedRate { get; set; }
     }
 }

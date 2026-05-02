@@ -26,9 +26,9 @@ namespace UnitTesting.Proposals
             // ARRANGE
             using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
             
-            var job = new JobPost { Id = "1", Title = "Job", Description = "Desc", Category = "Test", ClientId = "c1" };
+            context.Freelancers.Add(new Freelancer { UserId = "f1", Availability = "Full-time", PortfolioUrl = "https://example.com" });
+            var job = new JobPost { Id = "1", Title = "Job", Description = "Desc", ClientId = "c1" };
             context.JobPosts.Add(job);
-            context.Freelancers.Add(new Entities.Users.Freelancer { UserId = "f1", Availability = "Full-time", PortfolioUrl = "http://test.com" });
             await context.SaveChangesAsync();
 
             var handler = new CreateProposalCommandHandler(context);
@@ -52,7 +52,7 @@ namespace UnitTesting.Proposals
         {
             // ARRANGE
             using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
-            context.Freelancers.Add(new Entities.Users.Freelancer { UserId = "f1", Availability = "Full-time", PortfolioUrl = "http://test.com" });
+            context.Freelancers.Add(new Freelancer { UserId = "f1", Availability = "Full-time", PortfolioUrl = "https://example.com" });
             await context.SaveChangesAsync();
             var handler = new CreateProposalCommandHandler(context);
             var dto = new ProposalCreateDTO
@@ -88,7 +88,6 @@ namespace UnitTesting.Proposals
                 CoverLetter = new string('a', 60)
             };
             context.Proposals.Add(proposal);
-            context.Freelancers.Add(new Entities.Users.Freelancer { UserId = "f1", Availability = "Full-time", PortfolioUrl = "http://test.com" });
             await context.SaveChangesAsync();
 
             var handler = new WithdrawProposalCommandHandler(context);
@@ -108,6 +107,7 @@ namespace UnitTesting.Proposals
             // ARRANGE
             using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
             
+            context.Freelancers.Add(new Freelancer { UserId = "f1", Availability = "Full-time", PortfolioUrl = "https://example.com" });
             context.Proposals.Add(new Entities.Project.Proposal
             {
                 Id = 1,
@@ -115,7 +115,6 @@ namespace UnitTesting.Proposals
                 FreelancerId = "f1",
                 CoverLetter = new string('a', 60)
             });
-            context.Freelancers.Add(new Entities.Users.Freelancer { UserId = "f1", Availability = "Full-time", PortfolioUrl = "http://test.com" });
             await context.SaveChangesAsync();
 
             var handler = new CreateProposalCommandHandler(context);
