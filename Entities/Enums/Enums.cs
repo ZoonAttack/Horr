@@ -1,5 +1,7 @@
 namespace Entities.Enums
 {
+
+
     /// <summary>
     /// Represents the user role types in the system.
     /// </summary>
@@ -17,6 +19,7 @@ namespace Entities.Enums
         Freelancer,
         Agency
     }
+
 
     /// <summary>
     /// Represents the status of a user verification request.

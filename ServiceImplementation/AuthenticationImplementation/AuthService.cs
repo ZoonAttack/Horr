@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using ServiceContracts.DTOs.Responses;
+using ServiceImplementation.Helpers;
 using Services.Authentication;
 using Services.DTOs.Authentication;
 using Services.DTOs.UserDTOs;
@@ -56,9 +57,20 @@ namespace ServiceImplementation.Authentication
                 };
             }
 
+            if (!user.EmailConfirmed)
+            {
+                return new Result<AuthResponse>
+                {
+                    Succeeded = false,
+                    Message = "Email not confirmed",
+                    ErrorCode = ErrorCodes.EmailNotConfirmed,
+                    Errors = new List<string> { "Please confirm your email before logging in." }
+                };
+            }
+
             // ONE LINE to generate tokens now!
             var authResponse = await GenerateAuthResponseAsync(user);
-
+            
             return new Result<AuthResponse>
             {
                 Succeeded = true,
@@ -126,12 +138,13 @@ namespace ServiceImplementation.Authentication
                 bool result = await SendEmailHelperAsync(user);
                 return new Result<AuthResponse>
                 {
-                    Succeeded = true, 
+                    Succeeded = true,
                     Data = new AuthResponse
                     {
                         Id = user.Id,
                         Email = user.Email,
-                        IsEmailConfirmationSent = result 
+                        IsEmailConfirmationSent = result,
+                        isEmailConfirmed = false
                     },
                     Message = result
                     ? "Registration successful. Please check your email."
@@ -403,7 +416,8 @@ namespace ServiceImplementation.Authentication
                 Id = user.Id,
                 Email = user.Email,
                 Token = accessToken,
-                RefreshToken = refreshToken
+                RefreshToken = refreshToken,
+                isEmailConfirmed = user.EmailConfirmed
             };
         }
 

@@ -72,6 +72,7 @@ namespace Entities
         public DbSet<ContractReview> ContractReviews { get; set; }
         public DbSet<WorkDelivery> WorkDeliveries { get; set; }
         public DbSet<DeliveryAttachment> DeliveryAttachments { get; set; }
+        public DbSet<ContractMilestone> ContractMilestones { get; set; }
 
         // Job Management DbSets
         public DbSet<JobPost> JobPosts { get; set; }

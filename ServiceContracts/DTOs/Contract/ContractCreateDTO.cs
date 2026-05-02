@@ -10,7 +10,7 @@ namespace ServiceContracts.DTOs.Contract
     public class ContractCreateDTO
     {
         // Identifiers used for persistence and mapping
-        public int ProposalId { get; set; }
+        public int? ProposalId { get; set; }
 
         public string ClientId { get; set; }
 
