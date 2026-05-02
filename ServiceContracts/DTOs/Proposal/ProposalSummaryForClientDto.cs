@@ -1,0 +1,16 @@
+using Entities.Enums;
+using System;
+
+namespace ServiceContracts.DTOs.Proposal
+{
+    public class ProposalSummaryForClientDto
+    {
+        public int Id { get; set; }
+        public string FreelancerId { get; set; } = string.Empty;
+        public string FreelancerName { get; set; } = string.Empty;
+        public decimal BidRate { get; set; }
+        public string CoverLetter { get; set; } = string.Empty;
+        public ProposalStatus Status { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+}

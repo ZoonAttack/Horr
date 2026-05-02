@@ -43,5 +43,6 @@ namespace Entities.Project
         public virtual ICollection<JobSkill> JobSkills { get; set; } = new List<JobSkill>();
         public virtual ICollection<SavedJob> SavedByFreelancers { get; set; } = new List<SavedJob>();
         public virtual ICollection<Proposal> Proposals { get; set; } = new List<Proposal>();
+        public virtual ICollection<JobMilestone> JobMilestones { get; set; } = new List<JobMilestone>();
     }
 }

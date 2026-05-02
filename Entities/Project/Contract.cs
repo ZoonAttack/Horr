@@ -24,11 +24,16 @@ namespace Entities.Project
         public int Id { get; set; }
 
         // ── One-to-one: Contract → Proposal ──────────────────────────────
-        [Required]
-        public int ProposalId { get; set; }
+        public int? ProposalId { get; set; }
 
         [ForeignKey(nameof(ProposalId))]
-        public virtual Proposal Proposal { get; set; } = null!;
+        public virtual Proposal? Proposal { get; set; }
+
+        // ── FK: JobPost ──────────────────────────────────────────────────
+        public string? JobPostId { get; set; }
+
+        [ForeignKey(nameof(JobPostId))]
+        public virtual JobPost? JobPost { get; set; }
 
         // ── FK: Client (User) ─────────────────────────────────────────────
         [Required]
@@ -47,6 +52,8 @@ namespace Entities.Project
         // ── Financial ────────────────────────────────────────────────────
         [Column(TypeName = "decimal(18,2)")]
         public decimal AgreedRate { get; set; }
+
+        public string? CustomJobDescription { get; set; }
 
         // ── State ─────────────────────────────────────────────────────────
         public ContractStatus Status { get; set; } = ContractStatus.Active;
@@ -68,5 +75,6 @@ namespace Entities.Project
         // ── Navigation ────────────────────────────────────────────────────
         public virtual ICollection<WorkDelivery> WorkDeliveries { get; set; } = new List<WorkDelivery>();
         public virtual ICollection<ContractReview> ContractReviews { get; set; } = new List<ContractReview>();
+        public virtual ICollection<ContractMilestone> ContractMilestones { get; set; } = new List<ContractMilestone>();
     }
 }

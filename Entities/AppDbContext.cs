@@ -72,11 +72,13 @@ namespace Entities
         public DbSet<ContractReview> ContractReviews { get; set; }
         public DbSet<WorkDelivery> WorkDeliveries { get; set; }
         public DbSet<DeliveryAttachment> DeliveryAttachments { get; set; }
+        public DbSet<ContractMilestone> ContractMilestones { get; set; }
 
         // Job Management DbSets
         public DbSet<JobPost> JobPosts { get; set; }
         public DbSet<SavedJob> SavedJobs { get; set; }
         public DbSet<JobSkill> JobSkills { get; set; }
+        public DbSet<JobMilestone> JobMilestones { get; set; }
         public DbSet<ProposalTerm> ProposalTerms { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
