@@ -9,9 +9,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ServiceContracts.DTOs.Contract;
 using ServiceContracts.DTOs.Responses;
-using Services;
-using Microsoft.EntityFrameworkCore;
-using ServiceContracts.DTOs.Contract;
+using ServiceImplementation.Helpers;
 using Services;
 
 namespace ServiceImplementation.Implementations.Contracts
@@ -28,18 +26,30 @@ namespace ServiceImplementation.Implementations.Contracts
         public async Task<Result<ContractDto>> Handle(CreateDirectOfferCommand request, CancellationToken cancellationToken)
         {
             // 1. Validation
-            var client = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.ClientId, cancellationToken);
+            var client     = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.ClientId,     cancellationToken);
             var freelancer = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.FreelancerId, cancellationToken);
-            var job = await _context.JobPosts.FirstOrDefaultAsync(j => j.Id == request.JobPostId, cancellationToken);
+            var job        = await _context.JobPosts.FirstOrDefaultAsync(j => j.Id == request.JobPostId, cancellationToken);
 
             if (client == null || freelancer == null || job == null)
             {
-                return new Result<ContractDto> { Succeeded = false, Errors = new List<string> { "Invalid client, freelancer, or job specified." } };
+                return new Result<ContractDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.InvalidOfferParties,
+                    Message = "Invalid client, freelancer, or job specified.",
+                    Errors = new List<string> { "One or more of the provided IDs does not exist." }
+                };
             }
 
             if (request.Milestones == null || !request.Milestones.Any())
             {
-                return new Result<ContractDto> { Succeeded = false, Errors = new List<string> { "An offer must contain at least one milestone." } };
+                return new Result<ContractDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.MilestonesRequired,
+                    Message = "Milestones are required.",
+                    Errors = new List<string> { "An offer must contain at least one milestone." }
+                };
             }
 
             var totalAmount = request.Milestones.Sum(m => m.Amount);
@@ -48,36 +58,44 @@ namespace ServiceImplementation.Implementations.Contracts
             var wallet = await _context.Wallets.FirstOrDefaultAsync(w => w.UserId == request.ClientId, cancellationToken);
             if (wallet == null || wallet.Balance < totalAmount)
             {
-                return new Result<ContractDto> { Succeeded = false, Errors = new List<string> { "Insufficient wallet balance. Please deposit funds first." } };
+                return new Result<ContractDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.InsufficientBalance,
+                    Message = "Insufficient wallet balance.",
+                    Errors = new List<string> { "Please deposit funds before sending an offer." }
+                };
             }
 
             // 3. Create Contract in Draft State
             var contract = new Contract
             {
-                ClientId = request.ClientId,
-                FreelancerId = request.FreelancerId,
-                JobPostId = request.JobPostId,
+                ClientId             = request.ClientId,
+                FreelancerId         = request.FreelancerId,
+                JobPostId            = request.JobPostId,
                 CustomJobDescription = request.CustomJobDescription,
-                AgreedRate = totalAmount,
-                Status = ContractStatus.Draft,
-                StartedAt = DateTime.UtcNow,
-                ContractMilestones = request.Milestones.Select(m => new ContractMilestone
+                AgreedRate           = totalAmount,
+                Status               = ContractStatus.Draft,
+                StartedAt            = DateTime.UtcNow,
+                ContractMilestones   = request.Milestones.Select(m => new ContractMilestone
                 {
-                    Description = m.Title, // Assuming Title is the short description
-                    Amount = m.Amount,
-                    DueDate = m.DueDate
+                    Description = m.Title,
+                    Amount      = m.Amount,
+                    DueDate     = m.DueDate
                 }).ToList()
             };
 
             _context.Contracts.Add(contract);
 
-            // We do NOT deduct the wallet balance yet. 
-            // The funds are only transferred/escrowed when the freelancer accepts, or as per the system's billing flow.
-            // But we must ensure they have it available at the moment of offer creation.
-
+            // Funds are NOT deducted here — only verified.
+            // Deduction happens when the freelancer accepts (escrow logic).
             await _context.SaveChangesAsync(cancellationToken);
 
-            return new Result<ContractDto> { Succeeded = true, Data = contract.ToDto() };
+            return new Result<ContractDto>
+            {
+                Succeeded = true,
+                Data = contract.ToDto()
+            };
         }
     }
 }

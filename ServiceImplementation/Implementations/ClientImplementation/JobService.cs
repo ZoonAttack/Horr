@@ -5,6 +5,7 @@ using Entities.Enums;
 using Microsoft.EntityFrameworkCore;
 using ServiceContracts.DTOs.JobManagement;
 using ServiceContracts.DTOs.Responses;
+using ServiceImplementation.Helpers;
 using Services.Client;
 using System;
 using System.Collections.Generic;
@@ -24,58 +25,67 @@ namespace ServiceImplementation.Implementations.ClientImplementation
 
         public async Task<Result<JobDetailsDto>> CreateJobAsync(string clientId, JobDetailsDto jobDetails)
         {
-            // Validate client exists properly
             var clientUser = await _db.Users.FirstOrDefaultAsync(u => u.Id == clientId && u.Role == UserRole.Client);
             if (clientUser == null)
             {
                 return new Result<JobDetailsDto>
                 {
                     Succeeded = false,
+                    ErrorCode = ErrorCodes.ClientNotFound,
                     Message = "Client not found or unauthenticated.",
-                    Errors = { "Invalid client ID." }
+                    Errors = new List<string> { "Invalid client ID." }
                 };
             }
 
-            // Create new JobPost
             var jobPost = new JobPost
             {
-                Id = Guid.NewGuid().ToString(),
-                Title = jobDetails.Title,
-                Description = jobDetails.Description,
-                Category = jobDetails.Category,
-                Scope = jobDetails.Scope,
+                Id              = Guid.NewGuid().ToString(),
+                Title           = jobDetails.Title,
+                Description     = jobDetails.Description,
+                Category        = jobDetails.Category,
+                Scope           = jobDetails.Scope,
                 ExperienceLevel = jobDetails.ExperienceLevel,
-                Budget = jobDetails.Budget,
-                JobType = jobDetails.JobType,
-                PostedAt = DateTime.UtcNow,
-                ClientId = clientId,
-                IsDeleted = false
+                Budget          = jobDetails.Budget,
+                JobType         = jobDetails.JobType,
+                PostedAt        = DateTime.UtcNow,
+                ClientId        = clientId,
+                IsDeleted       = false
             };
 
             // Map Skills
-            // The frontend sends unique valid Skill.Id strings. It maps to JobSkill
             if (jobDetails.Skills != null && jobDetails.Skills.Any())
             {
                 jobPost.JobSkills = jobDetails.Skills.Select(skillId => new JobSkill
                 {
                     JobPostId = jobPost.Id,
-                    SkillId = skillId
+                    SkillId   = skillId
+                }).ToList();
+            }
+
+            // Map Milestones
+            if (jobDetails.Milestones != null && jobDetails.Milestones.Any())
+            {
+                jobPost.JobMilestones = jobDetails.Milestones.Select(m => new JobMilestone
+                {
+                    JobPostId = jobPost.Id,
+                    Title     = m.Title,
+                    Amount    = m.Amount,
+                    DueDate   = m.DueDate
                 }).ToList();
             }
 
             await _db.JobPosts.AddAsync(jobPost);
             await _db.SaveChangesAsync();
 
-            // Return the created DTO with populated Id and generic fields
-            jobDetails.Id = jobPost.Id;
-            jobDetails.PostedAt = jobPost.PostedAt;
-            jobDetails.ClientName = clientUser.FullName; 
+            jobDetails.Id         = jobPost.Id;
+            jobDetails.PostedAt   = jobPost.PostedAt;
+            jobDetails.ClientName = clientUser.FullName;
 
             return new Result<JobDetailsDto>
             {
                 Succeeded = true,
-                Message = "Job created successfully.",
-                Data = jobDetails
+                Message   = "Job created successfully.",
+                Data      = jobDetails
             };
         }
 
@@ -85,30 +95,30 @@ namespace ServiceImplementation.Implementations.ClientImplementation
                 .Include(j => j.Client)
                 .Include(j => j.JobSkills)
                     .ThenInclude(js => js.Skill)
-                .Where(j => !j.IsDeleted) // Global query filter usually handles this, but explicit doesn't hurt
+                .Where(j => !j.IsDeleted)
                 .OrderByDescending(j => j.PostedAt)
                 .ToListAsync();
 
             var jobSummaries = jobs.Select(j => new JobSummaryDto
             {
-                Id = j.Id,
-                Title = j.Title,
-                Category = j.Category,
-                Scope = j.Scope,
+                Id              = j.Id,
+                Title           = j.Title,
+                Category        = j.Category,
+                Scope           = j.Scope,
                 ExperienceLevel = j.ExperienceLevel,
-                Budget = j.Budget,
-                JobType = j.JobType,
-                PostedAt = j.PostedAt,
-                ClientName = j.Client?.FullName ?? "Unknown Client",
-                Skills = j.JobSkills.Select(js => js.Skill?.Name ?? js.SkillId).ToList(),
-                IsSaved = false // Current client API doesn't know context for "saved". This needs user context if extended.
+                Budget          = j.Budget,
+                JobType         = j.JobType,
+                PostedAt        = j.PostedAt,
+                ClientName      = j.Client?.FullName ?? "Unknown Client",
+                Skills          = j.JobSkills.Select(js => js.Skill?.Name ?? js.SkillId).ToList(),
+                IsSaved         = false
             }).ToList();
 
             return new Result<List<JobSummaryDto>>
             {
                 Succeeded = true,
-                Message = "Jobs retrieved successfully.",
-                Data = jobSummaries
+                Message   = "Jobs retrieved successfully.",
+                Data      = jobSummaries
             };
         }
 
@@ -118,6 +128,7 @@ namespace ServiceImplementation.Implementations.ClientImplementation
                 .Include(j => j.Client)
                 .Include(j => j.JobSkills)
                     .ThenInclude(js => js.Skill)
+                .Include(j => j.JobMilestones)
                 .FirstOrDefaultAsync(j => j.Id == jobId && !j.IsDeleted);
 
             if (job == null)
@@ -125,32 +136,39 @@ namespace ServiceImplementation.Implementations.ClientImplementation
                 return new Result<JobDetailsDto>
                 {
                     Succeeded = false,
-                    Message = "Job not found.",
-                    Errors = { "Job with the specified ID does not exist." }
+                    ErrorCode = ErrorCodes.JobNotFound,
+                    Message   = "Job not found.",
+                    Errors    = new List<string> { "Job with the specified ID does not exist." }
                 };
             }
 
             var jobDetails = new JobDetailsDto
             {
-                Id = job.Id,
-                Title = job.Title,
-                Description = job.Description,
-                Category = job.Category,
-                Scope = job.Scope,
+                Id              = job.Id,
+                Title           = job.Title,
+                Description     = job.Description,
+                Category        = job.Category,
+                Scope           = job.Scope,
                 ExperienceLevel = job.ExperienceLevel,
-                Budget = job.Budget,
-                JobType = job.JobType,
-                PostedAt = job.PostedAt,
-                ClientName = job.Client?.FullName ?? "Unknown Client",
-                Skills = job.JobSkills.Select(js => js.Skill?.Name ?? js.SkillId).ToList(),
-                IsSaved = false
+                Budget          = job.Budget,
+                JobType         = job.JobType,
+                PostedAt        = job.PostedAt,
+                ClientName      = job.Client?.FullName ?? "Unknown Client",
+                Skills          = job.JobSkills.Select(js => js.Skill?.Name ?? js.SkillId).ToList(),
+                IsSaved         = false,
+                Milestones      = job.JobMilestones.Select(m => new ServiceContracts.DTOs.Contract.ContractMilestoneDto
+                {
+                    Title   = m.Title,
+                    Amount  = m.Amount,
+                    DueDate = m.DueDate
+                }).ToList()
             };
 
             return new Result<JobDetailsDto>
             {
                 Succeeded = true,
-                Message = "Job details retrieved successfully.",
-                Data = jobDetails
+                Message   = "Job details retrieved successfully.",
+                Data      = jobDetails
             };
         }
     }

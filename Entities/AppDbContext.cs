@@ -78,6 +78,7 @@ namespace Entities
         public DbSet<JobPost> JobPosts { get; set; }
         public DbSet<SavedJob> SavedJobs { get; set; }
         public DbSet<JobSkill> JobSkills { get; set; }
+        public DbSet<JobMilestone> JobMilestones { get; set; }
         public DbSet<ProposalTerm> ProposalTerms { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
