@@ -44,7 +44,7 @@ public class User : IdentityUser
     [Column(TypeName = "text")]
     public string? Bio { get; set; }
 
-    //public string ProfilePicturePath { get; set; }
+    public string? ProfilePicturePath { get; set; }
 
     [Column(TypeName = "decimal(5,2)")]
     [Range(0, 100)]
