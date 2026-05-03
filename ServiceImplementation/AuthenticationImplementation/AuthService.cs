@@ -69,16 +69,16 @@ namespace ServiceImplementation.Authentication
                 };
             }
 
-            if (!user.EmailConfirmed)
-            {
-                return new Result<AuthResponse>
-                {
-                    Succeeded = false,
-                    ErrorCode = ErrorCodes.EmailNotConfirmed,
-                    Message   = "Email not confirmed.",
-                    Errors    = new List<string> { "Please confirm your email before logging in." }
-                };
-            }
+            //if (!user.EmailConfirmed)
+            //{
+            //    return new Result<AuthResponse>
+            //    {
+            //        Succeeded = false,
+            //        ErrorCode = ErrorCodes.EmailNotConfirmed,
+            //        Message   = "Email not confirmed.",
+            //        Errors    = new List<string> { "Please confirm your email before logging in." }
+            //    };
+            //}
 
             var authResponse = await GenerateAuthResponseAsync(user);
 
