@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using MimeKit;
+using Resend;
 using Services.Authentication;
 using System;
 using System.Collections.Generic;
@@ -18,38 +19,28 @@ namespace Services.Implementations
     {
         private readonly EmailSettings _settings;
         private readonly IConfiguration _configuration;
+        private readonly string _apiKey = string.Empty;
 
+        private IResend _resendClient;
         public EmailService(IOptions<EmailSettings> settings, IConfiguration configuration)
         {
             _settings = settings.Value;
             _configuration = configuration;
+            _apiKey = _configuration["ResendAPIKey"];
+            InitializeResendClient();
         }
 
         public async Task<bool> SendEmailAsync(string to, string subject, string htmlMessage)
         {
             try
             {
-                var email = new MimeMessage();
-                email.From.Add(MailboxAddress.Parse(_settings.From));
-                email.To.Add(MailboxAddress.Parse(to));
-                email.Subject = subject;
-                var builder = new BodyBuilder { HtmlBody = htmlMessage };
-                email.Body = builder.ToMessageBody();
-                
-                using var smtp = new SmtpClient();
+                var message = new EmailMessage();
+                message.From = "Acme <onboarding@resend.dev>";
+                message.To.Add(to);
+                message.Subject = subject;
+                message.HtmlBody = htmlMessage;
 
-                // 1. Connect
-                await smtp.ConnectAsync(_settings.SmtpServer, _settings.Port, SecureSocketOptions.StartTls);
-
-                // 2. Authenticate
-                await smtp.AuthenticateAsync(_settings.Username, _settings.Password);
-
-                // 3. Send
-                await smtp.SendAsync(email);
-
-                // 4. Disconnect
-                await smtp.DisconnectAsync(true);
-
+                await _resendClient.EmailSendAsync(message);
                 return true; // Success!
             }
             catch (Exception ex)
@@ -111,5 +102,15 @@ namespace Services.Implementations
             }
         }
 
+
+
+        private void InitializeResendClient()
+        {
+            var options = new ResendClientOptions
+            {
+                ApiToken = _apiKey
+            };
+            _resendClient = ResendClient.Create(options);
+        }
     }
 }
