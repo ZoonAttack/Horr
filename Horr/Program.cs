@@ -12,6 +12,8 @@ using Services.Authentication;
 using Services.Implementations;
 using System.Text;
 using ServiceImplementation.Hubs;
+using Services.Client;
+using ServiceImplementation.Implementations.ClientImplementation;
 
 namespace Horr
 {
@@ -54,6 +56,7 @@ namespace Horr
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IProfileSettings, ProfileSettings>();
+            builder.Services.AddScoped<IJobService, JobService>();
             builder.Services.AddTransient<IEmailService, EmailService>();
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
@@ -100,7 +103,7 @@ namespace Horr
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowReactApp",
-                    b => b.WithOrigins("http://localhost:3000") // Your React URL
+                    b => b.WithOrigins("http://localhost:5173") // Your React URL
                           .AllowAnyMethod()
                           .AllowAnyHeader());
             });

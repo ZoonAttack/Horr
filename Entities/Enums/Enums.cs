@@ -267,6 +267,7 @@ namespace Entities.Enums
         Image,
         Video,
         Document
+    }
     public enum DepositStatus
     {
         Pending,
