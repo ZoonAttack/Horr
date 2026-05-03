@@ -12,6 +12,7 @@ namespace Horr.Controllers.UserProfile
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class UserProfileController : ControllerBase
     {
         private readonly IProfileSettings _profileSettingsService;
@@ -20,6 +21,15 @@ namespace Horr.Controllers.UserProfile
         {
             _profileSettingsService = profileSettingsService;
         }
+        [HttpGet]
+        public async Task<IActionResult> GetProfile()
+        {
+            var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            var response = await _profileSettingsService.GetProfileAsync(userId);
+            if (!response.Succeeded) return NotFound(response.Errors);
+            return Ok(response);
+        }
+
         [HttpPatch("name")]
         public async Task<IActionResult> UpdateName([FromBody] string fullname)
         {

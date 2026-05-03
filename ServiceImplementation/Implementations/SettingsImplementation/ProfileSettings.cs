@@ -30,6 +30,28 @@ namespace ServiceImplementation.Implementations.Settings
             _context = context;
         }
         
+        public async Task<Result<UserProfileDto>> GetProfileAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null || user.IsDeleted) return new Result<UserProfileDto>
+            {
+                Succeeded = false,
+                Errors = { "User not found." },
+                Message = "Failed to retrieve profile.",
+                Data = null
+            };
+
+            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
+
+            return new Result<UserProfileDto>
+            {
+                Succeeded = true,
+                Errors = { },
+                Message = "Profile retrieved successfully.",
+                Data = user.ToUserProfileDto(freelancer: freelancer)
+            };
+        }
+
         public async Task<Result<UserProfileDto>> UpdateFullNameAsync(string userId, string newName)
         {
             var user = await _userManager.FindByIdAsync(userId);

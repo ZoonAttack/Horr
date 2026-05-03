@@ -36,7 +36,7 @@ namespace Horr.Middleware
             var problemDetails = new ProblemDetails
             {
                 Instance = context.Request.Path,
-                Detail = exception.Message
+                Detail = exception.ToString()
             };
 
             switch (exception)

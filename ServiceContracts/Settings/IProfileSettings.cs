@@ -10,6 +10,7 @@ namespace ServiceContracts.Settings
 {
     public interface IProfileSettings
     {
+        Task<Result<UserProfileDto>> GetProfileAsync(string userId);
         Task<Result<UserProfileDto>> UpdateFullNameAsync(string userId, string newName);
         Task<Result<UserProfileDto>> UpdateEmailAsync(string userId, string newEmail);
         Task<Result<UserProfileDto>> CreateBillingAsync(string userId, PaymentMethodCreateDTO dto);
