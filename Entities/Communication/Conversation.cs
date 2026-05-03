@@ -1,4 +1,5 @@
 using Entities.Common;
+using Entities.Project;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -20,6 +21,11 @@ namespace Entities.Communication
 
         // ── Soft Delete (ISoftDeletable) ──────────────────────────────────
         public bool IsDeleted { get; set; } = false;
+
+        public string? JobPostId { get; set; }
+
+        [ForeignKey(nameof(JobPostId))]
+        public virtual JobPost? JobPost { get; set; }
 
         // ── Navigation Properties ─────────────────────────────────────────
         public virtual ICollection<ConversationParticipant> Participants { get; set; }

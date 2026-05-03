@@ -48,7 +48,7 @@ namespace ServiceImplementation.Implementations.JobManagement
                     Hired = await _context.Contracts.CountAsync(c => c.JobPostId == job.Id && 
                         c.Status != Entities.Enums.ContractStatus.Rejected && 
                         c.Status != Entities.Enums.ContractStatus.Terminated, cancellationToken),
-                    Messaged = 0 // Placeholder
+                    Messaged = await _context.Conversations.CountAsync(c => c.JobPostId == job.Id, cancellationToken)
                 };
             }
 

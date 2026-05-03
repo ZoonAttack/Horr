@@ -201,6 +201,12 @@ namespace ServiceImplementation.Implementations.ClientImplementation
                 .Select(g => new { JobPostId = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.JobPostId, x => x.Count);
 
+            var messagedCounts = await _db.Conversations
+                .Where(c => jobIds.Contains(c.JobPostId ?? ""))
+                .GroupBy(c => c.JobPostId)
+                .Select(g => new { JobPostId = g.Key!, Count = g.Count() })
+                .ToDictionaryAsync(x => x.JobPostId, x => x.Count);
+
             var result = jobs.Select(j => new ClientJobSummaryDto
             {
                 Id = j.Id,
@@ -211,7 +217,7 @@ namespace ServiceImplementation.Implementations.ClientImplementation
                     Proposals = proposalCounts.GetValueOrDefault(j.Id),
                     Invited = invitedCounts.GetValueOrDefault(j.Id),
                     Hired = hiredCounts.GetValueOrDefault(j.Id),
-                    Messaged = 0 // Placeholder until Chat/Job link is implemented
+                    Messaged = messagedCounts.GetValueOrDefault(j.Id)
                 }
             }).ToList();
 
