@@ -3,6 +3,7 @@ using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
 using Resend;
@@ -20,11 +21,13 @@ namespace Services.Implementations
         private readonly EmailSettings _settings;
         private readonly IConfiguration _configuration;
         private readonly string _apiKey = string.Empty;
+        private readonly ILogger<EmailService> _logger;
 
         private IResend _resendClient;
-        public EmailService(IOptions<EmailSettings> settings, IConfiguration configuration)
+        public EmailService(IOptions<EmailSettings> settings, ILogger<EmailService> logger, IConfiguration configuration)
         {
             _settings = settings.Value;
+            _logger = logger;
             _configuration = configuration;
             _apiKey = _configuration["ResendAPIKey"];
             InitializeResendClient();
@@ -45,8 +48,7 @@ namespace Services.Implementations
             }
             catch (Exception ex)
             {
-                // Log the error so you know what happened
-                // e.g. _logger.LogError(ex.Message);
+                _logger.LogError(ex.Message);
                 Console.WriteLine($"Email send failed: {ex.Message}");
                 return false; // Failure
             }
@@ -72,7 +74,6 @@ namespace Services.Implementations
             }
             catch(Exception ex)
             {
-                // Log the error
                 Console.WriteLine($"Failed to send confirmation email: {ex.Message}");
                 return false;
             }
@@ -96,7 +97,6 @@ namespace Services.Implementations
             }
             catch (Exception ex)
             {
-                // Log the error
                 Console.WriteLine($"Failed to send change email: {ex.Message}");
                 return false;
             }
