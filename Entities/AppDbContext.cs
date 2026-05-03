@@ -80,6 +80,7 @@ namespace Entities
         public DbSet<JobSkill> JobSkills { get; set; }
         public DbSet<JobMilestone> JobMilestones { get; set; }
         public DbSet<ProposalTerm> ProposalTerms { get; set; }
+        public DbSet<JobInvitation> JobInvitations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -148,6 +149,10 @@ namespace Entities
 
             modelBuilder.Entity<Proposal>()
                 .HasIndex(p => new { p.FreelancerId, p.JobPostId })
+                .IsUnique();
+
+            modelBuilder.Entity<JobInvitation>()
+                .HasIndex(i => new { i.JobPostId, i.FreelancerId })
                 .IsUnique();
 
             // Ensure SavedJob/JobPost relationship doesn't cause delete path issues if needed,

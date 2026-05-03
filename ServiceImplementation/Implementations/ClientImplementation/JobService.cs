@@ -171,5 +171,56 @@ namespace ServiceImplementation.Implementations.ClientImplementation
                 Data      = jobDetails
             };
         }
+        public async Task<Result<List<ClientJobSummaryDto>>> GetClientJobsAsync(string clientId)
+        {
+            var jobs = await _db.JobPosts
+                .Where(j => j.ClientId == clientId && !j.IsDeleted)
+                .OrderByDescending(j => j.PostedAt)
+                .ToListAsync();
+
+            var jobIds = jobs.Select(j => j.Id).ToList();
+            
+            // Batch load stats to avoid N+1
+            var proposalCounts = await _db.Proposals
+                .Where(p => jobIds.Contains(p.JobPostId))
+                .GroupBy(p => p.JobPostId)
+                .Select(g => new { JobPostId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.JobPostId, x => x.Count);
+
+            var hiredCounts = await _db.Contracts
+                .Where(c => jobIds.Contains(c.JobPostId ?? "") && 
+                           c.Status != ContractStatus.Rejected && 
+                           c.Status != ContractStatus.Terminated)
+                .GroupBy(c => c.JobPostId)
+                .Select(g => new { JobPostId = g.Key!, Count = g.Count() })
+                .ToDictionaryAsync(x => x.JobPostId, x => x.Count);
+
+            var invitedCounts = await _db.JobInvitations
+                .Where(i => jobIds.Contains(i.JobPostId))
+                .GroupBy(i => i.JobPostId)
+                .Select(g => new { JobPostId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.JobPostId, x => x.Count);
+
+            var result = jobs.Select(j => new ClientJobSummaryDto
+            {
+                Id = j.Id,
+                Title = j.Title,
+                PostedAt = j.PostedAt,
+                Stats = new JobStatsDto
+                {
+                    Proposals = proposalCounts.GetValueOrDefault(j.Id),
+                    Invited = invitedCounts.GetValueOrDefault(j.Id),
+                    Hired = hiredCounts.GetValueOrDefault(j.Id),
+                    Messaged = 0 // Placeholder until Chat/Job link is implemented
+                }
+            }).ToList();
+
+            return new Result<List<ClientJobSummaryDto>>
+            {
+                Succeeded = true,
+                Message = "Client jobs retrieved successfully.",
+                Data = result
+            };
+        }
     }
 }

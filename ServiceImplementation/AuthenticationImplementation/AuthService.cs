@@ -106,7 +106,7 @@ namespace ServiceImplementation.Authentication
             {
                 UserName      = dto.Email,
                 Email         = dto.Email,
-                FullName      = dto.FullName,
+                FullName      = dto.FirstName + " " + dto.LastName,
                 PhoneNumber   = dto.PhoneNumber,
                 Bio           = dto.Bio           ?? string.Empty,
                 Address       = dto.Address       ?? string.Empty,

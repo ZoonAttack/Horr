@@ -15,5 +15,6 @@ namespace Services.Client
         public Task<Result<JobDetailsDto>> GetJobDetailsAsync(string jobId);
 
         public Task<Result<JobDetailsDto>> CreateJobAsync(string clientId, JobDetailsDto jobDetails);
+        public Task<Result<List<ClientJobSummaryDto>>> GetClientJobsAsync(string clientId);
     }
 }

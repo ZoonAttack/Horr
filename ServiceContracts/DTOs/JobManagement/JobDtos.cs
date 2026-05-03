@@ -3,6 +3,22 @@ using ServiceContracts.DTOs.Contract;
 
 namespace ServiceContracts.DTOs.JobManagement
 {
+    public class JobStatsDto
+    {
+        public int Proposals { get; set; }
+        public int Messaged { get; set; }
+        public int Invited { get; set; }
+        public int Hired { get; set; }
+    }
+
+    public class ClientJobSummaryDto
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public DateTime PostedAt { get; set; }
+        public JobStatsDto Stats { get; set; } = new();
+    }
+
     public class JobSummaryDto
     {
         public string Id { get; set; } = string.Empty;
@@ -27,6 +43,8 @@ namespace ServiceContracts.DTOs.JobManagement
         /// Each milestone represents a deliverable with a title, amount, and due date.
         /// </summary>
         public List<ContractMilestoneDto> Milestones { get; set; } = new();
+
+        public JobStatsDto? Stats { get; set; }
     }
 
     public class SearchJobsQueryResponse
