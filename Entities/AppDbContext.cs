@@ -34,6 +34,8 @@ namespace Entities
         // Skills DbSets
         public DbSet<Skill.Skill> Skills { get; set; }
         public DbSet<FreelancerSkill> FreelancerSkills { get; set; }
+        public DbSet<PortfolioItem> PortfolioItems { get; set; }
+        public DbSet<PortfolioMedia> PortfolioMedia { get; set; }
 
         // Project, Proposal, and Service DbSets
         public DbSet<ClientProject> ClientProjects { get; set; }
@@ -150,6 +152,17 @@ namespace Entities
             {
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETDATE()");
+            });
+
+            modelBuilder.Entity<PortfolioItem>(entity =>
+            {
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETDATE()");
+            });
+
+            modelBuilder.Entity<PortfolioMedia>(entity =>
+            {
+                entity.Property(e => e.UploadedAt).HasDefaultValueSql("GETDATE()");
             });
 
             modelBuilder.Entity<Proposal>()
