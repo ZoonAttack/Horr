@@ -71,6 +71,15 @@ namespace Horr.Controllers.UserProfile
             return Ok(new { message = "Bio updated successfully.", data = response });
         }
 
+        [HttpPatch("experience-level")]
+        public async Task<IActionResult> UpdateExperienceLevel([FromBody] int experienceLevel)
+        {
+            var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            var response = await _profileSettingsService.UpdateExperienceLevelAsync(userId, experienceLevel);
+            if (!response.Succeeded) return BadRequest(response.Errors);
+            return Ok(new { message = "Experience level updated successfully.", data = response });
+        }
+
         [HttpPost("payment-method")]
         public async Task<IActionResult> CreatePaymentMethod([FromBody] PaymentMethodCreateDTO dto)
         {
