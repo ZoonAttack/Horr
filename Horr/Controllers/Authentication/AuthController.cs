@@ -59,8 +59,7 @@ namespace Horr.Controllers.Authentication
             if (user == null || user.IsDeleted)
                 return Unauthorized(new { Message = "User not found." });
 
-            var decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(token));
-            var result = await _authService.ChangeEmailAsync(user.Id, newEmail, decodedToken);
+            var result = await _authService.ChangeEmailAsync(user.Id, newEmail, token);
 
             if(!result.Succeeded)
                 return BadRequest(result);

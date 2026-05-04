@@ -35,7 +35,7 @@ namespace ServiceImplementation.Authentication
         {
             var user = await _userManager.FindByEmailAsync(dto.Email);
 
-            if(user.IsDeleted)
+            if (user != null && user.IsDeleted)
             {
                 return new Result<AuthResponse>
                 {
@@ -44,15 +44,24 @@ namespace ServiceImplementation.Authentication
                     Errors = new List<string> { "The account associated with this email has been deleted." }
                 };
             }
-            
-            // ... Validate Password Logic ...
-            if (user is null || _userManager.CheckPasswordAsync(user, dto.Password).Result == false)
+
+            if (user is null || await _userManager.CheckPasswordAsync(user, dto.Password) == false)
             {
                 return new Result<AuthResponse>
                 {
                     Succeeded = false,
                     Message = "Invalid credentials",
                     Errors = new List<string> { "Email or Password is incorrect." }
+                };
+            }
+
+            if (!user.EmailConfirmed)
+            {
+                return new Result<AuthResponse>
+                {
+                    Succeeded = false,
+                    Message = "Email not confirmed",
+                    Errors = new List<string> { "You must confirm your email before logging in." }
                 };
             }
 
@@ -121,6 +130,27 @@ namespace ServiceImplementation.Authentication
                     Errors = roleResult.Errors.Select(e => e.Description).ToList()
                 };
             }
+
+            // 5. Create Profile based on Role
+            if (dto.Role.ToString() == "Freelancer")
+            {
+                _context.Freelancers.Add(new Entities.Users.Freelancer
+                {
+                    UserId = user.Id,
+                    Availability = "Available",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync();
+            }
+            else if (dto.Role.ToString() == "Client")
+            {
+                _context.Clients.Add(new Entities.Users.Client
+                {
+                    UserId = user.Id
+                });
+                await _context.SaveChangesAsync();
+            }
             try
             {
                 bool result = await SendEmailHelperAsync(user);
@@ -163,7 +193,8 @@ namespace ServiceImplementation.Authentication
                 };
             }
 
-            var changeEmailResult = await _userManager.ChangeEmailAsync(user, newEmail, token);
+            var decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(token));
+            var changeEmailResult = await _userManager.ChangeEmailAsync(user, newEmail, decodedToken);
 
             if (!changeEmailResult.Succeeded)
             {

@@ -29,6 +29,7 @@ namespace ServiceContracts.DTOs.UserDTOs
         // Privacy settings (derived from Freelancer, if applicable)
         public Visibility? Visibility { get; set; }
         public ExperienceLevel? ExperienceLevel { get; set; }
+        public int? YearsOfExperience { get; set; }
         public string? UserIdHash { get; set; }
     }
 
@@ -56,6 +57,7 @@ namespace ServiceContracts.DTOs.UserDTOs
                 PendingEmail = pendingEmail,
                 Visibility = freelancer?.VisibilityPreference,
                 ExperienceLevel = freelancer?.ExperienceLevel,
+                YearsOfExperience = freelancer?.YearsOfExperience,
                 UserIdHash = user.Id?.Length >= 8 ? user.Id.Substring(0, 8) : user.Id
             };
         }

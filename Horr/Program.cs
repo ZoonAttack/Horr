@@ -119,7 +119,14 @@ namespace Horr
 
             builder.Services.AddOpenApiDocument(config =>
             {
-                config.Title = "My API";
+                config.Title = "Horr API";
+                
+                config.PostProcess = document =>
+                {
+                    document.Servers.Clear();
+                    document.Servers.Add(new NSwag.OpenApiServer { Url = "https://localhost:7070", Description = "HTTPS Development" });
+                    document.Servers.Add(new NSwag.OpenApiServer { Url = "http://localhost:5200", Description = "HTTP Development" });
+                };
 
                 config.AddSecurity("JWT", Enumerable.Empty<string>(), new NSwag.OpenApiSecurityScheme
                 {
@@ -151,6 +158,7 @@ namespace Horr
             app.UseMiddleware<ExceptionMiddleware>();
 
             app.UseHttpsRedirection();
+            app.UseStaticFiles();
 
             // A. Use CORS before Auth
             app.UseCors("AllowReactApp");

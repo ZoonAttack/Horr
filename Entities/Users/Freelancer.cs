@@ -34,7 +34,7 @@ namespace Entities.Users
 
         [MaxLength(255)]
         [Url]
-        public string PortfolioUrl { get; set; }
+        public string? PortfolioUrl { get; set; }
 
         [MaxLength(120)]
         public string? Title { get; set; }

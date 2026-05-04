@@ -172,14 +172,14 @@ namespace ServiceImplementation.Implementations.Settings
             };
         }
 
-        public async Task<Result<UserProfileDto>> UpdateExperienceLevelAsync(string userId, int experienceLevel)
+        public async Task<Result<UserProfileDto>> UpdateExperienceAsync(string userId, ExperienceUpdateDto dto)
         {
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null || user.IsDeleted) return new Result<UserProfileDto>
             {
                 Succeeded = false,
                 Errors = { "User not found." },
-                Message = "Failed to update experience level.",
+                Message = "Failed to update experience.",
                 Data = null
             };
 
@@ -188,22 +188,24 @@ namespace ServiceImplementation.Implementations.Settings
             {
                 Succeeded = false,
                 Errors = { "Freelancer profile not found." },
-                Message = "Failed to update experience level.",
+                Message = "Failed to update experience.",
                 Data = null
             };
 
-            if (!Enum.IsDefined(typeof(Entities.Enums.ExperienceLevel), experienceLevel))
+            if (!Enum.IsDefined(typeof(Entities.Enums.ExperienceLevel), dto.ExperienceLevel))
             {
                 return new Result<UserProfileDto>
                 {
                     Succeeded = false,
                     Errors = { "Invalid experience level value." },
-                    Message = "Failed to update experience level.",
+                    Message = "Failed to update experience.",
                     Data = null
                 };
             }
 
-            freelancer.ExperienceLevel = (Entities.Enums.ExperienceLevel)experienceLevel;
+            freelancer.ExperienceLevel = (Entities.Enums.ExperienceLevel)dto.ExperienceLevel;
+            freelancer.YearsOfExperience = dto.YearsOfExperience;
+
             _context.Freelancers.Update(freelancer);
             await _context.SaveChangesAsync();
 
@@ -211,7 +213,7 @@ namespace ServiceImplementation.Implementations.Settings
             {
                 Succeeded = true,
                 Errors = { },
-                Message = "Experience level updated successfully.",
+                Message = "Experience updated successfully.",
                 Data = user.ToUserProfileDto(freelancer: freelancer)
             };
         }
