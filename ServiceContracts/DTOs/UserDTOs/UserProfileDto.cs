@@ -18,6 +18,7 @@ namespace ServiceContracts.DTOs.UserDTOs
         public string? TimeZone { get; set; }
         
         // Profile Info
+        public string? Title { get; set; }
         public string? Bio { get; set; }
         public decimal TrustScore { get; set; }
         public bool IsVerified { get; set; }
@@ -48,7 +49,8 @@ namespace ServiceContracts.DTOs.UserDTOs
                 ZipCode = user.ZipCode,
                 Country = user.Country,
                 TimeZone = user.TimeZone,
-                Bio = user.Bio,
+                Title = freelancer?.Title,
+                Bio = freelancer?.Bio,
                 TrustScore = user.TrustScore,
                 IsVerified = user.IsVerified,
                 PendingEmail = pendingEmail,

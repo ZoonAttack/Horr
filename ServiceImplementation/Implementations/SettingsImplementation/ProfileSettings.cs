@@ -106,6 +106,72 @@ namespace ServiceImplementation.Implementations.Settings
                 };
         }
 
+        public async Task<Result<UserProfileDto>> UpdateTitleAsync(string userId, string newTitle)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null || user.IsDeleted) return new Result<UserProfileDto>
+            {
+                Succeeded = false,
+                Errors = { "User not found." },
+                Message = "Failed to update title.",
+                Data = null
+            };
+
+            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
+            if (freelancer == null) return new Result<UserProfileDto>
+            {
+                Succeeded = false,
+                Errors = { "Freelancer profile not found." },
+                Message = "Failed to update title.",
+                Data = null
+            };
+
+            freelancer.Title = newTitle;
+            _context.Freelancers.Update(freelancer);
+            await _context.SaveChangesAsync();
+
+            return new Result<UserProfileDto>
+            {
+                Succeeded = true,
+                Errors = { },
+                Message = "Title updated successfully.",
+                Data = user.ToUserProfileDto(freelancer: freelancer)
+            };
+        }
+
+        public async Task<Result<UserProfileDto>> UpdateBioAsync(string userId, string newBio)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null || user.IsDeleted) return new Result<UserProfileDto>
+            {
+                Succeeded = false,
+                Errors = { "User not found." },
+                Message = "Failed to update bio.",
+                Data = null
+            };
+
+            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
+            if (freelancer == null) return new Result<UserProfileDto>
+            {
+                Succeeded = false,
+                Errors = { "Freelancer profile not found." },
+                Message = "Failed to update bio.",
+                Data = null
+            };
+
+            freelancer.Bio = newBio;
+            _context.Freelancers.Update(freelancer);
+            await _context.SaveChangesAsync();
+
+            return new Result<UserProfileDto>
+            {
+                Succeeded = true,
+                Errors = { },
+                Message = "Bio updated successfully.",
+                Data = user.ToUserProfileDto(freelancer: freelancer)
+            };
+        }
+
 
         public async Task<Result<UserProfileDto>> UpdateAccountAsync(string userId, AccountUpdateDto dto)
         {

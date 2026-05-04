@@ -53,6 +53,24 @@ namespace Horr.Controllers.UserProfile
             return Ok(new { message = response.Message, data = response });
         }
 
+        [HttpPatch("title")]
+        public async Task<IActionResult> UpdateTitle([FromBody] string title)
+        {
+            var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            var response = await _profileSettingsService.UpdateTitleAsync(userId, title);
+            if (!response.Succeeded) return NotFound(response.Errors);
+            return Ok(new { message = "Title updated successfully.", data = response });
+        }
+
+        [HttpPatch("bio")]
+        public async Task<IActionResult> UpdateBio([FromBody] string bio)
+        {
+            var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            var response = await _profileSettingsService.UpdateBioAsync(userId, bio);
+            if (!response.Succeeded) return NotFound(response.Errors);
+            return Ok(new { message = "Bio updated successfully.", data = response });
+        }
+
         [HttpPost("payment-method")]
         public async Task<IActionResult> CreatePaymentMethod([FromBody] PaymentMethodCreateDTO dto)
         {
