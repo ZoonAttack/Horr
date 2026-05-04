@@ -13,7 +13,6 @@ namespace Entities.Skill
     public class Skill
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public string Id { get; set; }
 
         [Required]
@@ -23,10 +22,7 @@ namespace Entities.Skill
         [MaxLength(50)]
         public string Category { get; set; }
 
-        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         public DateTime CreatedAt { get; set; }
-
-        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         public DateTime UpdatedAt { get; set; }
 
         // --- Navigation Properties ---
