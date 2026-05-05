@@ -13,6 +13,7 @@
   <ItemGroup>
     <PackageReference Include="MediatR" Version="14.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.3.0" />
+    <PackageReference Include="Resend" Version="0.5.0" />
   </ItemGroup>
 
   <ItemGroup>
