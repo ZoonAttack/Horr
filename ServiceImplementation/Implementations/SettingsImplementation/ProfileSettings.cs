@@ -53,6 +53,27 @@ namespace ServiceImplementation.Implementations.Settings
             };
         }
 
+        public async Task<Result<UserProfileDto>> GetPublicProfileAsync(string userIdHash)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id.StartsWith(userIdHash));
+            if (user == null || user.IsDeleted) return new Result<UserProfileDto>
+            {
+                Succeeded = false,
+                Errors = { "User not found." },
+                Message = "Failed to retrieve public profile.",
+                Data = null
+            };
+
+            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == user.Id);
+
+            return new Result<UserProfileDto>
+            {
+                Succeeded = true,
+                Message = "Public profile retrieved successfully.",
+                Data = user.ToUserProfileDto(freelancer: freelancer)
+            };
+        }
+
         public async Task<Result<UserProfileDto>> UpdateFullNameAsync(string userId, string newName)
         {
             var user = await _userManager.FindByIdAsync(userId);

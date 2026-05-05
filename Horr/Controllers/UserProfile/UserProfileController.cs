@@ -30,6 +30,15 @@ namespace Horr.Controllers.UserProfile
             return Ok(response);
         }
 
+        [HttpGet("public/{userIdHash}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPublicProfile(string userIdHash)
+        {
+            var response = await _profileSettingsService.GetPublicProfileAsync(userIdHash);
+            if (!response.Succeeded) return NotFound(response.Errors);
+            return Ok(response);
+        }
+
         [HttpPatch("name")]
         public async Task<IActionResult> UpdateName([FromBody] string fullname)
         {

@@ -12,7 +12,7 @@ namespace ServiceContracts.DTOs.Responses
         public string Message { get; set; }
 
         public string ErrorCode { get; set; }
-        public List<string> Errors { get; set; }
+        public List<string> Errors { get; set; } = new List<string>();
         public T Data { get; set; }
     }
 }
