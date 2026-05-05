@@ -52,7 +52,7 @@ namespace ServiceImplementation.Implementations.Contracts
                     ProposalId = c.ProposalId,
                     ClientId = c.ClientId,
                     FreelancerId = c.FreelancerId,
-                    Proposal_Title = c.Proposal.JobPost.Title,
+                    Proposal_Title = c.Proposal != null ? c.Proposal.JobPost.Title : (c.JobPost != null ? c.JobPost.Title : "Direct Offer"),
                     Client_Name = c.Client.FullName,
                     Freelancer_Name = c.Freelancer.FullName,
                     AgreedRate = c.AgreedRate,

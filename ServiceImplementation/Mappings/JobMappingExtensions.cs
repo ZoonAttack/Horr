@@ -19,8 +19,8 @@ namespace ServiceImplementation.Mappings
                 JobType = job.JobType,
                 PostedAt = job.PostedAt,
                 ClientName = job.Client?.FullName ?? "Unknown",
-                Skills = job.JobSkills.Select(js => js.Skill.Name).ToList(),
-                IsSaved = currentUserId != null && job.SavedByFreelancers.Any(s => s.FreelancerId == currentUserId)
+                Skills = job.JobSkills?.Where(js => js.Skill != null).Select(js => js.Skill.Name).ToList() ?? new List<string>(),
+                IsSaved = currentUserId != null && (job.SavedByFreelancers?.Any(s => s.FreelancerId == currentUserId) ?? false)
             };
         }
 
@@ -38,8 +38,8 @@ namespace ServiceImplementation.Mappings
                 JobType = job.JobType,
                 PostedAt = job.PostedAt,
                 ClientName = job.Client?.FullName ?? "Unknown",
-                Skills = job.JobSkills.Select(js => js.Skill.Name).ToList(),
-                IsSaved = currentUserId != null && job.SavedByFreelancers.Any(s => s.FreelancerId == currentUserId)
+                Skills = job.JobSkills?.Where(js => js.Skill != null).Select(js => js.Skill.Name).ToList() ?? new List<string>(),
+                IsSaved = currentUserId != null && (job.SavedByFreelancers?.Any(s => s.FreelancerId == currentUserId) ?? false)
             };
 
             return dto;

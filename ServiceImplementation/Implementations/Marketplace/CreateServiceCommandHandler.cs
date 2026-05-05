@@ -132,6 +132,24 @@ namespace ServiceImplementation.Implementations.Marketplace
             if (dto.Steps == null || !dto.Steps.Any())
                 errors.Add("Steps: At least 1 step is required.");
 
+            if (dto.Requirements != null)
+            {
+                for (int i = 0; i < dto.Requirements.Count; i++)
+                {
+                    if (string.IsNullOrWhiteSpace(dto.Requirements[i].Question) || dto.Requirements[i].Question.Length < 10)
+                        errors.Add($"Requirements[{i}].Question: Question must be at least 10 characters.");
+                }
+            }
+
+            if (dto.Steps != null)
+            {
+                for (int i = 0; i < dto.Steps.Count; i++)
+                {
+                    if (string.IsNullOrWhiteSpace(dto.Steps[i].Title) || dto.Steps[i].Title.Length < 3)
+                        errors.Add($"Steps[{i}].Title: Title must be at least 3 characters.");
+                }
+            }
+
             // Files
             if (command.Images != null)
             {

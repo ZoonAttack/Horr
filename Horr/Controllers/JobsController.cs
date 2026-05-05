@@ -75,5 +75,16 @@ namespace Horr.Controllers
             await _mediator.Send(new ToggleSavedJobCommand(id, userId));
             return NoContent();
         }
+
+        [HttpGet("{id}/proposals")]
+        [Authorize(Policy = "ClientOnly")]
+        public async Task<IActionResult> GetJobProposals(string id, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            string userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var result = await _mediator.Send(new ServiceImplementation.Implementations.Proposals.GetProposalsForJobQuery(id, userId, page, pageSize));
+            return Ok(result);
+        }
     }
 }

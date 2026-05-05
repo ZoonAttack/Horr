@@ -92,7 +92,6 @@ namespace Horr.Controllers.Authentication
 
             if (!result.Succeeded)
                 return BadRequest(result);
-
             SetRefreshTokenInCookie(result.Data.RefreshToken);
             return Ok(result.Data.Token);
         }

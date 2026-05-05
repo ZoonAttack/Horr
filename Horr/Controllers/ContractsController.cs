@@ -132,5 +132,26 @@ namespace Horr.Controllers
             var result = await _mediator.Send(new SubmitReviewCommand(id, dto, userId));
             return StatusCode(201, result);
         }
+
+        [HttpPost("create-offer")]
+        [Authorize(Policy = "ClientOnly")]
+        [ProducesResponseType(typeof(ContractDto), 201)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
+        public async Task<IActionResult> CreateDirectOffer([FromBody] CreateDirectOfferCommand command)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            // Ensure the client creating the offer is the one authenticated
+            command.ClientId = userId;
+
+            var result = await _mediator.Send(command);
+            if (result.Succeeded)
+            {
+                return StatusCode(201, result.Data);
+            }
+            return BadRequest(result.Errors);
+        }
     }
 }

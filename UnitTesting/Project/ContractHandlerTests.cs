@@ -29,7 +29,7 @@ namespace UnitTesting.Project
             => new Proposal
             {
                 Id = id,
-                JobPostId = 99,
+                JobPostId = "99",
                 FreelancerId = freelancerId,
                 BidRate = 500,
                 CoverLetter = "I'm a great fit",

@@ -12,12 +12,12 @@ using Entities;
 
 namespace UnitTesting.Integration;
 
-public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFactory>
+public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
 {
-    private readonly CustomWebApplicationFactory _factory;
+    private readonly CustomWebApplicationFactory<Program> _factory;
     private readonly HttpClient _client;
 
-    public ConversationsControllerTests(CustomWebApplicationFactory factory)
+    public ConversationsControllerTests(CustomWebApplicationFactory<Program> factory)
     {
         _factory = factory;
         _client = _factory.CreateClient();
@@ -167,7 +167,8 @@ public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFa
 
         var result = await response.Content.ReadFromJsonAsync<JsonElement>();
         result.GetProperty("body").GetString().Should().Be("Test Message Body");
-        result.GetProperty("status").GetInt32().Should().Be((int)MessageStatus.Unread);
+        result.GetProperty("status").GetString().Should().Be(MessageStatus.Unread.ToString());
+
     }
 
     [Fact]

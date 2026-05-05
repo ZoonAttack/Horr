@@ -58,6 +58,7 @@ namespace Horr
             builder.Services.AddScoped<IProfileSettings, ProfileSettings>();
             builder.Services.AddScoped<IJobService, JobService>();
             builder.Services.AddTransient<IEmailService, EmailService>();
+            builder.Services.AddScoped<Services.Client.IJobService, ServiceImplementation.Implementations.ClientImplementation.JobService>();
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
             // MediatR Registration
@@ -74,41 +75,45 @@ namespace Horr
                 options.AddPolicy("FreelancerOnly", policy => policy.RequireRole("Freelancer"));
                 options.AddPolicy("SpecialistOnly", policy => policy.RequireRole("Specialist"));
             });
-            builder.Services.AddAuthentication(options =>
+            if (!builder.Environment.IsEnvironment("Testing"))
             {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(options =>
-            {
-                options.SaveToken = true;
-                options.RequireHttpsMetadata = false; // Set to true in production
-                options.TokenValidationParameters = new TokenValidationParameters()
+                builder.Services.AddAuthentication(options =>
                 {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-                    ValidAudience = builder.Configuration["JwtSettings:Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"]))
-                };
-            });
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddJwtBearer(options =>
+                {
+                    options.SaveToken = true;
+                    options.RequireHttpsMetadata = false; // Set to true in production
+                    options.TokenValidationParameters = new TokenValidationParameters()
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+                        ValidAudience = builder.Configuration["JwtSettings:Audience"],
+                        IssuerSigningKey = new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"]))
+                    };
+                });
+            }
+
 
             // ==========================================
-            // 4. CORS SETUP (Crucial for React)
+            // 4. CORS SETUP (Crucial for React & SignalR)
             // ==========================================
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowReactApp",
-                    b => b.WithOrigins("http://localhost:5173") // Your React URL
+                    b => b.SetIsOriginAllowed(origin => true) // More flexible for dev
                           .AllowAnyMethod()
-                          .AllowAnyHeader());
+                          .AllowAnyHeader()
+                          .AllowCredentials()); // Required for SignalR
             });
 
-            builder.Services.AddControllers();
             builder.Services.AddSignalR();
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>

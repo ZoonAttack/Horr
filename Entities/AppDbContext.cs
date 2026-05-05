@@ -23,6 +23,7 @@ namespace Entities
         public DbSet<Specialist> SpecialistProfiles { get; set; }
         public DbSet<Freelancer> Freelancers { get; set; }
         public DbSet<Client> Clients { get; set; }
+        public DbSet<SavedFreelancer> SavedFreelancers { get; set; }
 
         // --- NEW FREELANCER PROFILE COLLECTIONS DbSets ---
         public DbSet<FreelancerLanguage> FreelancerLanguages { get; set; }
@@ -73,11 +74,13 @@ namespace Entities
         public DbSet<ContractReview> ContractReviews { get; set; }
         public DbSet<WorkDelivery> WorkDeliveries { get; set; }
         public DbSet<DeliveryAttachment> DeliveryAttachments { get; set; }
+        public DbSet<ContractMilestone> ContractMilestones { get; set; }
 
         // Job Management DbSets
         public DbSet<JobPost> JobPosts { get; set; }
         public DbSet<SavedJob> SavedJobs { get; set; }
         public DbSet<JobSkill> JobSkills { get; set; }
+        public DbSet<JobMilestone> JobMilestones { get; set; }
         public DbSet<ProposalTerm> ProposalTerms { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -135,6 +138,9 @@ namespace Entities
 
             modelBuilder.Entity<SavedJob>()
                 .HasKey(sj => new { sj.FreelancerId, sj.JobPostId });
+
+            modelBuilder.Entity<SavedFreelancer>()
+                .HasKey(sf => new { sf.ClientId, sf.FreelancerId });
 
             modelBuilder.Entity<JobSkill>()
                 .HasKey(js => new { js.JobPostId, js.SkillId });

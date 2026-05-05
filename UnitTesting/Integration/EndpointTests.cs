@@ -17,6 +17,11 @@ namespace UnitTesting.Integration
     {
         private readonly CustomWebApplicationFactory<Program> _factory;
         private readonly HttpClient _client;
+        private static readonly System.Text.Json.JsonSerializerOptions _jsonOptions = new System.Text.Json.JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+        };
 
         public EndpointTests(CustomWebApplicationFactory<Program> factory)
         {
@@ -30,6 +35,7 @@ namespace UnitTesting.Integration
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Database.EnsureDeleted();
             db.Database.EnsureCreated();
+
 
             // Seed a user
             var user = new Entities.Users.User
@@ -60,7 +66,7 @@ namespace UnitTesting.Integration
         public async Task SubmitDeposit_ValidPayload_Returns201()
         {
             await PrepareDatabaseAsync();
-            _client.DefaultRequestHeaders.Add("X-Role", "Client");
+            _client.DefaultRequestHeaders.Add("X-Test-UserRole", "Client");
 
             var content = new MultipartFormDataContent();
             content.Add(new StringContent("500"), "Amount");
@@ -72,7 +78,7 @@ namespace UnitTesting.Integration
             var response = await _client.PostAsync("/api/billing/deposit-requests", content);
 
             response.StatusCode.Should().Be(HttpStatusCode.Created);
-            var result = await response.Content.ReadFromJsonAsync<DepositRequestDto>();
+            var result = await response.Content.ReadFromJsonAsync<DepositRequestDto>(_jsonOptions);
             result.Should().NotBeNull();
             result!.Amount.Should().Be(500);
             result.Status.Should().Be(DepositStatus.Pending);
@@ -82,7 +88,7 @@ namespace UnitTesting.Integration
         public async Task SubmitDeposit_MissingPhoto_Returns400()
         {
             await PrepareDatabaseAsync();
-            _client.DefaultRequestHeaders.Add("X-Role", "Client");
+            _client.DefaultRequestHeaders.Add("X-Test-UserRole", "Client");
 
             var content = new MultipartFormDataContent();
             content.Add(new StringContent("500"), "Amount");
@@ -111,12 +117,14 @@ namespace UnitTesting.Integration
                 depositId = dep.Id;
             }
 
-            _client.DefaultRequestHeaders.Add("X-Role", "Admin");
+            _client.DefaultRequestHeaders.Add("X-Test-UserRole", "Admin");
             var reviewDto = new { Status = DepositStatus.Approved, AdminNote = "Approved!" };
 
-            var response = await _client.PatchAsJsonAsync($"/api/admin/billing/deposit-requests/{depositId}/review", reviewDto);
+            var response = await _client.PatchAsJsonAsync($"/api/admin/billing/deposit-requests/{depositId}/review", reviewDto, _jsonOptions);
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+
 
             using (var scope = _factory.Services.CreateScope())
             {
@@ -141,10 +149,10 @@ namespace UnitTesting.Integration
                 depositId = dep.Id;
             }
 
-            _client.DefaultRequestHeaders.Add("X-Role", "Admin");
+            _client.DefaultRequestHeaders.Add("X-Test-UserRole", "Admin");
             var reviewDto = new { Status = DepositStatus.Rejected, AdminNote = "Bad receipt" };
 
-            var response = await _client.PatchAsJsonAsync($"/api/admin/billing/deposit-requests/{depositId}/review", reviewDto);
+            var response = await _client.PatchAsJsonAsync($"/api/admin/billing/deposit-requests/{depositId}/review", reviewDto, _jsonOptions);
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -160,7 +168,7 @@ namespace UnitTesting.Integration
         public async Task AdminEndpoint_NonAdmin_Returns403()
         {
             await PrepareDatabaseAsync();
-            _client.DefaultRequestHeaders.Add("X-Role", "Client");
+            _client.DefaultRequestHeaders.Add("X-Test-UserRole", "Client");
 
             var response = await _client.GetAsync("/api/admin/billing/deposit-requests/pending");
 
@@ -182,10 +190,10 @@ namespace UnitTesting.Integration
                 depositId = dep.Id;
             }
 
-            _client.DefaultRequestHeaders.Add("X-Role", "Admin");
+            _client.DefaultRequestHeaders.Add("X-Test-UserRole", "Admin");
             var reviewDto = new { Status = DepositStatus.Approved, AdminNote = "Duplicate" };
 
-            var response = await _client.PatchAsJsonAsync($"/api/admin/billing/deposit-requests/{depositId}/review", reviewDto);
+            var response = await _client.PatchAsJsonAsync($"/api/admin/billing/deposit-requests/{depositId}/review", reviewDto, _jsonOptions);
 
             response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
         }
@@ -194,13 +202,13 @@ namespace UnitTesting.Integration
         public async Task GetWalletBalance_ReturnsCorrectBalance()
         {
             await PrepareDatabaseAsync();
-            _client.DefaultRequestHeaders.Add("X-Role", "Client");
-            _client.DefaultRequestHeaders.Add("X-UserId", "test-user-id");
+            _client.DefaultRequestHeaders.Add("X-Test-UserRole", "Client");
+            _client.DefaultRequestHeaders.Add("X-Test-UserId", "test-user-id");
 
             var response = await _client.GetAsync("/api/billing/wallet-balance");
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            var result = await response.Content.ReadFromJsonAsync<WalletBalanceDto>();
+            var result = await response.Content.ReadFromJsonAsync<WalletBalanceDto>(_jsonOptions);
             result!.BalanceEGP.Should().Be(1000);
         }
 
@@ -208,8 +216,8 @@ namespace UnitTesting.Integration
         public async Task SubmitWithdrawal_InsufficientBalance_Returns400()
         {
             await PrepareDatabaseAsync();
-            _client.DefaultRequestHeaders.Add("X-Role", "Freelancer");
-            _client.DefaultRequestHeaders.Add("X-UserId", "test-user-id");
+            _client.DefaultRequestHeaders.Add("X-Test-UserRole", "Freelancer");
+            _client.DefaultRequestHeaders.Add("X-Test-UserId", "test-user-id");
 
             var command = new
             {
@@ -218,7 +226,7 @@ namespace UnitTesting.Integration
                 InstapayUsername = "user1"
             };
 
-            var response = await _client.PostAsJsonAsync("/api/billing/withdrawal-requests", command);
+            var response = await _client.PostAsJsonAsync("/api/billing/withdrawal-requests", command, _jsonOptions);
 
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             var problem = await response.Content.ReadAsStringAsync();
