@@ -52,4 +52,10 @@ namespace ServiceContracts.DTOs.Settings
         public Visibility? Visibility { get; set; }
         public ExperienceLevel? ExperienceLevel { get; set; }
     }
+
+    public class ExperienceUpdateDto
+    {
+        public int ExperienceLevel { get; set; }
+        public int? YearsOfExperience { get; set; }
+    }
 }

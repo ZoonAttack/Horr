@@ -12,6 +12,7 @@ namespace Horr.Controllers.UserProfile
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class UserProfileController : ControllerBase
     {
         private readonly IProfileSettings _profileSettingsService;
@@ -20,6 +21,15 @@ namespace Horr.Controllers.UserProfile
         {
             _profileSettingsService = profileSettingsService;
         }
+        [HttpGet]
+        public async Task<IActionResult> GetProfile()
+        {
+            var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            var response = await _profileSettingsService.GetProfileAsync(userId);
+            if (!response.Succeeded) return NotFound(response.Errors);
+            return Ok(response);
+        }
+
         [HttpPatch("name")]
         public async Task<IActionResult> UpdateName([FromBody] string fullname)
         {
@@ -41,6 +51,33 @@ namespace Horr.Controllers.UserProfile
             //Changing the actual email is an Authentication concern. so this service only sends the confirmation email
             if (!response.Succeeded) return NotFound(response.Errors);
             return Ok(new { message = response.Message, data = response });
+        }
+
+        [HttpPatch("title")]
+        public async Task<IActionResult> UpdateTitle([FromBody] string title)
+        {
+            var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            var response = await _profileSettingsService.UpdateTitleAsync(userId, title);
+            if (!response.Succeeded) return NotFound(response.Errors);
+            return Ok(new { message = "Title updated successfully.", data = response });
+        }
+
+        [HttpPatch("bio")]
+        public async Task<IActionResult> UpdateBio([FromBody] string bio)
+        {
+            var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            var response = await _profileSettingsService.UpdateBioAsync(userId, bio);
+            if (!response.Succeeded) return NotFound(response.Errors);
+            return Ok(new { message = "Bio updated successfully.", data = response });
+        }
+
+        [HttpPatch("experience-level")]
+        public async Task<IActionResult> UpdateExperienceLevel([FromBody] ExperienceUpdateDto dto)
+        {
+            var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            var response = await _profileSettingsService.UpdateExperienceAsync(userId, dto);
+            if (!response.Succeeded) return BadRequest(response.Errors);
+            return Ok(new { message = "Experience updated successfully.", data = response });
         }
 
         [HttpPost("payment-method")]

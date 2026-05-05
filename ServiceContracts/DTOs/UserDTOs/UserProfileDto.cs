@@ -18,6 +18,7 @@ namespace ServiceContracts.DTOs.UserDTOs
         public string? TimeZone { get; set; }
         
         // Profile Info
+        public string? Title { get; set; }
         public string? Bio { get; set; }
         public decimal TrustScore { get; set; }
         public bool IsVerified { get; set; }
@@ -28,6 +29,7 @@ namespace ServiceContracts.DTOs.UserDTOs
         // Privacy settings (derived from Freelancer, if applicable)
         public Visibility? Visibility { get; set; }
         public ExperienceLevel? ExperienceLevel { get; set; }
+        public int? YearsOfExperience { get; set; }
         public string? UserIdHash { get; set; }
     }
 
@@ -48,12 +50,14 @@ namespace ServiceContracts.DTOs.UserDTOs
                 ZipCode = user.ZipCode,
                 Country = user.Country,
                 TimeZone = user.TimeZone,
-                Bio = user.Bio,
+                Title = freelancer?.Title,
+                Bio = freelancer?.Bio,
                 TrustScore = user.TrustScore,
                 IsVerified = user.IsVerified,
                 PendingEmail = pendingEmail,
                 Visibility = freelancer?.VisibilityPreference,
                 ExperienceLevel = freelancer?.ExperienceLevel,
+                YearsOfExperience = freelancer?.YearsOfExperience,
                 UserIdHash = user.Id?.Length >= 8 ? user.Id.Substring(0, 8) : user.Id
             };
         }

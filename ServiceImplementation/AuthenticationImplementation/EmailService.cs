@@ -61,7 +61,7 @@ namespace Services.Implementations
                 var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
                 // Build the confirmation link here
                 var baseUrl = _configuration["FrontendBaseUrl"];
-                var link = $"{baseUrl}/api/Auth/confirm-email?userId={userId}&token={encodedToken}";
+                var link = $"{baseUrl}/email-confirmed?userId={userId}&token={encodedToken}";
 
                 string subject = "Confirm your email";
                 string body = $@"
@@ -86,7 +86,7 @@ namespace Services.Implementations
                 var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
                 // Build the confirmation link here
                 var baseUrl = _configuration["FrontendBaseUrl"];
-                var link = $"{baseUrl}/api/Auth/change-email?userId={userId}&newEmail={to}&token={encodedToken}";
+                var link = $"{baseUrl}/change-email?userId={userId}&newEmail={to}&token={encodedToken}";
                 string subject = "Confirm your new email";
                 string body = $@"
                                 <h2>Email Change Confirmation</h2>

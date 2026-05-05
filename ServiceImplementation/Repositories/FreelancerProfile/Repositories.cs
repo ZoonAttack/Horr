@@ -12,7 +12,7 @@ namespace ServiceImplementation.Repositories.FreelancerProfile
 
         public async Task<IEnumerable<PortfolioItem>> GetByUserIdAsync(string userId)
         {
-            return await Task.FromResult(_mockDb.Where(p => p.UserId == userId && !p.IsDeleted));
+            return await Task.FromResult(_mockDb.Where(p => p.FreelancerId == userId && !p.IsDeleted));
         }
 
         public async Task<PortfolioItem> AddAsync(PortfolioItem item)

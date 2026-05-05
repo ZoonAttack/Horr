@@ -139,6 +139,26 @@ namespace ServiceImplementation.Authentication
                 };
             }
 
+            // 5. Create Profile based on Role
+            if (dto.Role.ToString() == "Freelancer")
+            {
+                _context.Freelancers.Add(new Entities.Users.Freelancer
+                {
+                    UserId = user.Id,
+                    Availability = "Available",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync();
+            }
+            else if (dto.Role.ToString() == "Client")
+            {
+                _context.Clients.Add(new Entities.Users.Client
+                {
+                    UserId = user.Id
+                });
+                await _context.SaveChangesAsync();
+            }
             try
             {
                 bool sent = await SendEmailHelperAsync(user);
@@ -182,7 +202,9 @@ namespace ServiceImplementation.Authentication
                 };
             }
 
-            var changeEmailResult = await _userManager.ChangeEmailAsync(user, newEmail, token);
+            var decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(token));
+            var changeEmailResult = await _userManager.ChangeEmailAsync(user, newEmail, decodedToken);
+
             if (!changeEmailResult.Succeeded)
             {
                 return new Result<AuthResponse>
@@ -411,8 +433,8 @@ namespace ServiceImplementation.Authentication
             var userRoles   = await _userManager.GetRolesAsync(user);
             var authClaims  = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, user.FullName ?? "User"), // Use FullName
-                new Claim(ClaimTypes.Email, user.Email), // Add Email claim
+                new Claim(ClaimTypes.Name, user.FullName),
+                new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim("name", user.FullName ?? "User"), // Custom claim for frontend
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
