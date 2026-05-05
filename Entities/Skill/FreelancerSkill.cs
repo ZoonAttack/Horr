@@ -24,10 +24,7 @@ namespace Entities.Skill
 
         public ProficiencyLevel ProficiencyLevel { get; set; }
 
-        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         public DateTime CreatedAt { get; set; }
-
-        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         public DateTime UpdatedAt { get; set; }
 
         // --- Navigation Properties ---
