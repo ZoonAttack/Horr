@@ -8,6 +8,7 @@ using Entities.Token;
 using Entities.Common;
 using Entities.Users;
 using Entities.Users.FreelancerHelpers;
+using Entities.Verification;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System.Linq; // Needed for the OnModelCreating loop
@@ -19,7 +20,8 @@ namespace Entities
 
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         // User and Profile DbSets
-        public DbSet<UserVerification> UserVerifications { get; set; }
+
+        public DbSet<VerificationRequest> VerificationRequests { get; set; }
         public DbSet<Specialist> SpecialistProfiles { get; set; }
         public DbSet<Freelancer> Freelancers { get; set; }
         public DbSet<Client> Clients { get; set; }
