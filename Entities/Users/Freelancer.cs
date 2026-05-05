@@ -30,11 +30,17 @@ namespace Entities.Users
         public int? YearsOfExperience { get; set; }
 
         public Enums.Visibility VisibilityPreference { get; set; } = Enums.Visibility.Public;
-        public Enums.ExperienceLevel ExperienceLevel { get; set; } = Enums.ExperienceLevel.EntryLevel;
+        public Enums.ExperienceLevel ExperienceLevel { get; set; } = Enums.ExperienceLevel.Beginner;
 
         [MaxLength(255)]
         [Url]
-        public string PortfolioUrl { get; set; }
+        public string? PortfolioUrl { get; set; }
+
+        [MaxLength(120)]
+        public string? Title { get; set; }
+
+        [MaxLength(1000)]
+        public string? Bio { get; set; }
 
 
         public DateTime CreatedAt { get; set; }

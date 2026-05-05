@@ -18,7 +18,7 @@ namespace ServiceImplementation.Mappings.FreelancerProfile
                 Title = item.Title,
                 Role = item.Role,
                 Description = item.Description,
-                MediaUrl = item.MediaUrl
+                MediaUrl = item.ThumbnailUrl ?? string.Empty
             };
         }
 
@@ -34,11 +34,11 @@ namespace ServiceImplementation.Mappings.FreelancerProfile
             return new PortfolioItem
             {
                 Id = Guid.NewGuid().ToString(),
-                UserId = userId,
+                FreelancerId = userId,
                 Title = dto.Title,
                 Role = dto.Role,
                 Description = dto.Description,
-                MediaUrl = dto.MediaUrl,
+                ThumbnailUrl = dto.MediaUrl,
                 IsDeleted = false
             };
         }

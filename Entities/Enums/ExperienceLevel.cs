@@ -2,8 +2,9 @@ namespace Entities.Enums
 {
     public enum ExperienceLevel
     {
-        EntryLevel = 0,
+        Beginner = 0,
         Intermediate = 1,
-        Expert = 2
+        Advanced = 2,
+        Expert = 3
     }
 }
