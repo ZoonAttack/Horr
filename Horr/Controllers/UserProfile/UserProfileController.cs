@@ -125,28 +125,5 @@ namespace Horr.Controllers.UserProfile
             return Ok(new { message = "Location updated successfully." });
         }
 
-        [HttpGet("privacy")]
-        public async Task<IActionResult> GetPrivacy()
-        {
-            var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
-            var response = await _profileSettingsService.GetPrivacySettingsAsync(userId);
-
-            if (response.Data == null) return NotFound("Freelancer profile not found for user.");
-
-            return Ok(response);
-        }
-
-        [HttpPatch("privacy")]
-        public async Task<IActionResult> UpdatePrivacy([FromBody] PrivacyUpdateDto dto)
-        {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-
-            var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
-            var response = await _profileSettingsService.UpdatePrivacySettingsAsync(userId, dto);
-
-            if (!response.Succeeded) return NotFound("Freelancer profile not found.");
-
-            return Ok(new { message = "Privacy settings updated successfully." });
-        }
     }
 }

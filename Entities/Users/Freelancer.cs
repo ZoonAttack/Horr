@@ -29,7 +29,6 @@ namespace Entities.Users
 
         public int? YearsOfExperience { get; set; }
 
-        public Enums.Visibility VisibilityPreference { get; set; } = Enums.Visibility.Public;
         public Enums.ExperienceLevel ExperienceLevel { get; set; } = Enums.ExperienceLevel.Beginner;
 
         [MaxLength(255)]

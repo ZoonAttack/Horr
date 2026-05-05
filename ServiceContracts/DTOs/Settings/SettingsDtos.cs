@@ -40,19 +40,6 @@ namespace ServiceContracts.DTOs.Settings
         public string? PhoneNumber { get; set; }
     }
 
-    public class PrivacyResponseDto
-    {
-        public string UserIdHash { get; set; } = string.Empty;
-        public Visibility Visibility { get; set; }
-        public ExperienceLevel ExperienceLevel { get; set; }
-    }
-
-    public class PrivacyUpdateDto
-    {
-        public Visibility? Visibility { get; set; }
-        public ExperienceLevel? ExperienceLevel { get; set; }
-    }
-
     public class ExperienceUpdateDto
     {
         public int ExperienceLevel { get; set; }

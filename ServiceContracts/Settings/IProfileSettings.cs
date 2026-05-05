@@ -23,7 +23,5 @@ namespace ServiceContracts.Settings
 
         Task<Result<UserProfileDto>> UpdateAccountAsync(string userId, AccountUpdateDto dto);
         Task<Result<UserProfileDto>> UpdateLocationAsync(string userId, LocationUpdateDto dto);
-        Task<Result<UserProfileDto>> GetPrivacySettingsAsync(string userId);
-        Task<Result<UserProfileDto>> UpdatePrivacySettingsAsync(string userId, PrivacyUpdateDto dto);
     }
 }
