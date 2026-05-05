@@ -83,7 +83,7 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
                 Email = createDto.Email,
                 UserName = createDto.Email, // Identity requires UserName
                 PhoneNumber = createDto.Phone,
-                Bio = createDto.Bio ?? string.Empty,
+                Bio = createDto.Bio,
                 Address = createDto.Address ?? string.Empty,
                 City = createDto.City ?? string.Empty,
                 StateProvince = createDto.StateProvince ?? string.Empty,

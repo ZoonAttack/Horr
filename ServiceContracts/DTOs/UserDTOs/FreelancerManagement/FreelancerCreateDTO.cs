@@ -28,7 +28,7 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
         // --- Freelancer Profile Properties (Mirrors Freelancer Entity) ---
 
         // Note: [Column(TypeName = "text")] for Bio allows large text, so no StringLength is strictly needed.
-        public string Bio { get; set; }
+        public string? Bio { get; set; }
 
         // Matches decimal(10,2) format, must be positive, and allows null (?)
         [Range(0.01, 99999999.99, ErrorMessage = "Hourly Rate must be between 0.01 and 99,999,999.99.")]

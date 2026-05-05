@@ -45,7 +45,8 @@ namespace Services.DTOs.UserDTOs.Client
             {
                 FullName = createDto.FullName,
                 Email = createDto.Email,
-                PhoneNumber = createDto.Phone
+                PhoneNumber = createDto.Phone,
+                Bio = createDto.Bio
             };
         }
 
@@ -60,6 +61,7 @@ namespace Services.DTOs.UserDTOs.Client
             user.FullName = updateDto.FullName;
             user.Email = updateDto.Email;
             user.PhoneNumber = updateDto.Phone;
+            user.Bio = updateDto.Bio;
 
         }
     }

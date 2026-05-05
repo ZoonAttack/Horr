@@ -239,7 +239,7 @@ namespace ServiceImplementation.Implementations.Settings
             };
         }
 
-        public async Task<Result<UserProfileDto>> UpdateBioAsync(string userId, string newBio)
+        public async Task<Result<UserProfileDto>> UpdateBioAsync(string userId, string? newBio)
         {
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null || user.IsDeleted) return new Result<UserProfileDto>

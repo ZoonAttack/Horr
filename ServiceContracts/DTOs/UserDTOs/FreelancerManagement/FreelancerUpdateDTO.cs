@@ -11,7 +11,7 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
         public string Phone { get; set; }
 
         // --- Freelancer Profile Properties ---
-        public string Bio { get; set; }
+        public string? Bio { get; set; }
         public decimal? HourlyRate { get; set; }
         public string Availability { get; set; }
         public int? YearsOfExperience { get; set; }

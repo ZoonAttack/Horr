@@ -72,7 +72,7 @@ namespace Horr.Controllers.UserProfile
         }
 
         [HttpPatch("bio")]
-        public async Task<IActionResult> UpdateBio([FromBody] string bio)
+        public async Task<IActionResult> UpdateBio([FromBody] string? bio)
         {
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
             var response = await _profileSettingsService.UpdateBioAsync(userId, bio);
