@@ -13,8 +13,10 @@ using ServiceImplementation.Helpers;
 using Services.Authentication;
 using Services.Implementations;
 using System;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ServiceContracts.DTOs.FreelancerProfile;
 
 namespace ServiceImplementation.Implementations.Settings
 {
@@ -53,10 +55,24 @@ namespace ServiceImplementation.Implementations.Settings
             };
         }
 
-        public async Task<Result<UserProfileDto>> GetPublicProfileAsync(string userIdHash)
+        public async Task<Result<PublicProfileDto>> GetPublicProfileAsync(string userIdHash)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id.StartsWith(userIdHash));
-            if (user == null || user.IsDeleted) return new Result<UserProfileDto>
+            var user = await _context.Users
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.FreelancerSkills)
+                        .ThenInclude(fs => fs.Skill)
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.Languages)
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.Education)
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.EmploymentHistory)
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.PortfolioItems)
+                        .ThenInclude(pi => pi.Media)
+                .FirstOrDefaultAsync(u => u.Id.StartsWith(userIdHash));
+
+            if (user == null || user.IsDeleted) return new Result<PublicProfileDto>
             {
                 Succeeded = false,
                 Errors = { "User not found." },
@@ -64,13 +80,71 @@ namespace ServiceImplementation.Implementations.Settings
                 Data = null
             };
 
-            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == user.Id);
+            var freelancer = user.Freelancer;
 
-            return new Result<UserProfileDto>
+            var publicProfile = new PublicProfileDto
+            {
+                FullName = user.FullName,
+                Title = freelancer?.Title,
+                Bio = freelancer?.Bio,
+                City = user.City,
+                Country = user.Country,
+                ProfilePicturePath = user.ProfilePicturePath,
+                TrustScore = user.TrustScore,
+                IsVerified = user.IsVerified,
+                ExperienceLevel = (int)(freelancer?.ExperienceLevel ?? Entities.Enums.ExperienceLevel.Beginner),
+                YearsOfExperience = freelancer?.YearsOfExperience,
+
+                TotalEarnings = "$0", 
+                TotalJobs = 0,
+                TotalHours = 0,
+
+                Skills = freelancer?.FreelancerSkills.Select(s => s.Skill.Name).ToList() ?? new List<string>(),
+                Portfolio = freelancer?.PortfolioItems.Where(pi => !pi.IsDeleted).Select(pi => new PortfolioItemDto
+                {
+                    Id = pi.Id,
+                    Title = pi.Title,
+                    Description = pi.Description,
+                    Role = pi.Role,
+                    VisitLink = pi.VisitLink,
+                    ThumbnailUrl = pi.ThumbnailUrl,
+                    Media = pi.Media.Select(m => new PortfolioMediaDto
+                    {
+                        Id = m.Id,
+                        FileUrl = m.FileUrl,
+                        FileType = m.FileType
+                    }).ToList(),
+                    CreatedAt = pi.CreatedAt
+                }).ToList() ?? new List<PortfolioItemDto>(),
+
+                Languages = freelancer?.Languages.Select(l => new LanguageDto
+                {
+                    Name = l.Name,
+                    Level = l.Level
+                }).ToList() ?? new List<LanguageDto>(),
+
+                Education = freelancer?.Education.Select(e => new EducationDto
+                {
+                    School = e.School,
+                    Degree = e.Degree,
+                    FieldOfStudy = e.FieldOfStudy,
+                    Year = e.DateEnd?.Year ?? e.DateStart.Year
+                }).ToList() ?? new List<EducationDto>(),
+
+                EmploymentHistory = freelancer?.EmploymentHistory.Select(eh => new EmploymentDto
+                {
+                    Company = eh.Company,
+                    Title = eh.Title,
+                    DateRange = $"{eh.FromDate:MMM yyyy} - {(eh.CurrentlyWorkThere ? "Present" : eh.ToDate?.ToString("MMM yyyy"))}",
+                    Description = "" 
+                }).ToList() ?? new List<EmploymentDto>()
+            };
+
+            return new Result<PublicProfileDto>
             {
                 Succeeded = true,
                 Message = "Public profile retrieved successfully.",
-                Data = user.ToUserProfileDto(freelancer: freelancer)
+                Data = publicProfile
             };
         }
 

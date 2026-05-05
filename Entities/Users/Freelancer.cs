@@ -59,6 +59,6 @@ namespace Entities.Users
         public virtual ICollection<FreelancerEducation> Education { get; set; } = new List<FreelancerEducation>();
         public virtual ICollection<FreelancerExperienceDetail> ExperienceDetails { get; set; } = new List<FreelancerExperienceDetail>();
         public virtual ICollection<FreelancerEmployment> EmploymentHistory { get; set; } = new List<FreelancerEmployment>();
-        
+        public virtual ICollection<PortfolioItem> PortfolioItems { get; set; } = new List<PortfolioItem>();
     }
 }
