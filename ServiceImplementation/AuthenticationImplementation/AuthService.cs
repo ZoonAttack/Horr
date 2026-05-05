@@ -69,16 +69,16 @@ namespace ServiceImplementation.Authentication
                 };
             }
 
-            if (user is null || await _userManager.CheckPasswordAsync(user, dto.Password) == false)
-            {
-                return new Result<AuthResponse>
-                {
-                    Succeeded = false,
-                    ErrorCode = ErrorCodes.EmailNotConfirmed,
-                    Message   = "Email not confirmed.",
-                    Errors    = new List<string> { "Please confirm your email before logging in." }
-                };
-            }
+            //if (!user.EmailConfirmed)
+            //{
+            //    return new Result<AuthResponse>
+            //    {
+            //        Succeeded = false,
+            //        ErrorCode = ErrorCodes.EmailNotConfirmed,
+            //        Message   = "Email not confirmed.",
+            //        Errors    = new List<string> { "Please confirm your email before logging in." }
+            //    };
+            //}
 
             var authResponse = await GenerateAuthResponseAsync(user);
 
@@ -106,7 +106,7 @@ namespace ServiceImplementation.Authentication
             {
                 UserName      = dto.Email,
                 Email         = dto.Email,
-                FullName      = dto.FullName,
+                FullName      = dto.FirstName + " " + dto.LastName,
                 PhoneNumber   = dto.PhoneNumber,
                 Bio           = dto.Bio           ?? string.Empty,
                 Address       = dto.Address       ?? string.Empty,

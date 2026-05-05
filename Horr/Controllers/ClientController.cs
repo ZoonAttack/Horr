@@ -1,0 +1,50 @@
+using Horr.Extentions;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using ServiceContracts.Client;
+using Services.Client;
+
+namespace Horr.Controllers
+{
+    [ApiController]
+    [Route("api/client")]
+    [Authorize(Policy = "ClientOnly")]
+    public class ClientController : ControllerBase
+    {
+        private readonly IClientProfileService _profileService;
+        private readonly IJobService _jobService;
+
+        public ClientController(IClientProfileService profileService, IJobService jobService)
+        {
+            _profileService = profileService;
+            _jobService = jobService;
+        }
+
+        [HttpGet("me")]
+        public async Task<IActionResult> GetMe()
+        {
+            string userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            var result = await _profileService.GetClientMeAsync(userId);
+            if (result.Succeeded) return Ok(result.Data);
+            return BadRequest(new { result.ErrorCode, result.Message });
+        }
+
+        [HttpGet("onboarding")]
+        public async Task<IActionResult> GetOnboarding()
+        {
+            string userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            var result = await _profileService.GetClientOnboardingAsync(userId);
+            if (result.Succeeded) return Ok(result.Data);
+            return BadRequest(new { result.ErrorCode, result.Message });
+        }
+
+        [HttpGet("jobs")]
+        public async Task<IActionResult> GetClientJobs()
+        {
+            string userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            var result = await _jobService.GetClientJobsAsync(userId);
+            if (result.Succeeded) return Ok(result.Data);
+            return BadRequest(new { result.ErrorCode, result.Message });
+        }
+    }
+}

@@ -297,4 +297,15 @@ namespace Entities.Enums
         Credit,
         Debit
     }
+
+    /// <summary>
+    /// Represents the status of a job invitation.
+    /// </summary>
+    public enum InvitationStatus
+    {
+        Pending,
+        Accepted,
+        Declined,
+        Withdrawn
+    }
 }
