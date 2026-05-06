@@ -7,6 +7,7 @@ namespace ServiceContracts.DTOs.Skill
         public string Id { get; set; }
         public string Name { get; set; }
         public string? Category { get; set; }
+        public string? CategoryId { get; set; }
     }
 
     public class FreelancerSkillDto
@@ -14,6 +15,7 @@ namespace ServiceContracts.DTOs.Skill
         public string SkillId { get; set; }
         public string SkillName { get; set; }
         public string? SkillCategory { get; set; }
+        public string? SkillCategoryId { get; set; }
         public int ProficiencyLevel { get; set; }
     }
 

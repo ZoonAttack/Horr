@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Entities.Project;
 
 namespace Entities.Skill
 {
@@ -19,8 +20,11 @@ namespace Entities.Skill
         [MaxLength(100)]
         public string Name { get; set; }
 
-        [MaxLength(50)]
-        public string Category { get; set; }
+        [Required]
+        [ForeignKey(nameof(Category))]
+        public string CategoryId { get; set; } = string.Empty;
+
+        public virtual Entities.Project.Category Category { get; set; } = null!;
 
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }

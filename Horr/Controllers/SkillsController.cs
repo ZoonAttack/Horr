@@ -24,11 +24,13 @@ namespace Horr.Controllers
         public async Task<ActionResult<IEnumerable<SkillDto>>> GetAllSkills()
         {
             var skills = await _context.Skills
+                .Include(s => s.Category)
                 .Select(s => new SkillDto
                 {
                     Id = s.Id,
                     Name = s.Name,
-                    Category = s.Category
+                    CategoryId = s.CategoryId,
+                    Category = s.Category != null ? s.Category.Name : null
                 })
                 .ToListAsync();
 
@@ -44,11 +46,13 @@ namespace Horr.Controllers
 
             var mySkills = await _context.FreelancerSkills
                 .Where(fs => fs.FreelancerId == freelancer.UserId)
+                .Include(fs => fs.Skill.Category)
                 .Select(fs => new FreelancerSkillDto
                 {
                     SkillId = fs.SkillId,
                     SkillName = fs.Skill.Name,
-                    SkillCategory = fs.Skill.Category,
+                    SkillCategoryId = fs.Skill.CategoryId,
+                    SkillCategory = fs.Skill.Category != null ? fs.Skill.Category.Name : null,
                     ProficiencyLevel = (int)fs.ProficiencyLevel
                 })
                 .ToListAsync();
@@ -63,7 +67,9 @@ namespace Horr.Controllers
             var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
             if (freelancer == null) return NotFound("Freelancer profile not found.");
 
-            var skill = await _context.Skills.FindAsync(dto.SkillId);
+            var skill = await _context.Skills
+                .Include(s => s.Category)
+                .FirstOrDefaultAsync(s => s.Id == dto.SkillId);
             if (skill == null) return NotFound("Skill not found.");
 
             var existing = await _context.FreelancerSkills
@@ -84,7 +90,8 @@ namespace Horr.Controllers
             {
                 SkillId = freelancerSkill.SkillId,
                 SkillName = skill.Name,
-                SkillCategory = skill.Category,
+                SkillCategoryId = skill.CategoryId,
+                SkillCategory = skill.Category != null ? skill.Category.Name : null,
                 ProficiencyLevel = (int)freelancerSkill.ProficiencyLevel
             });
         }

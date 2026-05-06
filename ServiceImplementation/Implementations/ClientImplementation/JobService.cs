@@ -25,15 +25,15 @@ namespace ServiceImplementation.Implementations.ClientImplementation
 
         public async Task<Result<JobDetailsDto>> CreateJobAsync(string clientId, JobDetailsDto jobDetails)
         {
-            var clientUser = await _db.Users.FirstOrDefaultAsync(u => u.Id == clientId && u.Role == UserRole.Client);
-            if (clientUser == null)
+            var clientUser = await _db.Users.FirstOrDefaultAsync(u => u.Id == clientId);
+            if (clientUser == null || clientUser.IsDeleted)
             {
                 return new Result<JobDetailsDto>
                 {
                     Succeeded = false,
                     ErrorCode = ErrorCodes.ClientNotFound,
-                    Message = "Client not found or unauthenticated.",
-                    Errors = new List<string> { "Invalid client ID." }
+                    Message = "Client not found",
+                    Errors = new List<string> { "Invalid client ID. || May be the client is deleted." }
                 };
             }
 
@@ -42,7 +42,7 @@ namespace ServiceImplementation.Implementations.ClientImplementation
                 Id              = Guid.NewGuid().ToString(),
                 Title           = jobDetails.Title,
                 Description     = jobDetails.Description,
-                Category        = jobDetails.Category,
+                CategoryId      = jobDetails.CategoryId,
                 Scope           = jobDetails.Scope,
                 ExperienceLevel = jobDetails.ExperienceLevel,
                 Budget          = jobDetails.Budget,
@@ -93,6 +93,7 @@ namespace ServiceImplementation.Implementations.ClientImplementation
         {
             var jobs = await _db.JobPosts
                 .Include(j => j.Client)
+                .Include(j => j.Category)
                 .Include(j => j.JobSkills)
                     .ThenInclude(js => js.Skill)
                 .Where(j => !j.IsDeleted)
@@ -103,7 +104,8 @@ namespace ServiceImplementation.Implementations.ClientImplementation
             {
                 Id              = j.Id,
                 Title           = j.Title,
-                Category        = j.Category,
+                CategoryId      = j.CategoryId,
+                CategoryName    = j.Category?.Name ?? string.Empty,
                 Scope           = j.Scope,
                 ExperienceLevel = j.ExperienceLevel,
                 Budget          = j.Budget,
@@ -126,6 +128,7 @@ namespace ServiceImplementation.Implementations.ClientImplementation
         {
             var job = await _db.JobPosts
                 .Include(j => j.Client)
+                .Include(j => j.Category)
                 .Include(j => j.JobSkills)
                     .ThenInclude(js => js.Skill)
                 .Include(j => j.JobMilestones)
@@ -147,7 +150,8 @@ namespace ServiceImplementation.Implementations.ClientImplementation
                 Id              = job.Id,
                 Title           = job.Title,
                 Description     = job.Description,
-                Category        = job.Category,
+                CategoryId      = job.CategoryId,
+                CategoryName    = job.Category?.Name ?? string.Empty,
                 Scope           = job.Scope,
                 ExperienceLevel = job.ExperienceLevel,
                 Budget          = job.Budget,

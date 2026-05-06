@@ -9,7 +9,9 @@ namespace ServiceContracts.DTOs.Skill.Skill
 
         public string Name { get; set; }
 
-        public string Category { get; set; }
+        public string? Category { get; set; }
+        public string? CategoryId { get; set; }
+        public string? CategoryName { get; set; }
 
         public DateTime CreatedAt { get; set; }
 

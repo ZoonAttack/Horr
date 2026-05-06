@@ -14,6 +14,8 @@ using System.Text;
 using ServiceImplementation.Hubs;
 using Services.Client;
 using ServiceImplementation.Implementations.ClientImplementation;
+using ServiceContracts;
+using ServiceImplementation.Implementations;
 
 namespace Horr
 {
@@ -60,6 +62,7 @@ namespace Horr
             builder.Services.AddTransient<IEmailService, EmailService>();
             builder.Services.AddScoped<Services.Client.IJobService, ServiceImplementation.Implementations.ClientImplementation.JobService>();
             builder.Services.AddScoped<ServiceContracts.Client.IClientProfileService, ServiceImplementation.Implementations.ClientImplementation.ClientProfileService>();
+            builder.Services.AddScoped<ICategoryService, CategoryService>();
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
             // MediatR Registration

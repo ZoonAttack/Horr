@@ -20,6 +20,7 @@ namespace ServiceImplementation.Implementations.JobManagement
         {
             var jobQuery = _context.JobPosts
                 .Include(j => j.Client)
+                .Include(j => j.Category)
                 .Include(j => j.JobSkills).ThenInclude(js => js.Skill)
                 .Include(j => j.SavedByFreelancers);
 
