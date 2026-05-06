@@ -4,10 +4,12 @@ using Microsoft.EntityFrameworkCore;
 using ServiceContracts.DTOs.JobManagement;
 using ServiceImplementation.Mappings;
 using ServiceImplementation.Exceptions;
+using ServiceContracts.DTOs.Responses;
+using ServiceImplementation.Helpers;
 
 namespace ServiceImplementation.Implementations.JobManagement
 {
-    public class GetJobDetailsQueryHandler : IRequestHandler<GetJobDetailsQuery, JobDetailsDto>
+    public class GetJobDetailsQueryHandler : IRequestHandler<GetJobDetailsQuery, Result<JobDetailsDto>>
     {
         private readonly AppDbContext _context;
 
@@ -16,25 +18,38 @@ namespace ServiceImplementation.Implementations.JobManagement
             _context = context;
         }
 
-        public async Task<JobDetailsDto> Handle(GetJobDetailsQuery request, CancellationToken cancellationToken)
+        public async Task<Result<JobDetailsDto>> Handle(GetJobDetailsQuery request, CancellationToken cancellationToken)
         {
+            if (!string.IsNullOrEmpty(request.CurrentUserId))
+            {
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.CurrentUserId, cancellationToken);
+                if (user == null || user.IsDeleted)
+                {
+                    return new Result<JobDetailsDto>
+                    {
+                        Succeeded = false,
+                        ErrorCode = ErrorCodes.AccountDeleted,
+                        Message = "Account not found or is deleted."
+                    };
+                }
+            }
+
             var jobQuery = _context.JobPosts
                 .Include(j => j.Client)
                 .Include(j => j.Category)
                 .Include(j => j.JobSkills).ThenInclude(js => js.Skill)
                 .Include(j => j.SavedByFreelancers);
 
-            if (request.CurrentUserId != null)
-            {
-                // If user is owner, we might need more info for stats
-                // But we can also do separate counts to keep the main entity load lean
-            }
-
             var job = await jobQuery.FirstOrDefaultAsync(j => j.Id == request.Id, cancellationToken);
 
             if (job == null)
             {
-                throw new NotFoundException($"Job with ID {request.Id} not found");
+                return new Result<JobDetailsDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.JobNotFound,
+                    Message = $"Job with ID {request.Id} not found"
+                };
             }
 
             var dto = job.ToDetailsDto(request.CurrentUserId);
@@ -53,7 +68,7 @@ namespace ServiceImplementation.Implementations.JobManagement
                 };
             }
 
-            return dto;
+            return new Result<JobDetailsDto> { Succeeded = true, Data = dto };
         }
     }
 }

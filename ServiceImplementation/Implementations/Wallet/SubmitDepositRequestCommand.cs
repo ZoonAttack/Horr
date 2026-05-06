@@ -1,5 +1,6 @@
 using MediatR;
 using ServiceContracts.DTOs.Wallet;
+using ServiceContracts.DTOs.Responses;
 using Microsoft.AspNetCore.Http;
 
 namespace ServiceImplementation.Implementations.Wallet
@@ -9,5 +10,5 @@ namespace ServiceImplementation.Implementations.Wallet
         decimal Amount,
         string ReceiptNumber,
         IFormFile? ReceiptPhoto
-    ) : IRequest<DepositRequestDto>;
+    ) : IRequest<Result<DepositRequestDto>>;
 }

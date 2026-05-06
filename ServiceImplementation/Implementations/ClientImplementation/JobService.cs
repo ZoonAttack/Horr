@@ -177,6 +177,17 @@ namespace ServiceImplementation.Implementations.ClientImplementation
         }
         public async Task<Result<List<ClientJobSummaryDto>>> GetClientJobsAsync(string clientId)
         {
+            var clientUser = await _db.Users.FirstOrDefaultAsync(u => u.Id == clientId);
+            if (clientUser == null || clientUser.IsDeleted)
+            {
+                return new Result<List<ClientJobSummaryDto>>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message = "Client account not found or is deleted."
+                };
+            }
+
             var jobs = await _db.JobPosts
                 .Where(j => j.ClientId == clientId && !j.IsDeleted)
                 .OrderByDescending(j => j.PostedAt)

@@ -7,11 +7,13 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using ServiceContracts.DTOs.Chat;
 using ServiceImplementation.Exceptions;
+using ServiceContracts.DTOs.Responses;
+using ServiceImplementation.Helpers;
 using System.IO;
 
 namespace ServiceImplementation.Implementations.Communication
 {
-    public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, MessageDto>
+    public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Result<MessageDto>>
     {
         private readonly AppDbContext _context;
         private readonly IHubContext<ChatHub> _hubContext;
@@ -22,8 +24,19 @@ namespace ServiceImplementation.Implementations.Communication
             _hubContext = hubContext;
         }
 
-        public async Task<MessageDto> Handle(SendMessageCommand request, CancellationToken cancellationToken)
+        public async Task<Result<MessageDto>> Handle(SendMessageCommand request, CancellationToken cancellationToken)
         {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.SenderId, cancellationToken);
+            if (user == null || user.IsDeleted)
+            {
+                return new Result<MessageDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message = "Sender account not found or is deleted."
+                };
+            }
+
             using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 
             try
@@ -33,7 +46,12 @@ namespace ServiceImplementation.Implementations.Communication
 
                 if (conversation == null)
                 {
-                    throw new NotFoundException($"Conversation with ID {request.ConversationId} not found.");
+                    return new Result<MessageDto>
+                    {
+                        Succeeded = false,
+                        ErrorCode = "CONVERSATION_NOT_FOUND",
+                        Message = $"Conversation with ID {request.ConversationId} not found."
+                    };
                 }
 
                 // Create Message
@@ -101,7 +119,7 @@ namespace ServiceImplementation.Implementations.Communication
 
                 await transaction.CommitAsync(cancellationToken);
 
-                return messageDto;
+                return new Result<MessageDto> { Succeeded = true, Data = messageDto };
             }
             catch (Exception)
             {

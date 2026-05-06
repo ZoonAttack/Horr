@@ -8,13 +8,14 @@ using Microsoft.EntityFrameworkCore;
 using Entities;
 using Entities.Project;
 using Entities.Enums;
+using ServiceContracts.DTOs.Responses;
+using ServiceImplementation.Helpers;
 using ServiceContracts.DTOs.Contract;
 using ServiceImplementation.Exceptions;
-using ServiceImplementation.Helpers;
 
 namespace ServiceImplementation.Implementations.Contracts
 {
-    public class DeliverWorkCommandHandler : IRequestHandler<DeliverWorkCommand, WorkDeliveryDto>
+    public class DeliverWorkCommandHandler : IRequestHandler<DeliverWorkCommand, Result<WorkDeliveryDto>>
     {
         private readonly AppDbContext _context;
 
@@ -23,14 +24,30 @@ namespace ServiceImplementation.Implementations.Contracts
             _context = context;
         }
 
-        public async Task<WorkDeliveryDto> Handle(DeliverWorkCommand request, CancellationToken cancellationToken)
+        public async Task<Result<WorkDeliveryDto>> Handle(DeliverWorkCommand request, CancellationToken cancellationToken)
         {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.FreelancerId, cancellationToken);
+            if (user == null || user.IsDeleted)
+            {
+                return new Result<WorkDeliveryDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message = "Freelancer account not found or is deleted."
+                };
+            }
+
             var contract = await _context.Contracts
                 .FirstOrDefaultAsync(c => c.Id == request.ContractId, cancellationToken);
 
             if (contract == null)
             {
-                throw new NotFoundException($"Contract with ID {request.ContractId} not found.");
+                return new Result<WorkDeliveryDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.ContractNotFound,
+                    Message = $"Contract with ID {request.ContractId} not found."
+                };
             }
 
             var errors = new System.Collections.Generic.List<string>();
@@ -45,7 +62,12 @@ namespace ServiceImplementation.Implementations.Contracts
 
             if (contract.FreelancerId != request.FreelancerId)
             {
-                throw new UnauthorizedAccessException("Unauthorized: Only the contract freelancer can deliver work.");
+                return new Result<WorkDeliveryDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.Unauthorized,
+                    Message = "Unauthorized: Only the contract freelancer can deliver work."
+                };
             }
 
             // State Guard
@@ -97,13 +119,17 @@ namespace ServiceImplementation.Implementations.Contracts
 
             await _context.SaveChangesAsync(cancellationToken);
 
-            return new WorkDeliveryDto
+            return new Result<WorkDeliveryDto>
             {
-                Id = delivery.Id,
-                ContractId = delivery.ContractId,
-                Note = delivery.Note,
-                ActionStatus = delivery.ActionStatus,
-                SubmittedAt = delivery.SubmittedAt
+                Succeeded = true,
+                Data = new WorkDeliveryDto
+                {
+                    Id = delivery.Id,
+                    ContractId = delivery.ContractId,
+                    Note = delivery.Note,
+                    ActionStatus = delivery.ActionStatus,
+                    SubmittedAt = delivery.SubmittedAt
+                }
             };
         }
     }

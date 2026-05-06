@@ -46,7 +46,7 @@ namespace ServiceImplementation.Implementations
                 .FirstOrDefaultAsync();
 
             if (category == null)
-                return new Result<CategoryDto> { Succeeded = false, ErrorCode = ErrorCodes.NotFound, Message = "Category not found." };
+                return new Result<CategoryDto> { Succeeded = false, ErrorCode = ErrorCodes.CategoryNotFound, Message = "Category not found." };
 
             return new Result<CategoryDto> { Succeeded = true, Data = category };
         }
@@ -76,7 +76,7 @@ namespace ServiceImplementation.Implementations
         {
             var category = await _db.Categories.FindAsync(id);
             if (category == null)
-                return new Result<CategoryDto> { Succeeded = false, ErrorCode = ErrorCodes.NotFound, Message = "Category not found." };
+                return new Result<CategoryDto> { Succeeded = false, ErrorCode = ErrorCodes.CategoryNotFound, Message = "Category not found." };
 
             if (!string.IsNullOrEmpty(dto.Name)) category.Name = dto.Name;
             if (dto.Description != null) category.Description = dto.Description;
@@ -97,11 +97,11 @@ namespace ServiceImplementation.Implementations
         {
             var category = await _db.Categories.FindAsync(id);
             if (category == null)
-                return new Result<bool> { Succeeded = false, ErrorCode = ErrorCodes.NotFound, Message = "Category not found." };
+                return new Result<bool> { Succeeded = false, ErrorCode = ErrorCodes.CategoryNotFound, Message = "Category not found." };
 
             // Check if any jobs or skills are using this category
             if (await _db.JobPosts.AnyAsync(j => j.CategoryId == id) || await _db.Skills.AnyAsync(s => s.CategoryId == id))
-                return new Result<bool> { Succeeded = false, ErrorCode = ErrorCodes.Conflict, Message = "Category is in use and cannot be deleted." };
+                return new Result<bool> { Succeeded = false, ErrorCode = ErrorCodes.CategoryAlreadyExists, Message = "Category is in use and cannot be deleted." };
 
             _db.Categories.Remove(category);
             await _db.SaveChangesAsync();

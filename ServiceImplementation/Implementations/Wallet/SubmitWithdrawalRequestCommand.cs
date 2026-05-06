@@ -1,5 +1,6 @@
 using MediatR;
 using ServiceContracts.DTOs.Wallet;
+using ServiceContracts.DTOs.Responses;
 using Entities.Enums;
 
 namespace ServiceImplementation.Implementations.Wallet
@@ -11,5 +12,5 @@ namespace ServiceImplementation.Implementations.Wallet
         string? InstapayUsername,
         string? BankAccountDetails,
         string? EWalletNumber
-    ) : IRequest<WithdrawalRequestDto>;
+    ) : IRequest<Result<WithdrawalRequestDto>>;
 }

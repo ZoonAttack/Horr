@@ -30,8 +30,10 @@ namespace Horr.Controllers.FreelancerProfile
         public async Task<ActionResult<IEnumerable<PortfolioItemDto>>> GetPortfolio()
         {
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
-            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
-            if (freelancer == null) return NotFound("Freelancer profile not found.");
+            var freelancer = await _context.Freelancers
+                .Include(f => f.User)
+                .FirstOrDefaultAsync(f => f.UserId == userId);
+            if (freelancer == null || freelancer.User.IsDeleted) return NotFound("Freelancer profile not found or is deleted.");
 
             var items = await _context.PortfolioItems
                 .Include(i => i.Media)
@@ -61,8 +63,10 @@ namespace Horr.Controllers.FreelancerProfile
         public async Task<ActionResult<PortfolioItemDto>> GetById(string id)
         {
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
-            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
-            if (freelancer == null) return NotFound("Freelancer profile not found.");
+            var freelancer = await _context.Freelancers
+                .Include(f => f.User)
+                .FirstOrDefaultAsync(f => f.UserId == userId);
+            if (freelancer == null || freelancer.User.IsDeleted) return NotFound("Freelancer profile not found or is deleted.");
 
             var item = await _context.PortfolioItems
                 .Include(i => i.Media)
@@ -93,8 +97,10 @@ namespace Horr.Controllers.FreelancerProfile
         public async Task<ActionResult<PortfolioItemDto>> Create([FromForm] string title, [FromForm] string description, [FromForm] string? role, [FromForm] string? visitLink, [FromForm] IFormFile thumbnail, [FromForm] List<IFormFile>? images, [FromForm] List<IFormFile>? videos)
         {
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
-            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
-            if (freelancer == null) return NotFound("Freelancer profile not found.");
+            var freelancer = await _context.Freelancers
+                .Include(f => f.User)
+                .FirstOrDefaultAsync(f => f.UserId == userId);
+            if (freelancer == null || freelancer.User.IsDeleted) return NotFound("Freelancer profile not found or is deleted.");
 
             var errors = ValidatePortfolioItem(title, description, visitLink, thumbnail, images, videos);
             if (errors.Any()) return BadRequest(new { errors });
@@ -160,8 +166,10 @@ namespace Horr.Controllers.FreelancerProfile
         public async Task<ActionResult<PortfolioItemDto>> Update(string id, [FromForm] string title, [FromForm] string description, [FromForm] string? role, [FromForm] string? visitLink, [FromForm] IFormFile? thumbnail, [FromForm] List<IFormFile>? images, [FromForm] List<IFormFile>? videos)
         {
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
-            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
-            if (freelancer == null) return NotFound("Freelancer profile not found.");
+            var freelancer = await _context.Freelancers
+                .Include(f => f.User)
+                .FirstOrDefaultAsync(f => f.UserId == userId);
+            if (freelancer == null || freelancer.User.IsDeleted) return NotFound("Freelancer profile not found or is deleted.");
 
             var item = await _context.PortfolioItems
                 .Include(i => i.Media)
@@ -232,8 +240,10 @@ namespace Horr.Controllers.FreelancerProfile
         public async Task<IActionResult> Delete(string id)
         {
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
-            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
-            if (freelancer == null) return NotFound("Freelancer profile not found.");
+            var freelancer = await _context.Freelancers
+                .Include(f => f.User)
+                .FirstOrDefaultAsync(f => f.UserId == userId);
+            if (freelancer == null || freelancer.User.IsDeleted) return NotFound("Freelancer profile not found or is deleted.");
 
             var item = await _context.PortfolioItems
                 .FirstOrDefaultAsync(i => i.Id == id && i.FreelancerId == freelancer.UserId && !i.IsDeleted);

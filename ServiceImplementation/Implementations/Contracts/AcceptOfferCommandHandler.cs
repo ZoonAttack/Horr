@@ -7,12 +7,13 @@ using Microsoft.EntityFrameworkCore;
 using Entities;
 using Entities.Project;
 using Entities.Enums;
-using ServiceImplementation.Exceptions;
+using ServiceContracts.DTOs.Responses;
 using ServiceImplementation.Helpers;
+using ServiceImplementation.Exceptions;
 
 namespace ServiceImplementation.Implementations.Contracts
 {
-    public class AcceptOfferCommandHandler : IRequestHandler<AcceptOfferCommand, bool>
+    public class AcceptOfferCommandHandler : IRequestHandler<AcceptOfferCommand, Result<bool>>
     {
         private readonly AppDbContext _context;
 
@@ -21,26 +22,52 @@ namespace ServiceImplementation.Implementations.Contracts
             _context = context;
         }
 
-        public async Task<bool> Handle(AcceptOfferCommand request, CancellationToken cancellationToken)
+        public async Task<Result<bool>> Handle(AcceptOfferCommand request, CancellationToken cancellationToken)
         {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.FreelancerId, cancellationToken);
+            if (user == null || user.IsDeleted)
+            {
+                return new Result<bool>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message = "Freelancer account not found or is deleted."
+                };
+            }
+
             var contract = await _context.Contracts
                 .Include(c => c.Proposal)
                 .FirstOrDefaultAsync(c => c.Id == request.ContractId, cancellationToken);
 
             if (contract == null)
             {
-                throw new NotFoundException($"Contract with ID {request.ContractId} not found.");
+                return new Result<bool>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.ContractNotFound,
+                    Message = $"Contract with ID {request.ContractId} not found."
+                };
             }
 
             if (contract.FreelancerId != request.FreelancerId)
             {
-                throw new UnauthorizedAccessException("Unauthorized: Only the freelancer can accept the offer.");
+                return new Result<bool>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.Unauthorized,
+                    Message = "Unauthorized: Only the freelancer can accept the offer."
+                };
             }
 
             // State Guard — the contract must be in Draft status (awaiting freelancer acceptance)
             if (contract.Status != ContractStatus.Draft)
             {
-                throw new InvalidStateException("Only draft contracts can be accepted.");
+                return new Result<bool>
+                {
+                    Succeeded = false,
+                    ErrorCode = "INVALID_STATE",
+                    Message = "Only draft contracts can be accepted."
+                };
             }
 
             // Also ensure the underlying proposal is in the right state
@@ -53,7 +80,7 @@ namespace ServiceImplementation.Implementations.Contracts
             contract.Proposal.Status = ProposalStatus.Offer;
 
             await _context.SaveChangesAsync(cancellationToken);
-            return true;
+            return new Result<bool> { Succeeded = true, Data = true };
         }
     }
 }

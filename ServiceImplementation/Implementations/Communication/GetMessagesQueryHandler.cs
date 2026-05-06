@@ -5,10 +5,12 @@ using Microsoft.EntityFrameworkCore;
 using ServiceContracts.DTOs.Chat;
 using ServiceImplementation.Exceptions;
 using Services;
+using ServiceContracts.DTOs.Responses;
+using ServiceImplementation.Helpers;
 
 namespace ServiceImplementation.Implementations.Communication
 {
-    public class GetMessagesQueryHandler : IRequestHandler<GetMessagesQuery, PagedResult<MessageDto>>
+    public class GetMessagesQueryHandler : IRequestHandler<GetMessagesQuery, Result<PagedResult<MessageDto>>>
     {
         private readonly AppDbContext _context;
 
@@ -17,15 +19,31 @@ namespace ServiceImplementation.Implementations.Communication
             _context = context;
         }
 
-        public async Task<PagedResult<MessageDto>> Handle(GetMessagesQuery request, CancellationToken cancellationToken)
+        public async Task<Result<PagedResult<MessageDto>>> Handle(GetMessagesQuery request, CancellationToken cancellationToken)
         {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
+            if (user == null || user.IsDeleted)
+            {
+                return new Result<PagedResult<MessageDto>>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message = "Account not found or is deleted."
+                };
+            }
+
             // Verify conversation and participation
             var isParticipant = await _context.ConversationParticipants
                 .AnyAsync(p => p.ConversationId == request.ConversationId && p.UserId == request.UserId, cancellationToken);
 
             if (!isParticipant)
             {
-                throw new NotFoundException($"Conversation with ID {request.ConversationId} not found or you are not a participant.");
+                return new Result<PagedResult<MessageDto>>
+                {
+                    Succeeded = false,
+                    ErrorCode = "CONVERSATION_NOT_FOUND",
+                    Message = $"Conversation with ID {request.ConversationId} not found or you are not a participant."
+                };
             }
 
             using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
@@ -70,13 +88,15 @@ namespace ServiceImplementation.Implementations.Communication
 
                 await transaction.CommitAsync(cancellationToken);
 
-                return new PagedResult<MessageDto>
+                var response = new PagedResult<MessageDto>
                 {
                     Items = items,
                     TotalCount = totalCount,
                     Page = request.PageNumber,
                     PageSize = request.PageSize
                 };
+
+                return new Result<PagedResult<MessageDto>> { Succeeded = true, Data = response };
             }
             catch (Exception)
             {

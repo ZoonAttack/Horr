@@ -38,7 +38,8 @@ namespace Horr.Controllers
                         ?? "Freelancer";
 
             var result = await _mediator.Send(new GetMyContractsQuery(userId, userRole, status, page, pageSize));
-            return Ok(result);
+            if (!result.Succeeded) return BadRequest(result);
+            return Ok(result.Data);
         }
 
         [HttpGet("{id}")]
@@ -50,7 +51,8 @@ namespace Horr.Controllers
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             var result = await _mediator.Send(new GetContractByIdQuery(id, userId));
-            return Ok(result);
+            if (!result.Succeeded) return NotFound(result);
+            return Ok(result.Data);
         }
 
         [HttpPost("{id}/accept-offer")]
@@ -63,7 +65,11 @@ namespace Horr.Controllers
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             var result = await _mediator.Send(new AcceptOfferCommand(id, userId));
-            return StatusCode(201, result);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result);
+            }
+            return StatusCode(201, result.Data);
         }
 
         [HttpPost("{id}/decline-offer")]
@@ -75,7 +81,11 @@ namespace Horr.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            await _mediator.Send(new DeclineOfferCommand(id, userId));
+            var result = await _mediator.Send(new DeclineOfferCommand(id, userId));
+            if (!result.Succeeded)
+            {
+                return BadRequest(result);
+            }
             return NoContent();
         }
 
@@ -90,7 +100,11 @@ namespace Horr.Controllers
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             var result = await _mediator.Send(new DeliverWorkCommand(id, note, userId, files));
-            return StatusCode(201, result);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result);
+            }
+            return StatusCode(201, result.Data);
         }
 
         [HttpPost("{id}/complete")]
@@ -102,7 +116,11 @@ namespace Horr.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            await _mediator.Send(new MarkContractAsCompletedCommand(id, userId));
+            var result = await _mediator.Send(new MarkContractAsCompletedCommand(id, userId));
+            if (!result.Succeeded)
+            {
+                return BadRequest(result);
+            }
             return NoContent();
         }
 
@@ -115,7 +133,11 @@ namespace Horr.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            await _mediator.Send(new RejectContractCommand(id, userId));
+            var result = await _mediator.Send(new RejectContractCommand(id, userId));
+            if (!result.Succeeded)
+            {
+                return BadRequest(result);
+            }
             return NoContent();
         }
 
@@ -130,7 +152,20 @@ namespace Horr.Controllers
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             var result = await _mediator.Send(new SubmitReviewCommand(id, dto, userId));
-            return StatusCode(201, result);
+            if (!result.Succeeded)
+            {
+                if (result.ErrorCode == ServiceImplementation.Helpers.ErrorCodes.AlreadyReviewed)
+                {
+                    return Conflict(new ProblemDetails
+                    {
+                        Status = 409,
+                        Title = "Already Reviewed",
+                        Detail = result.Message
+                    });
+                }
+                return BadRequest(result);
+            }
+            return StatusCode(201, result.Data);
         }
 
         [HttpPost("create-offer")]

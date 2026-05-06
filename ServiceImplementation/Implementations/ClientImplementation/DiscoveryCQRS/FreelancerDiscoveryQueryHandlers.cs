@@ -7,10 +7,12 @@ using ServiceContracts.DTOs.UserDTOs.FreelancerManagement;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ServiceContracts.DTOs.Responses;
+using ServiceImplementation.Helpers;
 
 namespace ServiceImplementation.Implementations.ClientImplementation.DiscoveryCQRS
 {
-    public class SearchFreelancersQueryHandler : IRequestHandler<SearchFreelancersQuery, PagedResult<FreelancerReadDTO>>
+    public class SearchFreelancersQueryHandler : IRequestHandler<SearchFreelancersQuery, Result<PagedResult<FreelancerReadDTO>>>
     {
         private readonly AppDbContext _context;
 
@@ -19,8 +21,21 @@ namespace ServiceImplementation.Implementations.ClientImplementation.DiscoveryCQ
             _context = context;
         }
 
-        public async Task<PagedResult<FreelancerReadDTO>> Handle(SearchFreelancersQuery request, CancellationToken cancellationToken)
+        public async Task<Result<PagedResult<FreelancerReadDTO>>> Handle(SearchFreelancersQuery request, CancellationToken cancellationToken)
         {
+            if (!string.IsNullOrEmpty(request.ClientId))
+            {
+                var requestingUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.ClientId, cancellationToken);
+                if (requestingUser == null || requestingUser.IsDeleted)
+                {
+                    return new Result<PagedResult<FreelancerReadDTO>>
+                    {
+                        Succeeded = false,
+                        ErrorCode = ErrorCodes.AccountDeleted,
+                        Message = "Account not found or is deleted."
+                    };
+                }
+            }
             var query = _context.Users
                 .Include(u => u.Freelancer)
                     .ThenInclude(f => f.FreelancerSkills)
@@ -98,17 +113,21 @@ namespace ServiceImplementation.Implementations.ClientImplementation.DiscoveryCQ
 
             var dtos = items.Select(u => u.Freelancer_To_FreelancerRead()).ToList();
 
-            return new PagedResult<FreelancerReadDTO>
+            return new Result<PagedResult<FreelancerReadDTO>>
             {
-                Items = dtos,
-                TotalCount = totalCount,
-                Page = request.Page,
-                PageSize = request.PageSize
+                Succeeded = true,
+                Data = new PagedResult<FreelancerReadDTO>
+                {
+                    Items = dtos,
+                    TotalCount = totalCount,
+                    Page = request.Page,
+                    PageSize = request.PageSize
+                }
             };
         }
     }
 
-    public class GetSavedFreelancersQueryHandler : IRequestHandler<GetSavedFreelancersQuery, PagedResult<FreelancerReadDTO>>
+    public class GetSavedFreelancersQueryHandler : IRequestHandler<GetSavedFreelancersQuery, Result<PagedResult<FreelancerReadDTO>>>
     {
         private readonly AppDbContext _context;
 
@@ -117,8 +136,18 @@ namespace ServiceImplementation.Implementations.ClientImplementation.DiscoveryCQ
             _context = context;
         }
 
-        public async Task<PagedResult<FreelancerReadDTO>> Handle(GetSavedFreelancersQuery request, CancellationToken cancellationToken)
+        public async Task<Result<PagedResult<FreelancerReadDTO>>> Handle(GetSavedFreelancersQuery request, CancellationToken cancellationToken)
         {
+            var requestingUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.ClientId, cancellationToken);
+            if (requestingUser == null || requestingUser.IsDeleted)
+            {
+                return new Result<PagedResult<FreelancerReadDTO>>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message = "Account not found or is deleted."
+                };
+            }
             var query = _context.SavedFreelancers
                 .Include(sf => sf.Freelancer)
                     .ThenInclude(f => f.User)
@@ -148,12 +177,16 @@ namespace ServiceImplementation.Implementations.ClientImplementation.DiscoveryCQ
                 .Select(sf => sf.Freelancer.User.Freelancer_To_FreelancerRead())
                 .ToList();
 
-            return new PagedResult<FreelancerReadDTO>
+            return new Result<PagedResult<FreelancerReadDTO>>
             {
-                Items = dtos,
-                TotalCount = totalCount,
-                Page = request.Page,
-                PageSize = request.PageSize
+                Succeeded = true,
+                Data = new PagedResult<FreelancerReadDTO>
+                {
+                    Items = dtos,
+                    TotalCount = totalCount,
+                    Page = request.Page,
+                    PageSize = request.PageSize
+                }
             };
         }
     }

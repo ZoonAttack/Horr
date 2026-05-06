@@ -9,10 +9,11 @@ using Entities.Project;
 using Entities.Enums;
 using ServiceImplementation.Exceptions;
 using ServiceImplementation.Helpers;
+using ServiceContracts.DTOs.Responses;
 
 namespace ServiceImplementation.Implementations.Contracts
 {
-    public class RejectContractCommandHandler : IRequestHandler<RejectContractCommand, bool>
+    public class RejectContractCommandHandler : IRequestHandler<RejectContractCommand, Result<bool>>
     {
         private readonly AppDbContext _context;
 
@@ -21,30 +22,58 @@ namespace ServiceImplementation.Implementations.Contracts
             _context = context;
         }
 
-        public async Task<bool> Handle(RejectContractCommand request, CancellationToken cancellationToken)
+        public async Task<Result<bool>> Handle(RejectContractCommand request, CancellationToken cancellationToken)
         {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.ClientId, cancellationToken);
+            if (user == null || user.IsDeleted)
+            {
+                return new Result<bool>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message = "Client account not found or is deleted."
+                };
+            }
+
             var contract = await _context.Contracts
                 .FirstOrDefaultAsync(c => c.Id == request.ContractId, cancellationToken);
 
             if (contract == null)
             {
-                throw new NotFoundException($"Contract with ID {request.ContractId} not found.");
+                return new Result<bool>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.ContractNotFound,
+                    Message = $"Contract with ID {request.ContractId} not found."
+                };
             }
 
             if (contract.ClientId != request.ClientId)
             {
-                throw new UnauthorizedAccessException("Unauthorized: Only the client can reject the contract.");
+                return new Result<bool>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.Unauthorized,
+                    Message = "Unauthorized: Only the client can reject the contract."
+                };
             }
 
             // State Guard
-            ContractStateGuard.EnsureCanRejectContract(contract);
+            try 
+            {
+                ContractStateGuard.EnsureCanRejectContract(contract);
+            }
+            catch (Exception ex)
+            {
+                return new Result<bool> { Succeeded = false, ErrorCode = ErrorCodes.InvalidState, Message = ex.Message };
+            }
 
             contract.Status = ContractStatus.Rejected;
             contract.RejectedAt = DateTime.UtcNow;
             contract.ClosedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync(cancellationToken);
-            return true;
+            return new Result<bool> { Succeeded = true, Data = true };
         }
     }
 }

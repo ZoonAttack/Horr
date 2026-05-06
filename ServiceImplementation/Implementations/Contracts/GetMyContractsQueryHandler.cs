@@ -10,10 +10,11 @@ using Entities.Project;
 using ServiceContracts.DTOs.Contract;
 using Services;
 using ServiceImplementation.Helpers;
+using ServiceContracts.DTOs.Responses;
 
 namespace ServiceImplementation.Implementations.Contracts
 {
-    public class GetMyContractsQueryHandler : IRequestHandler<GetMyContractsQuery, Services.PagedResult<ContractReadDTO>>
+    public class GetMyContractsQueryHandler : IRequestHandler<GetMyContractsQuery, Result<Services.PagedResult<ContractReadDTO>>>
     {
         private readonly AppDbContext _context;
 
@@ -22,8 +23,19 @@ namespace ServiceImplementation.Implementations.Contracts
             _context = context;
         }
 
-        public async Task<Services.PagedResult<ContractReadDTO>> Handle(GetMyContractsQuery request, CancellationToken cancellationToken)
+        public async Task<Result<Services.PagedResult<ContractReadDTO>>> Handle(GetMyContractsQuery request, CancellationToken cancellationToken)
         {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
+            if (user == null || user.IsDeleted)
+            {
+                return new Result<Services.PagedResult<ContractReadDTO>>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message = "Account not found or is deleted."
+                };
+            }
+
             var query = _context.Contracts.AsQueryable();
 
             if (request.UserRole == "Client")
@@ -60,7 +72,6 @@ namespace ServiceImplementation.Implementations.Contracts
                     StartedAt = c.StartedAt,
                     ClosedAt = c.ClosedAt,
                     CreatedAt = c.CreatedAt,
-                    // Latest delivery summary logic: most recent delivery note
                     LatestDeliverySummary = c.WorkDeliveries
                         .OrderByDescending(d => d.SubmittedAt)
                         .Select(d => d.Note)
@@ -68,13 +79,15 @@ namespace ServiceImplementation.Implementations.Contracts
                 })
                 .ToListAsync(cancellationToken);
 
-            return new Services.PagedResult<ContractReadDTO>
+            var pagedResult = new Services.PagedResult<ContractReadDTO>
             {
                 Items = items,
                 TotalCount = totalCount,
                 Page = request.Page,
                 PageSize = request.PageSize,
             };
+
+            return new Result<Services.PagedResult<ContractReadDTO>> { Succeeded = true, Data = pagedResult };
         }
     }
 }

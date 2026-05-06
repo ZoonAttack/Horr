@@ -29,7 +29,11 @@ namespace Horr.Controllers
 
             // The command already has properties from form, but we ensure ClientId is set from auth
             var result = await _mediator.Send(command with { ClientId = userId });
-            return CreatedAtAction(nameof(GetMyDeposits), null, result);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result);
+            }
+            return CreatedAtAction(nameof(GetMyDeposits), null, result.Data);
         }
 
         [HttpGet("deposit-requests/my-requests")]
@@ -40,7 +44,8 @@ namespace Horr.Controllers
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             var result = await _mediator.Send(new GetMyDepositRequestsQuery(userId, page, pageSize));
-            return Ok(result);
+            if (!result.Succeeded) return BadRequest(result);
+            return Ok(result.Data);
         }
 
         [HttpPost("withdrawal-requests")]
@@ -51,7 +56,11 @@ namespace Horr.Controllers
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             var result = await _mediator.Send(command with { FreelancerId = userId });
-            return CreatedAtAction(nameof(GetMyWithdrawals), null, result);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result);
+            }
+            return CreatedAtAction(nameof(GetMyWithdrawals), null, result.Data);
         }
 
         [HttpGet("withdrawal-requests/my-requests")]
@@ -62,7 +71,8 @@ namespace Horr.Controllers
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             var result = await _mediator.Send(new GetMyWithdrawalRequestsQuery(userId, page, pageSize));
-            return Ok(result);
+            if (!result.Succeeded) return BadRequest(result);
+            return Ok(result.Data);
         }
 
         [HttpGet("wallet-balance")]
@@ -73,7 +83,8 @@ namespace Horr.Controllers
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             var result = await _mediator.Send(new GetWalletBalanceQuery(userId));
-            return Ok(result);
+            if (!result.Succeeded) return BadRequest(result);
+            return Ok(result.Data);
         }
     }
 }

@@ -3,13 +3,20 @@ using Entities;
 using Entities.Payment;
 using Entities.Enums;
 using ServiceContracts.DTOs.Wallet;
+using ServiceContracts.DTOs.Responses;
+using ServiceImplementation.Helpers;
 using ServiceImplementation.Exceptions;
 using ServiceImplementation.Mappings;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ServiceImplementation.Implementations.Wallet
 {
-    public class SubmitWithdrawalRequestCommandHandler : IRequestHandler<SubmitWithdrawalRequestCommand, WithdrawalRequestDto>
+    public class SubmitWithdrawalRequestCommandHandler : IRequestHandler<SubmitWithdrawalRequestCommand, Result<WithdrawalRequestDto>>
     {
         private readonly AppDbContext _context;
 
@@ -18,13 +25,28 @@ namespace ServiceImplementation.Implementations.Wallet
             _context = context;
         }
 
-        public async Task<WithdrawalRequestDto> Handle(SubmitWithdrawalRequestCommand request, CancellationToken cancellationToken)
+        public async Task<Result<WithdrawalRequestDto>> Handle(SubmitWithdrawalRequestCommand request, CancellationToken cancellationToken)
         {
-            await ValidateAsync(request, cancellationToken);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.FreelancerId, cancellationToken);
+            if (user == null || user.IsDeleted)
+            {
+                return new Result<WithdrawalRequestDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message = "Freelancer account not found or is deleted."
+                };
+            }
+
+            var validationResult = await ValidateAsync(request, cancellationToken);
+            if (!validationResult.Succeeded)
+            {
+                return validationResult;
+            }
 
             var withdrawalRequest = new WithdrawalRequest
             {
-                FreelancerId = request.FreelancerId,
+                FreelancerId = request.FreelancerId!,
                 Amount = request.Amount,
                 Method = request.Method,
                 InstapayUsername = request.InstapayUsername,
@@ -37,31 +59,33 @@ namespace ServiceImplementation.Implementations.Wallet
             _context.WithdrawalRequests.Add(withdrawalRequest);
             await _context.SaveChangesAsync(cancellationToken);
 
-            return withdrawalRequest.ToDto();
+            return new Result<WithdrawalRequestDto>
+            {
+                Succeeded = true,
+                Data = withdrawalRequest.ToDto()
+            };
         }
 
-        private async Task ValidateAsync(SubmitWithdrawalRequestCommand request, CancellationToken cancellationToken)
+        private async Task<Result<WithdrawalRequestDto>> ValidateAsync(SubmitWithdrawalRequestCommand request, CancellationToken cancellationToken)
         {
-            var errors = new List<string>();
-
             if (request.Amount <= 0)
             {
-                errors.Add("Amount must be greater than zero.");
+                return new Result<WithdrawalRequestDto> { Succeeded = false, ErrorCode = ErrorCodes.InvalidAmount, Message = "Amount must be greater than zero." };
             }
 
             if (request.Method == WithdrawalMethod.InstaPay && string.IsNullOrWhiteSpace(request.InstapayUsername))
             {
-                errors.Add("InstaPay username is required.");
+                return new Result<WithdrawalRequestDto> { Succeeded = false, ErrorCode = ErrorCodes.MissingPaymentDetails, Message = "InstaPay username is required." };
             }
 
             if (request.Method == WithdrawalMethod.BankTransfer && string.IsNullOrWhiteSpace(request.BankAccountDetails))
             {
-                errors.Add("Bank account details are required.");
+                return new Result<WithdrawalRequestDto> { Succeeded = false, ErrorCode = ErrorCodes.MissingPaymentDetails, Message = "Bank account details are required." };
             }
 
             if (request.Method == WithdrawalMethod.EWallet && string.IsNullOrWhiteSpace(request.EWalletNumber))
             {
-                errors.Add("E-wallet number is required.");
+                return new Result<WithdrawalRequestDto> { Succeeded = false, ErrorCode = ErrorCodes.MissingPaymentDetails, Message = "E-wallet number is required." };
             }
 
             var wallet = await _context.WalletBalances
@@ -71,13 +95,10 @@ namespace ServiceImplementation.Implementations.Wallet
 
             if (request.Amount > balance)
             {
-                errors.Add("Insufficient wallet balance.");
+                return new Result<WithdrawalRequestDto> { Succeeded = false, ErrorCode = ErrorCodes.InsufficientBalance, Message = "Insufficient wallet balance." };
             }
 
-            if (errors.Any())
-            {
-                throw new ValidationException("Validation failed", errors);
-            }
+            return new Result<WithdrawalRequestDto> { Succeeded = true };
         }
     }
 }

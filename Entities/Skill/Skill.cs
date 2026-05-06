@@ -10,7 +10,7 @@ namespace Entities.Skill
     /// </summary>
     [Table("skills")]
     [Index(nameof(Name), IsUnique = true)]
-    [Index(nameof(Category))]
+    [Index(nameof(CategoryId))]
     public class Skill
     {
         [Key]

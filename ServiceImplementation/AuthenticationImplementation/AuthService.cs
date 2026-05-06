@@ -237,13 +237,13 @@ namespace ServiceImplementation.Authentication
         public async Task<Result<AuthResponse>> ConfirmEmailAsync(string userId, string token)
         {
             var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
+            if (user == null || user.IsDeleted)
             {
                 return new Result<AuthResponse>
                 {
                     Succeeded = false,
-                    ErrorCode = ErrorCodes.UserNotFound,
-                    Message   = "User not found."
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message   = "User not found or account is deleted."
                 };
             }
 
@@ -272,14 +272,14 @@ namespace ServiceImplementation.Authentication
         public async Task<Result<AuthResponse>> ResendConfirmationEmailAsync(string email)
         {
             var user = await _userManager.FindByEmailAsync(email);
-            if (user == null)
+            if (user == null || user.IsDeleted)
             {
                 return new Result<AuthResponse>
                 {
                     Succeeded = false,
-                    ErrorCode = ErrorCodes.UserNotFound,
+                    ErrorCode = ErrorCodes.AccountDeleted,
                     Message   = "Invalid request.",
-                    Errors    = new List<string> { "User not found." }
+                    Errors    = new List<string> { "User not found or account is deleted." }
                 };
             }
 
@@ -330,14 +330,14 @@ namespace ServiceImplementation.Authentication
                 .Include(x => x.User)
                 .SingleOrDefaultAsync(x => x.Token == refreshToken);
 
-            if (storedToken == null)
+            if (storedToken == null || storedToken.User == null || storedToken.User.IsDeleted)
             {
                 return new Result<AuthResponse>
                 {
                     Succeeded = false,
-                    ErrorCode = ErrorCodes.TokenInvalid,
-                    Message   = "Token not found.",
-                    Errors    = new List<string> { "The provided refresh token does not exist." }
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message   = "Token invalid or account is deleted.",
+                    Errors    = new List<string> { "The provided refresh token is invalid or associated account is deleted." }
                 };
             }
 

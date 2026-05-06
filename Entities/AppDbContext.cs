@@ -110,18 +110,17 @@ namespace Entities
                 .HasIndex(u => u.Email)
                 .IsUnique();
 
-            // When using SQLite (e.g., in tests), make sure CreatedAt/UpdatedAt
-            // get database-generated default values to satisfy NOT NULL constraints.
-            if (Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite")
-            {
-                modelBuilder.Entity<User>()
-                    .Property(u => u.CreatedAt)
-                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            // Support both SQL Server and SQLite for default values
+            var isSqlite = Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite";
+            var nowSql = isSqlite ? "CURRENT_TIMESTAMP" : "GETDATE()";
 
-                modelBuilder.Entity<User>()
-                    .Property(u => u.UpdatedAt)
-                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
-            }
+            modelBuilder.Entity<User>()
+                .Property(u => u.CreatedAt)
+                .HasDefaultValueSql(nowSql);
+
+            modelBuilder.Entity<User>()
+                .Property(u => u.UpdatedAt)
+                .HasDefaultValueSql(nowSql);
 
             modelBuilder.Entity<ServiceCatalogItem>(entity =>
             {
@@ -152,25 +151,25 @@ namespace Entities
 
             modelBuilder.Entity<Skill.Skill>(entity =>
             {
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
-                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETDATE()");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql(nowSql);
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql(nowSql);
             });
 
             modelBuilder.Entity<FreelancerSkill>(entity =>
             {
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
-                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETDATE()");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql(nowSql);
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql(nowSql);
             });
 
             modelBuilder.Entity<PortfolioItem>(entity =>
             {
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
-                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETDATE()");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql(nowSql);
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql(nowSql);
             });
 
             modelBuilder.Entity<PortfolioMedia>(entity =>
             {
-                entity.Property(e => e.UploadedAt).HasDefaultValueSql("GETDATE()");
+                entity.Property(e => e.UploadedAt).HasDefaultValueSql(nowSql);
             });
 
             modelBuilder.Entity<Proposal>()
@@ -248,11 +247,11 @@ namespace Entities
             const string otherId = "6c5b4a3b-2c1d-0e9f-8d7c-6b5a4f3e2d1c";
 
             modelBuilder.Entity<Category>().HasData(
-                new Category { Id = techId, Name = "Technology" },
-                new Category { Id = designId, Name = "Design" },
-                new Category { Id = dataAiId, Name = "Data & AI" },
-                new Category { Id = writingMarketingId, Name = "Writing & Marketing" },
-                new Category { Id = otherId, Name = "Other" }
+                new Category { Id = techId, Name = "Technology", Slug = "technology" },
+                new Category { Id = designId, Name = "Design", Slug = "design" },
+                new Category { Id = dataAiId, Name = "Data & AI", Slug = "data-ai" },
+                new Category { Id = writingMarketingId, Name = "Writing & Marketing", Slug = "writing-marketing" },
+                new Category { Id = otherId, Name = "Other", Slug = "other" }
             );
 
             modelBuilder.Entity<Skill.Skill>().HasData(

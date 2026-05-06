@@ -21,6 +21,9 @@ namespace UnitTesting.Project
             var freelancerUser = new Entities.Users.User { Id = "freelancer-1", UserName = "free@test.com", Email = "free@test.com", FullName = "Freelancer User", Address = "A", City = "C", StateProvince = "S", ZipCode = "Z", Country = "C", Bio = "B" };
             context.Users.AddRange(client, freelancerUser);
             
+            // Seed Category
+            context.Categories.Add(new Category { Id = "cat-1", Name = "Development", Slug = "development" });
+            
             // Proposal.FreelancerId requires a record in 'freelancers' table
             var freelancerProfile = new Entities.Users.Freelancer { UserId = freelancerUser.Id, Availability = "Full-time", PortfolioUrl = "http://test.com" };
             context.Freelancers.Add(freelancerProfile);
@@ -34,7 +37,8 @@ namespace UnitTesting.Project
                 ClientId = client.Id,
                 Budget = 500,
                 PostedAt = DateTime.UtcNow,
-                JobType = JobType.FixedPrice
+                JobType = JobType.FixedPrice,
+                CategoryId = "cat-1"
             };
             context.JobPosts.Add(job);
             await context.SaveChangesAsync();
@@ -73,7 +77,7 @@ namespace UnitTesting.Project
             
             await context.SaveChangesAsync();
 
-            var job2 = new JobPost { Title = "J2", Description = "D", ClientId = "client-1", PostedAt = DateTime.UtcNow, JobType = JobType.FixedPrice };
+            var job2 = new JobPost { Title = "J2", Description = "D", ClientId = "client-1", PostedAt = DateTime.UtcNow, JobType = JobType.FixedPrice, CategoryId = "cat-1" };
             context.JobPosts.Add(job2);
             await context.SaveChangesAsync();
             var p2 = new Entities.Project.Proposal { JobPostId = job2.Id, FreelancerId = freelancer2User.Id, CoverLetter = "C", BidRate = 10, HORRFee = 1, Status = ProposalStatus.Active };

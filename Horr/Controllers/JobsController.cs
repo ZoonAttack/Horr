@@ -28,7 +28,8 @@ namespace Horr.Controllers
         {
             string userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
             var result = await _mediator.Send(query with { CurrentUserId = userId });
-            return Ok(result);
+            if (!result.Succeeded) return BadRequest(result);
+            return Ok(result.Data);
         }
 
         [HttpPost("create-job")]
@@ -51,7 +52,8 @@ namespace Horr.Controllers
         {
             string userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
             var result = await _mediator.Send(new GetJobDetailsQuery(id, userId));
-            return Ok(result);
+            if (!result.Succeeded) return BadRequest(result);
+            return Ok(result.Data);
         }
 
         [HttpPost("{id}/save-job")]
@@ -61,8 +63,9 @@ namespace Horr.Controllers
             string userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            await _mediator.Send(new ToggleSavedJobCommand(id, userId));
-            return NoContent();
+            var result = await _mediator.Send(new ToggleSavedJobCommand(id, userId));
+            if (!result.Succeeded) return BadRequest(result);
+            return Ok(result.Data);
         }
 
         [HttpDelete("{id}/unsave-job")]
@@ -72,8 +75,9 @@ namespace Horr.Controllers
             string userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            await _mediator.Send(new ToggleSavedJobCommand(id, userId));
-            return NoContent();
+            var result = await _mediator.Send(new ToggleSavedJobCommand(id, userId));
+            if (!result.Succeeded) return BadRequest(result);
+            return Ok(result.Data);
         }
 
         [HttpGet("{id}/proposals")]
@@ -84,7 +88,8 @@ namespace Horr.Controllers
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             var result = await _mediator.Send(new ServiceImplementation.Implementations.Proposals.GetProposalsForJobQuery(id, userId, page, pageSize));
-            return Ok(result);
+            if (!result.Succeeded) return BadRequest(result);
+            return Ok(result.Data);
         }
     }
 }
