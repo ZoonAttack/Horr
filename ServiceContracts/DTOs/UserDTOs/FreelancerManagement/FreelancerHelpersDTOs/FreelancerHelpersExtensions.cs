@@ -14,6 +14,7 @@ namespace Mappers
         public static LanguageReadDto ToReadDto(this FreelancerLanguage entity) =>
             new LanguageReadDto
             {
+                Id = entity.Id,
                 Name = entity.Name,
                 Level = entity.Level
             };
@@ -21,6 +22,7 @@ namespace Mappers
         public static EducationReadDto ToReadDto(this FreelancerEducation entity) =>
             new EducationReadDto
             {
+                Id = entity.Id,
                 School = entity.School,
                 DateStart = entity.DateStart,
                 DateEnd = entity.DateEnd,
@@ -31,6 +33,7 @@ namespace Mappers
         public static ExperienceDetailReadDto ToReadDto(this FreelancerExperienceDetail entity) =>
             new ExperienceDetailReadDto
             {
+                Id = entity.Id,
                 Subject = entity.Subject,
                 Description = entity.Description
             };
@@ -38,6 +41,7 @@ namespace Mappers
         public static EmploymentReadDto ToReadDto(this FreelancerEmployment entity) =>
             new EmploymentReadDto
             {
+                Id = entity.Id,
                 Company = entity.Company,
                 City = entity.City,
                 Country = entity.Country,
@@ -56,39 +60,39 @@ namespace Mappers
             new FreelancerLanguage
             {
                 FreelancerId = freelancerId,
-                Name = dto.Name,
-                Level = dto.Level
+                Name = dto.Name ?? string.Empty,
+                Level = dto.Level ?? string.Empty
             };
 
         public static FreelancerEducation ToEntity(this EducationCreateDto dto, string freelancerId) =>
             new FreelancerEducation
             {
                 FreelancerId = freelancerId,
-                School = dto.School,
-                DateStart = dto.DateStart,
+                School = dto.School ?? string.Empty,
+                DateStart = dto.DateStart ?? DateTime.UtcNow,
                 DateEnd = dto.DateEnd,
-                Degree = dto.Degree,
-                FieldOfStudy = dto.FieldOfStudy
+                Degree = dto.Degree ?? string.Empty,
+                FieldOfStudy = dto.FieldOfStudy ?? string.Empty
             };
 
         public static FreelancerExperienceDetail ToEntity(this ExperienceDetailCreateDto dto, string freelancerId) =>
             new FreelancerExperienceDetail
             {
                 FreelancerId = freelancerId,
-                Subject = dto.Subject,
-                Description = dto.Description
+                Subject = dto.Subject ?? string.Empty,
+                Description = dto.Description ?? string.Empty
             };
 
         public static FreelancerEmployment ToEntity(this EmploymentCreateDto dto, string freelancerId) =>
             new FreelancerEmployment
             {
                 FreelancerId = freelancerId,
-                Company = dto.Company,
-                City = dto.City,
-                Country = dto.Country,
-                Title = dto.Title,
-                CurrentlyWorkThere = dto.CurrentlyWorkThere,
-                FromDate = dto.FromDate,
+                Company = dto.Company ?? string.Empty,
+                City = dto.City ?? string.Empty,
+                Country = dto.Country ?? string.Empty,
+                Title = dto.Title ?? string.Empty,
+                CurrentlyWorkThere = dto.CurrentlyWorkThere ?? false,
+                FromDate = dto.FromDate ?? DateTime.UtcNow,
                 ToDate = dto.ToDate
             };
 
@@ -101,8 +105,8 @@ namespace Mappers
             {
                 Id = dto.Id ?? 0,
                 FreelancerId = freelancerId,
-                Name = dto.Name,
-                Level = dto.Level
+                Name = dto.Name ?? string.Empty,
+                Level = dto.Level ?? string.Empty
             };
 
         public static FreelancerEducation ToEntity(this EducationUpdateDto dto, string freelancerId) =>
@@ -110,11 +114,11 @@ namespace Mappers
             {
                 Id = dto.Id ?? 0,
                 FreelancerId = freelancerId,
-                School = dto.School,
-                DateStart = dto.DateStart,
+                School = dto.School ?? string.Empty,
+                DateStart = dto.DateStart ?? DateTime.UtcNow,
                 DateEnd = dto.DateEnd,
-                Degree = dto.Degree,
-                FieldOfStudy = dto.FieldOfStudy
+                Degree = dto.Degree ?? string.Empty,
+                FieldOfStudy = dto.FieldOfStudy ?? string.Empty
             };
 
         public static FreelancerExperienceDetail ToEntity(this ExperienceDetailUpdateDto dto, string freelancerId) =>
@@ -122,8 +126,8 @@ namespace Mappers
             {
                 Id = dto.Id ?? 0,
                 FreelancerId = freelancerId,
-                Subject = dto.Subject,
-                Description = dto.Description
+                Subject = dto.Subject ?? string.Empty,
+                Description = dto.Description ?? string.Empty
             };
 
         public static FreelancerEmployment ToEntity(this EmploymentUpdateDto dto, string freelancerId) =>
@@ -131,12 +135,12 @@ namespace Mappers
             {
                 Id = dto.Id ?? 0,
                 FreelancerId = freelancerId,
-                Company = dto.Company,
-                City = dto.City,
-                Country = dto.Country,
-                Title = dto.Title,
-                CurrentlyWorkThere = dto.CurrentlyWorkThere,
-                FromDate = dto.FromDate,
+                Company = dto.Company ?? string.Empty,
+                City = dto.City ?? string.Empty,
+                Country = dto.Country ?? string.Empty,
+                Title = dto.Title ?? string.Empty,
+                CurrentlyWorkThere = dto.CurrentlyWorkThere ?? false,
+                FromDate = dto.FromDate ?? DateTime.UtcNow,
                 ToDate = dto.ToDate
             };
     }

@@ -17,6 +17,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ServiceContracts.DTOs.FreelancerProfile;
+using Services.Freelancer;
+using ServiceContracts.DTOs.UserDTOs.FreelancerManagement;
+using Entities.Enums;
 
 namespace ServiceImplementation.Implementations.Settings
 {
@@ -25,12 +28,14 @@ namespace ServiceImplementation.Implementations.Settings
         private readonly AppDbContext _context;
         private readonly UserManager<User> _userManager;
         private readonly IEmailService _emailService;
+        private readonly IFreelancerService _freelancerService;
 
-        public ProfileSettings(UserManager<User> userManager, IEmailService emailService, AppDbContext context)
+        public ProfileSettings(UserManager<User> userManager, IEmailService emailService, AppDbContext context, IFreelancerService freelancerService)
         {
             _userManager  = userManager;
             _emailService = emailService;
             _context      = context;
+            _freelancerService = freelancerService;
         }
         
         public async Task<Result<UserProfileDto>> GetProfileAsync(string userId)
@@ -44,7 +49,12 @@ namespace ServiceImplementation.Implementations.Settings
                 Data = null
             };
 
-            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
+            var freelancer = await _context.Freelancers
+                .Include(f => f.Languages)
+                .Include(f => f.Education)
+                .Include(f => f.ExperienceDetails)
+                .Include(f => f.EmploymentHistory)
+                .FirstOrDefaultAsync(f => f.UserId == userId);
 
             return new Result<UserProfileDto>
             {
@@ -82,6 +92,20 @@ namespace ServiceImplementation.Implementations.Settings
 
             var freelancer = user.Freelancer;
 
+            var workHistory = await _context.Contracts
+                .Include(c => c.ContractReviews)
+                .Include(c => c.JobPost)
+                .Where(c => c.FreelancerId == user.Id && (c.Status == ContractStatus.Completed || c.Status == ContractStatus.Closed))
+                .Select(c => new EmploymentDto
+                {
+                    Company = "HORR Platform",
+                    Title = c.JobPost != null ? c.JobPost.Title : (c.CustomJobDescription ?? "Contract"),
+                    DateRange = $"{c.StartedAt:MMM yyyy} - {(c.ClosedAt.HasValue ? c.ClosedAt.Value.ToString("MMM yyyy") : "Present")}",
+                    Description = c.ContractReviews.FirstOrDefault(r => r.ReviewerId != user.Id) != null 
+                        ? c.ContractReviews.FirstOrDefault(r => r.ReviewerId != user.Id)!.Comment 
+                        : ""
+                }).ToListAsync();
+
             var publicProfile = new PublicProfileDto
             {
                 FullName = user.FullName,
@@ -96,7 +120,7 @@ namespace ServiceImplementation.Implementations.Settings
                 YearsOfExperience = freelancer?.YearsOfExperience,
 
                 TotalEarnings = "$0", 
-                TotalJobs = 0,
+                TotalJobs = workHistory.Count,
                 TotalHours = 0,
 
                 Skills = freelancer?.FreelancerSkills.Select(s => s.Skill.Name).ToList() ?? new List<string>(),
@@ -131,13 +155,7 @@ namespace ServiceImplementation.Implementations.Settings
                     Year = e.DateEnd?.Year ?? e.DateStart.Year
                 }).ToList() ?? new List<EducationDto>(),
 
-                EmploymentHistory = freelancer?.EmploymentHistory.Select(eh => new EmploymentDto
-                {
-                    Company = eh.Company,
-                    Title = eh.Title,
-                    DateRange = $"{eh.FromDate:MMM yyyy} - {(eh.CurrentlyWorkThere ? "Present" : eh.ToDate?.ToString("MMM yyyy"))}",
-                    Description = "" 
-                }).ToList() ?? new List<EmploymentDto>()
+                EmploymentHistory = workHistory
             };
 
             return new Result<PublicProfileDto>
@@ -260,7 +278,10 @@ namespace ServiceImplementation.Implementations.Settings
             };
 
             freelancer.Bio = newBio;
+            user.Bio = newBio;
+            
             _context.Freelancers.Update(freelancer);
+            await _userManager.UpdateAsync(user);
             await _context.SaveChangesAsync();
 
             return new Result<UserProfileDto>
@@ -343,7 +364,14 @@ namespace ServiceImplementation.Implementations.Settings
             }
 
             if (dto.Bio != null)
+            {
                 user.Bio = dto.Bio;
+                var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
+                if (freelancer != null)
+                {
+                    freelancer.Bio = dto.Bio;
+                }
+            }
 
             await _userManager.UpdateAsync(user);
 
@@ -409,6 +437,70 @@ namespace ServiceImplementation.Implementations.Settings
                 Succeeded = true,
                 Message   = "Payment method added successfully.",
                 Data      = user.ToUserProfileDto()
+            };
+        }
+
+        public async Task<Result<UserProfileDto>> UpdateFreelancerDetailsAsync(string userId, FreelancerUpdateDTO updateDto)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null || user.IsDeleted) return new Result<UserProfileDto>
+            {
+                Succeeded = false,
+                Errors = { "User not found." },
+                Message = "Failed to update freelancer details.",
+                Data = null
+            };
+
+            // Call the shared freelancer update logic
+            var success = await _freelancerService.UpdateFreelancerAsync(userId, updateDto);
+            if (!success) return new Result<UserProfileDto>
+            {
+                Succeeded = false,
+                Errors = { "Failed to update freelancer profile." },
+                Message = "Failed to update freelancer details.",
+                Data = null
+            };
+
+            // Fetch the updated freelancer entity for the response
+            var freelancer = await _context.Freelancers
+                .Include(f => f.Languages)
+                .Include(f => f.Education)
+                .Include(f => f.EmploymentHistory)
+                .FirstOrDefaultAsync(f => f.UserId == userId);
+
+            return new Result<UserProfileDto>
+            {
+                Succeeded = true,
+                Message = "Freelancer details updated successfully.",
+                Errors = { },
+                Data = user.ToUserProfileDto(freelancer: freelancer)
+            };
+        }
+
+        public async Task<Result<UserProfileDto>> GetFreelancerDetailsAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null || user.IsDeleted) return new Result<UserProfileDto>
+            {
+                Succeeded = false,
+                Errors = { "User not found." },
+                Message = "Failed to retrieve freelancer details.",
+                Data = null
+            };
+
+            var freelancer = await _context.Freelancers
+                .Include(f => f.Languages)
+                .Include(f => f.Education)
+                .Include(f => f.ExperienceDetails)
+                .Include(f => f.EmploymentHistory)
+                .FirstOrDefaultAsync(f => f.UserId == userId);
+
+            return new Result<UserProfileDto>
+            {
+                Succeeded = true,
+                Message = "Freelancer details retrieved successfully.",
+                Errors = { },
+                Data = user.ToUserProfileDto(freelancer: freelancer)
             };
         }
     }

@@ -14,6 +14,8 @@ using System.Text;
 using ServiceImplementation.Hubs;
 using Services.Client;
 using ServiceImplementation.Implementations.ClientImplementation;
+using Services.Freelancer;
+using ServiceImplementation.Implementations.FreelancerImplementation;
 
 namespace Horr
 {
@@ -59,6 +61,7 @@ namespace Horr
             builder.Services.AddScoped<IJobService, JobService>();
             builder.Services.AddTransient<IEmailService, EmailService>();
             builder.Services.AddScoped<Services.Client.IJobService, ServiceImplementation.Implementations.ClientImplementation.JobService>();
+            builder.Services.AddScoped<IFreelancerService, FreelancerService>();
             builder.Services.AddScoped<ServiceContracts.Client.IClientProfileService, ServiceImplementation.Implementations.ClientImplementation.ClientProfileService>();
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 

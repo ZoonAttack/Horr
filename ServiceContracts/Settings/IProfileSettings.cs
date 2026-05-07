@@ -23,5 +23,7 @@ namespace ServiceContracts.Settings
 
         Task<Result<UserProfileDto>> UpdateAccountAsync(string userId, AccountUpdateDto dto);
         Task<Result<UserProfileDto>> UpdateLocationAsync(string userId, LocationUpdateDto dto);
+        Task<Result<UserProfileDto>> UpdateFreelancerDetailsAsync(string userId, ServiceContracts.DTOs.UserDTOs.FreelancerManagement.FreelancerUpdateDTO updateDto);
+        Task<Result<UserProfileDto>> GetFreelancerDetailsAsync(string userId);
     }
 }

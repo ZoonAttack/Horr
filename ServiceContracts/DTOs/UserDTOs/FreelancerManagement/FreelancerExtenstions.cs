@@ -22,7 +22,7 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
                 Role = user.Role,
                 FullName = user.FullName,
                 Email = user.Email,
-                Phone = user.PhoneNumber,
+                PhoneNumber = user.PhoneNumber,
                 IsVerified = user.IsVerified,
                 TrustScore = user.TrustScore,
                 CreatedAt = user.CreatedAt,
@@ -97,6 +97,7 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
                     HourlyRate = createDto.HourlyRate,
                     Availability = createDto.Availability,
                     YearsOfExperience = createDto.YearsOfExperience,
+                    Bio = createDto.Bio,
                     PortfolioUrl = createDto.PortfolioUrl
                 }
             };
@@ -134,23 +135,37 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
             }
 
             // Apply updates to the User entity
-            user.FullName = updateDto.FullName;
-            user.Email = updateDto.Email;
-            user.UserName = updateDto.Email;
-            user.PhoneNumber = updateDto.Phone;
+            if (!string.IsNullOrEmpty(updateDto.FullName)) user.FullName = updateDto.FullName;
+            if (!string.IsNullOrEmpty(updateDto.Email)) 
+            {
+                user.Email = updateDto.Email;
+                user.UserName = updateDto.Email;
+            }
+            user.PhoneNumber = updateDto.PhoneNumber;
             user.Bio = updateDto.Bio;
+            if (user.Freelancer != null) user.Freelancer.Bio = updateDto.Bio;
+            user.Address = updateDto.Address;
+            user.City = updateDto.City;
+            user.StateProvince = updateDto.StateProvince;
+            user.ZipCode = updateDto.ZipCode;
+            user.Country = updateDto.Country;
+            user.TimeZone = updateDto.TimeZone;
 
             // Apply updates to the Freelancer Profile
             if (user.Freelancer != null)
             {
-                user.Freelancer.HourlyRate = updateDto.HourlyRate;
-                user.Freelancer.Availability = updateDto.Availability;
-                user.Freelancer.YearsOfExperience = updateDto.YearsOfExperience;
-                user.Freelancer.PortfolioUrl = updateDto.PortfolioUrl;
+                if (!string.IsNullOrEmpty(updateDto.Title)) user.Freelancer.Title = updateDto.Title;
+                if (updateDto.HourlyRate.HasValue) user.Freelancer.HourlyRate = updateDto.HourlyRate;
+                if (!string.IsNullOrEmpty(updateDto.Availability)) user.Freelancer.Availability = updateDto.Availability;
+                if (updateDto.YearsOfExperience.HasValue) user.Freelancer.YearsOfExperience = updateDto.YearsOfExperience;
+                if (!string.IsNullOrEmpty(updateDto.PortfolioUrl)) user.Freelancer.PortfolioUrl = updateDto.PortfolioUrl;
+
+                if (updateDto.ExperienceLevel.HasValue)
+                {
+                    user.Freelancer.ExperienceLevel = (Entities.Enums.ExperienceLevel)updateDto.ExperienceLevel.Value;
+                }
 
                 // --- NEW MAPPING: PROFILE COLLECTIONS (Update Logic Handled by Service Layer) ---
-
-                string freelancerId = user.Id;
             }
         }
 

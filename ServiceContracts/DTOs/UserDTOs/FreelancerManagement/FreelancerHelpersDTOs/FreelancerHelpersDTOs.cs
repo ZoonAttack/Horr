@@ -9,21 +9,22 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
 
     public class LanguageReadDto
     {
+        public int Id { get; set; }
         public string Name { get; set; }
         public string Level { get; set; }
     }
 
     public class LanguageCreateDto
     {
-        public string Name { get; set; }
-        public string Level { get; set; }
+        public string? Name { get; set; }
+        public string? Level { get; set; }
     }
 
     public class LanguageUpdateDto
     {
         public int? Id { get; set; }
-        public string Name { get; set; }
-        public string Level { get; set; }
+        public string? Name { get; set; }
+        public string? Level { get; set; }
     }
 
     // =========================================================
@@ -32,6 +33,7 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
 
     public class EducationReadDto
     {
+        public int Id { get; set; }
         public string School { get; set; }
         public DateTime DateStart { get; set; }
         public DateTime? DateEnd { get; set; }
@@ -41,21 +43,21 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
 
     public class EducationCreateDto
     {
-        public string School { get; set; }
-        public DateTime DateStart { get; set; }
+        public string? School { get; set; }
+        public DateTime? DateStart { get; set; }
         public DateTime? DateEnd { get; set; }
-        public string Degree { get; set; }
-        public string FieldOfStudy { get; set; }
+        public string? Degree { get; set; }
+        public string? FieldOfStudy { get; set; }
     }
 
     public class EducationUpdateDto
     {
         public int? Id { get; set; }
-        public string School { get; set; }
-        public DateTime DateStart { get; set; }
+        public string? School { get; set; }
+        public DateTime? DateStart { get; set; }
         public DateTime? DateEnd { get; set; }
-        public string Degree { get; set; }
-        public string FieldOfStudy { get; set; }
+        public string? Degree { get; set; }
+        public string? FieldOfStudy { get; set; }
     }
 
     // =========================================================
@@ -64,21 +66,22 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
 
     public class ExperienceDetailReadDto
     {
+        public int Id { get; set; }
         public string Subject { get; set; }
         public string Description { get; set; }
     }
 
     public class ExperienceDetailCreateDto
     {
-        public string Subject { get; set; }
-        public string Description { get; set; }
+        public string? Subject { get; set; }
+        public string? Description { get; set; }
     }
 
     public class ExperienceDetailUpdateDto
     {
         public int? Id { get; set; }
-        public string Subject { get; set; }
-        public string Description { get; set; }
+        public string? Subject { get; set; }
+        public string? Description { get; set; }
     }
 
     // =========================================================
@@ -87,6 +90,7 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
 
     public class EmploymentReadDto
     {
+        public int Id { get; set; }
         public string Company { get; set; }
         public string City { get; set; }
         public string Country { get; set; }
@@ -98,24 +102,24 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
 
     public class EmploymentCreateDto
     {
-        public string Company { get; set; }
-        public string City { get; set; }
-        public string Country { get; set; }
-        public string Title { get; set; }
-        public bool CurrentlyWorkThere { get; set; }
-        public DateTime FromDate { get; set; }
+        public string? Company { get; set; }
+        public string? City { get; set; }
+        public string? Country { get; set; }
+        public string? Title { get; set; }
+        public bool? CurrentlyWorkThere { get; set; }
+        public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
     }
 
     public class EmploymentUpdateDto
     {
         public int? Id { get; set; }
-        public string Company { get; set; }
-        public string City { get; set; }
-        public string Country { get; set; }
-        public string Title { get; set; }
-        public bool CurrentlyWorkThere { get; set; }
-        public DateTime FromDate { get; set; }
+        public string? Company { get; set; }
+        public string? City { get; set; }
+        public string? Country { get; set; }
+        public string? Title { get; set; }
+        public bool? CurrentlyWorkThere { get; set; }
+        public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
     }
 }

@@ -30,6 +30,15 @@ namespace Horr.Controllers.UserProfile
             return Ok(response);
         }
 
+        [HttpGet("freelancer-details")]
+        public async Task<IActionResult> GetFreelancerDetails()
+        {
+            var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            var result = await _profileSettingsService.GetFreelancerDetailsAsync(userId);
+            if (!result.Succeeded) return BadRequest(result.Errors);
+            return Ok(result.Data);
+        }
+
         [HttpGet("public/{userIdHash}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetPublicProfile(string userIdHash)
@@ -123,6 +132,29 @@ namespace Horr.Controllers.UserProfile
             if (!response.Succeeded) return NotFound("User not found.");
 
             return Ok(new { message = "Location updated successfully." });
+        }
+
+        [HttpPatch("freelancer-details")]
+        public async Task<IActionResult> UpdateFreelancerDetails([FromBody] ServiceContracts.DTOs.UserDTOs.FreelancerManagement.FreelancerUpdateDTO dto)
+        {
+            if (!ModelState.IsValid) 
+            {
+                var errors = ModelState.ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
+                );
+                return BadRequest(new { errors });
+            }
+
+            var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            var response = await _profileSettingsService.UpdateFreelancerDetailsAsync(userId, dto);
+
+            if (!response.Succeeded) 
+            {
+                return BadRequest(new { errors = response.Errors, message = response.Message });
+            }
+
+            return Ok(new { message = "Freelancer details updated successfully.", data = response.Data });
         }
 
     }

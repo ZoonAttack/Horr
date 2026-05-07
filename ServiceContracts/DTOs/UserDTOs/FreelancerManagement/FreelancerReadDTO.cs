@@ -12,7 +12,7 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
         public UserRole Role { get; set; }
         public string FullName { get; set; }
         public string Email { get; set; }
-        public string Phone { get; set; }
+        public string PhoneNumber { get; set; }
         public bool IsVerified { get; set; }
         public decimal TrustScore { get; set; }
         public DateTime CreatedAt { get; set; }

@@ -114,7 +114,8 @@ namespace ServiceImplementation.Authentication
                 Country       = dto.Country       ?? string.Empty,
                 StateProvince = dto.StateProvince ?? string.Empty,
                 TimeZone      = dto.TimeZone      ?? "UTC+02:00",
-                ZipCode       = dto.ZipCode       ?? string.Empty
+                ZipCode       = dto.ZipCode       ?? string.Empty,
+                Role          = dto.Role
             };
 
             var createResult = await _userManager.CreateAsync(user, dto.Password);
@@ -145,6 +146,7 @@ namespace ServiceImplementation.Authentication
                 _context.Freelancers.Add(new Entities.Users.Freelancer
                 {
                     UserId = user.Id,
+                    Bio = dto.Bio,
                     Availability = "Available",
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
