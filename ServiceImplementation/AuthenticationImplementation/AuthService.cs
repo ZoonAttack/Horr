@@ -420,6 +420,31 @@ namespace ServiceImplementation.Authentication
                 };
         }
 
+        public async Task<Result<bool>> LogoutAsync(string refreshToken)
+        {
+            var storedToken = await _context.RefreshTokens
+                .SingleOrDefaultAsync(x => x.Token == refreshToken);
+
+            if (storedToken == null)
+            {
+                return new Result<bool>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.TokenInvalid,
+                    Message   = "Token not found."
+                };
+            }
+
+            storedToken.Revoked = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return new Result<bool>
+            {
+                Succeeded = true,
+                Message   = "Logged out successfully."
+            };
+        }
+
         #region helpers
 
         private async Task<bool> SendEmailHelperAsync(Entities.Users.User user)
@@ -449,6 +474,16 @@ namespace ServiceImplementation.Authentication
             var accessToken  = _tokenService.GenerateAccessToken(authClaims);
             var refreshToken = _tokenService.GenerateRefreshToken();
 
+            // Store refresh token in database
+            _context.RefreshTokens.Add(new RefreshToken
+            {
+                Token   = refreshToken,
+                UserId  = user.Id,
+                Created = DateTime.UtcNow,
+                Expires = DateTime.UtcNow.AddDays(7) // Match your cookie/policy expiry
+            });
+
+            await _context.SaveChangesAsync();
             await _userManager.UpdateAsync(user);
 
             return new AuthResponse

@@ -1,6 +1,7 @@
 using Entities.Enums;
 using Entities.Users;
 using Horr.Extentions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
@@ -97,14 +98,15 @@ namespace Horr.Controllers.Authentication
         }
 
         [HttpPost("logout")]
+        [Authorize]
         public async Task<IActionResult> Logout()
         {
-            if (_signInManager.IsSignedIn(User) == false)
+            if (Request.Cookies.TryGetValue("refreshToken", out var refreshToken))
             {
-                return BadRequest(new { Message = "No user is currently logged in." });
+                await _authService.LogoutAsync(refreshToken);
             }
+
             Response.Cookies.Delete("refreshToken");
-            await _signInManager.SignOutAsync();
             return Ok(new { Message = "Logged out successfully." });
         }
 
