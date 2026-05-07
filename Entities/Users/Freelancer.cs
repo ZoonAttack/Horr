@@ -38,8 +38,7 @@ namespace Entities.Users
         [MaxLength(120)]
         public string? Title { get; set; }
 
-        [MaxLength(1000)]
-        public string? Bio { get; set; }
+
 
 
         public DateTime CreatedAt { get; set; }

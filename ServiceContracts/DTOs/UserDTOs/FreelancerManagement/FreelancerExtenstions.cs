@@ -97,7 +97,6 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
                     HourlyRate = createDto.HourlyRate,
                     Availability = createDto.Availability,
                     YearsOfExperience = createDto.YearsOfExperience,
-                    Bio = createDto.Bio,
                     PortfolioUrl = createDto.PortfolioUrl
                 }
             };
@@ -143,7 +142,6 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
             }
             user.PhoneNumber = updateDto.PhoneNumber;
             user.Bio = updateDto.Bio;
-            if (user.Freelancer != null) user.Freelancer.Bio = updateDto.Bio;
             user.Address = updateDto.Address;
             user.City = updateDto.City;
             user.StateProvince = updateDto.StateProvince;

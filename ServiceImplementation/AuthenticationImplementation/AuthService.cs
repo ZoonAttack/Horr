@@ -146,7 +146,6 @@ namespace ServiceImplementation.Authentication
                 _context.Freelancers.Add(new Entities.Users.Freelancer
                 {
                     UserId = user.Id,
-                    Bio = dto.Bio,
                     Availability = "Available",
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow

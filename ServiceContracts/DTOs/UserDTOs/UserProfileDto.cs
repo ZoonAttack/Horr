@@ -60,7 +60,7 @@ namespace ServiceContracts.DTOs.UserDTOs
                 Country = user.Country,
                 TimeZone = user.TimeZone,
                 Title = freelancer?.Title,
-                Bio = freelancer?.Bio,
+                Bio = user.Bio,
                 TrustScore = user.TrustScore,
                 IsVerified = user.IsVerified,
                 PendingEmail = pendingEmail,

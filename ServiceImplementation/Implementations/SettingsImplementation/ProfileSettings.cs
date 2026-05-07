@@ -110,7 +110,7 @@ namespace ServiceImplementation.Implementations.Settings
             {
                 FullName = user.FullName,
                 Title = freelancer?.Title,
-                Bio = freelancer?.Bio,
+                Bio = user.Bio,
                 City = user.City,
                 Country = user.Country,
                 ProfilePicturePath = user.ProfilePicturePath,
@@ -268,21 +268,10 @@ namespace ServiceImplementation.Implementations.Settings
                 Data = null
             };
 
-            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
-            if (freelancer == null) return new Result<UserProfileDto>
-            {
-                Succeeded = false,
-                Errors = { "Freelancer profile not found." },
-                Message = "Failed to update bio.",
-                Data = null
-            };
-
-            freelancer.Bio = newBio;
             user.Bio = newBio;
-            
-            _context.Freelancers.Update(freelancer);
             await _userManager.UpdateAsync(user);
-            await _context.SaveChangesAsync();
+
+            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
 
             return new Result<UserProfileDto>
             {
@@ -366,11 +355,6 @@ namespace ServiceImplementation.Implementations.Settings
             if (dto.Bio != null)
             {
                 user.Bio = dto.Bio;
-                var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
-                if (freelancer != null)
-                {
-                    freelancer.Bio = dto.Bio;
-                }
             }
 
             await _userManager.UpdateAsync(user);

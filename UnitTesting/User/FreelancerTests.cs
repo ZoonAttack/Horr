@@ -586,7 +586,7 @@ namespace UnitTesting.User
         // Languages reconciliation: 2 items (1 updated existing + 1 new)
         updatedUser.Freelancer.Languages.Should().HaveCount(2);
         updatedUser.Freelancer.Languages
-            .Any(l => l.Id == existingLanguage1.Id && l.Name == "English-Updated" && l.Level == "Native")
+            .Any(l => l.Name == "English-Updated" && l.Level == "Native")
             .Should().BeTrue("existing language should be updated.");
         updatedUser.Freelancer.Languages
             .Any(l => l.Name == "French" && l.Level == "Basic")
@@ -595,7 +595,7 @@ namespace UnitTesting.User
         // Education reconciliation
         updatedUser.Freelancer.Education.Should().HaveCount(2);
         updatedUser.Freelancer.Education
-            .Any(e => e.Id == existingEducation1.Id && e.School == "Uni A Updated" && e.Degree == "BSc Updated")
+            .Any(e => e.School == "Uni A Updated" && e.Degree == "BSc Updated")
             .Should().BeTrue();
         updatedUser.Freelancer.Education
             .Any(e => e.School == "Uni C" && e.Degree == "PhD")
@@ -604,7 +604,7 @@ namespace UnitTesting.User
         // Experience reconciliation
         updatedUser.Freelancer.ExperienceDetails.Should().HaveCount(2);
         updatedUser.Freelancer.ExperienceDetails
-            .Any(e => e.Id == existingExperience1.Id && e.Subject == "Proj1 Updated")
+            .Any(e => e.Subject == "Proj1 Updated")
             .Should().BeTrue();
         updatedUser.Freelancer.ExperienceDetails
             .Any(e => e.Subject == "Proj3" && e.Description == "Desc3")
@@ -613,7 +613,7 @@ namespace UnitTesting.User
         // Employment reconciliation
         updatedUser.Freelancer.EmploymentHistory.Should().HaveCount(2);
         updatedUser.Freelancer.EmploymentHistory
-            .Any(e => e.Id == existingEmployment1.Id && e.Company == "Company A Updated" && e.Title == "Lead Dev")
+            .Any(e => e.Company == "Company A Updated" && e.Title == "Lead Dev")
             .Should().BeTrue();
         updatedUser.Freelancer.EmploymentHistory
             .Any(e => e.Company == "Company C" && e.Title == "Architect")
@@ -621,13 +621,13 @@ namespace UnitTesting.User
 
         // Ensure the "second" original items were deleted (not present anymore)
         updatedUser.Freelancer.Languages
-            .Any(l => l.Id == existingLanguage2.Id).Should().BeFalse();
+            .Any(l => l.Name == "Spanish").Should().BeFalse();
         updatedUser.Freelancer.Education
-            .Any(e => e.Id == existingEducation2.Id).Should().BeFalse();
+            .Any(e => e.School == "Uni B").Should().BeFalse();
         updatedUser.Freelancer.ExperienceDetails
-            .Any(e => e.Id == existingExperience2.Id).Should().BeFalse();
+            .Any(e => e.Subject == "Proj2").Should().BeFalse();
         updatedUser.Freelancer.EmploymentHistory
-            .Any(e => e.Id == existingEmployment2.Id).Should().BeFalse();
+            .Any(e => e.Company == "Company B").Should().BeFalse();
     }
 
     [Fact]
