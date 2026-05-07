@@ -90,7 +90,7 @@ namespace Horr.Controllers
                 .OrderByDescending(r => r.SubmittedAt)
                 .FirstOrDefaultAsync();
 
-            if (request == null) return NotFound("No verification request found.");
+            if (request == null) return Ok(null);
 
             return Ok(MapToDto(request, user.FullName));
         }
