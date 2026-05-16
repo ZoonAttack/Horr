@@ -17,5 +17,6 @@ namespace Services.Authentication
         Task<Result<AuthResponse>> ResendConfirmationEmailAsync(string email);
         Task<Result<AuthResponse>> RefreshTokenAsync(string refreshToken);
         Task<Result<AuthResponse>> ChangePasswordAsync(string userId, ChangePasswordRequestDTO dto);
+        Task<Result<bool>> LogoutAsync(string refreshToken);
     }
 }

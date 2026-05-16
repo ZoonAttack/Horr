@@ -8,10 +8,12 @@ using Entities;
 using Entities.Project;
 using ServiceContracts.DTOs.Contract;
 using ServiceImplementation.Exceptions;
+using ServiceContracts.DTOs.Responses;
+using ServiceImplementation.Helpers;
 
 namespace ServiceImplementation.Implementations.Contracts
 {
-    public class GetContractByIdQueryHandler : IRequestHandler<GetContractByIdQuery, ContractReadDTO>
+    public class GetContractByIdQueryHandler : IRequestHandler<GetContractByIdQuery, Result<ContractReadDTO>>
     {
         private readonly AppDbContext _context;
 
@@ -20,7 +22,7 @@ namespace ServiceImplementation.Implementations.Contracts
             _context = context;
         }
 
-        public async Task<ContractReadDTO> Handle(GetContractByIdQuery request, CancellationToken cancellationToken)
+        public async Task<Result<ContractReadDTO>> Handle(GetContractByIdQuery request, CancellationToken cancellationToken)
         {
             var contract = await _context.Contracts
                 .Include(c => c.Proposal)
@@ -32,16 +34,16 @@ namespace ServiceImplementation.Implementations.Contracts
 
             if (contract == null)
             {
-                throw new NotFoundException($"Contract with ID {request.ContractId} not found.");
+                return new Result<ContractReadDTO> { Succeeded = false, ErrorCode = ErrorCodes.ContractNotFound, Message = "Contract not found." };
             }
 
             // Check if user is part of the contract
             if (contract.ClientId != request.UserId && contract.FreelancerId != request.UserId)
             {
-                throw new UnauthorizedAccessException("Unauthorized: You are not a party to this contract.");
+                return new Result<ContractReadDTO> { Succeeded = false, ErrorCode = ErrorCodes.Unauthorized, Message = "Unauthorized." };
             }
 
-            return new ContractReadDTO
+            var dto = new ContractReadDTO
             {
                 Id = contract.Id,
                 ProposalId = contract.ProposalId,
@@ -60,6 +62,8 @@ namespace ServiceImplementation.Implementations.Contracts
                     .Select(d => d.Note)
                     .FirstOrDefault()
             };
+
+            return new Result<ContractReadDTO> { Succeeded = true, Data = dto };
         }
     }
 }

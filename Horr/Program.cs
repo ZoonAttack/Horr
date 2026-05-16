@@ -14,6 +14,8 @@ using System.Text;
 using ServiceImplementation.Hubs;
 using Services.Client;
 using ServiceImplementation.Implementations.ClientImplementation;
+using ServiceContracts;
+using ServiceImplementation.Implementations;
 using Services.Freelancer;
 using ServiceImplementation.Implementations.FreelancerImplementation;
 
@@ -63,6 +65,8 @@ namespace Horr
             builder.Services.AddScoped<Services.Client.IJobService, ServiceImplementation.Implementations.ClientImplementation.JobService>();
             builder.Services.AddScoped<IFreelancerService, FreelancerService>();
             builder.Services.AddScoped<ServiceContracts.Client.IClientProfileService, ServiceImplementation.Implementations.ClientImplementation.ClientProfileService>();
+            builder.Services.AddScoped<ICategoryService, CategoryService>();
+            builder.Services.AddScoped<ISkillService, SkillService>();
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
             // MediatR Registration

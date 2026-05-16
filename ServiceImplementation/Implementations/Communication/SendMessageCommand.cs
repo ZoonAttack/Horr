@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using ServiceContracts.DTOs.Chat;
+using ServiceContracts.DTOs.Responses;
+using System.Collections.Generic;
 
 namespace ServiceImplementation.Implementations.Communication
 {
@@ -9,5 +11,5 @@ namespace ServiceImplementation.Implementations.Communication
         string SenderId,
         string Body,
         List<IFormFile>? Files = null
-    ) : IRequest<MessageDto>;
+    ) : IRequest<Result<MessageDto>>;
 }

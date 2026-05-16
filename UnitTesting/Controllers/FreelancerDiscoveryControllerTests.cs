@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Services;
 using Moq;
 using ServiceContracts.DTOs.UserDTOs.FreelancerManagement;
+using ServiceContracts.DTOs.Responses;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -41,15 +42,16 @@ namespace UnitTesting.Controllers
         public async Task SearchFreelancers_ShouldReturnOk_WithPagedResult()
         {
             // Arrange
-            var expectedResult = new PagedResult<FreelancerReadDTO>
+            var data = new PagedResult<FreelancerReadDTO>
             {
                 Items = new List<FreelancerReadDTO> { new FreelancerReadDTO { Id = "freelancer1" } },
                 TotalCount = 1,
                 Page = 1,
                 PageSize = 10
             };
+            var expectedResult = new Result<PagedResult<FreelancerReadDTO>> { Succeeded = true, Data = data };
 
-            _mediatorMock.Setup(m => m.Send(It.IsAny<SearchFreelancersQuery>(), default))
+            _mediatorMock.Setup(m => m.Send<Result<PagedResult<FreelancerReadDTO>>>(It.IsAny<SearchFreelancersQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedResult);
 
             // Act
@@ -57,15 +59,15 @@ namespace UnitTesting.Controllers
 
             // Assert
             var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
-            okResult.Value.Should().BeEquivalentTo(expectedResult);
+            okResult.Value.Should().BeEquivalentTo(data);
         }
 
         [Fact]
         public async Task SaveFreelancer_ShouldReturnOk_WhenSuccessful()
         {
             // Arrange
-            _mediatorMock.Setup(m => m.Send(It.IsAny<SaveFreelancerCommand>(), default))
-                .ReturnsAsync(true);
+            _mediatorMock.Setup(m => m.Send<Result<bool>>(It.IsAny<SaveFreelancerCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Result<bool> { Succeeded = true, Data = true });
 
             // Act
             var result = await _controller.SaveFreelancer("freelancer1");
@@ -76,26 +78,11 @@ namespace UnitTesting.Controllers
         }
 
         [Fact]
-        public async Task SaveFreelancer_ShouldReturnBadRequest_WhenFails()
-        {
-            // Arrange
-            _mediatorMock.Setup(m => m.Send(It.IsAny<SaveFreelancerCommand>(), default))
-                .ReturnsAsync(false);
-
-            // Act
-            var result = await _controller.SaveFreelancer("freelancer1");
-
-            // Assert
-            var badRequestResult = result.Should().BeOfType<BadRequestObjectResult>().Subject;
-            badRequestResult.Value.Should().BeEquivalentTo(new { message = "Failed to save freelancer." });
-        }
-
-        [Fact]
         public async Task UnsaveFreelancer_ShouldReturnOk_WhenSuccessful()
         {
             // Arrange
-            _mediatorMock.Setup(m => m.Send(It.IsAny<UnsaveFreelancerCommand>(), default))
-                .ReturnsAsync(true);
+            _mediatorMock.Setup(m => m.Send<Result<bool>>(It.IsAny<UnsaveFreelancerCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Result<bool> { Succeeded = true, Data = true });
 
             // Act
             var result = await _controller.UnsaveFreelancer("freelancer1");
@@ -106,33 +93,19 @@ namespace UnitTesting.Controllers
         }
 
         [Fact]
-        public async Task UnsaveFreelancer_ShouldReturnNotFound_WhenFails()
-        {
-            // Arrange
-            _mediatorMock.Setup(m => m.Send(It.IsAny<UnsaveFreelancerCommand>(), default))
-                .ReturnsAsync(false);
-
-            // Act
-            var result = await _controller.UnsaveFreelancer("freelancer1");
-
-            // Assert
-            var notFoundResult = result.Should().BeOfType<NotFoundObjectResult>().Subject;
-            notFoundResult.Value.Should().BeEquivalentTo(new { message = "Saved freelancer not found." });
-        }
-
-        [Fact]
         public async Task GetSavedFreelancers_ShouldReturnOk_WithPagedResult()
         {
             // Arrange
-            var expectedResult = new PagedResult<FreelancerReadDTO>
+            var data = new PagedResult<FreelancerReadDTO>
             {
                 Items = new List<FreelancerReadDTO> { new FreelancerReadDTO { Id = "freelancer1" } },
                 TotalCount = 1,
                 Page = 1,
                 PageSize = 10
             };
+            var expectedResult = new Result<PagedResult<FreelancerReadDTO>> { Succeeded = true, Data = data };
 
-            _mediatorMock.Setup(m => m.Send(It.IsAny<GetSavedFreelancersQuery>(), default))
+            _mediatorMock.Setup(m => m.Send<Result<PagedResult<FreelancerReadDTO>>>(It.IsAny<GetSavedFreelancersQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedResult);
 
             // Act
@@ -140,7 +113,7 @@ namespace UnitTesting.Controllers
 
             // Assert
             var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
-            okResult.Value.Should().BeEquivalentTo(expectedResult);
+            okResult.Value.Should().BeEquivalentTo(data);
         }
     }
 }

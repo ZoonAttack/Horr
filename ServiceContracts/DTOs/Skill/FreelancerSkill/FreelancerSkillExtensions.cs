@@ -20,7 +20,7 @@ namespace ServiceContracts.DTOs.Skill.FreelancerSkill
                 FreelancerId = freelancerSkill.FreelancerId.ToString(),
                 SkillId = freelancerSkill.SkillId.ToString(),
                 SkillName = freelancerSkill.Skill?.Name,
-                SkillCategory = freelancerSkill.Skill?.Category,
+                SkillCategory = freelancerSkill.Skill?.Category?.Name,
                 ProficiencyLevel = freelancerSkill.ProficiencyLevel,
                 CreatedAt = freelancerSkill.CreatedAt,
                 UpdatedAt = freelancerSkill.UpdatedAt

@@ -23,13 +23,13 @@ namespace ServiceImplementation.Implementations.ClientImplementation
             var user = await _db.Users
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
-            if (user == null)
+            if (user == null || user.IsDeleted)
             {
                 return new Result<ClientMeDto>
                 {
                     Succeeded = false,
-                    ErrorCode = ErrorCodes.UserNotFound,
-                    Message = "User not found."
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message = "Account not found or is deleted."
                 };
             }
 
@@ -62,13 +62,13 @@ namespace ServiceImplementation.Implementations.ClientImplementation
                 .Include(u => u.PaymentMethods)
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
-            if (user == null)
+            if (user == null || user.IsDeleted)
             {
                 return new Result<ClientOnboardingDto>
                 {
                     Succeeded = false,
-                    ErrorCode = ErrorCodes.UserNotFound,
-                    Message = "User not found."
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message = "Account not found or is deleted."
                 };
             }
 

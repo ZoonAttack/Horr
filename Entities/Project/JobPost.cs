@@ -21,7 +21,10 @@ namespace Entities.Project
         public string Description { get; set; } = string.Empty;
 
         [Required]
-        public string Category { get; set; } = string.Empty;
+        [ForeignKey(nameof(Category))]
+        public string CategoryId { get; set; } = string.Empty;
+
+        public virtual Category Category { get; set; } = null!;
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal Budget { get; set; }

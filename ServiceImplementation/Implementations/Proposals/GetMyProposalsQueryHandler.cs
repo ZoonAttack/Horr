@@ -3,10 +3,12 @@ using Microsoft.EntityFrameworkCore;
 using Entities;
 using ServiceContracts.DTOs.Proposal;
 using Entities.Enums;
+using ServiceContracts.DTOs.Responses;
+using ServiceImplementation.Helpers;
 
 namespace ServiceImplementation.Implementations.Proposals
 {
-    public class GetMyProposalsQueryHandler : IRequestHandler<GetMyProposalsQuery, MyProposalsResponseDto>
+    public class GetMyProposalsQueryHandler : IRequestHandler<GetMyProposalsQuery, Result<MyProposalsResponseDto>>
     {
         private readonly AppDbContext _context;
 
@@ -15,8 +17,19 @@ namespace ServiceImplementation.Implementations.Proposals
             _context = context;
         }
 
-        public async Task<MyProposalsResponseDto> Handle(GetMyProposalsQuery request, CancellationToken cancellationToken)
+        public async Task<Result<MyProposalsResponseDto>> Handle(GetMyProposalsQuery request, CancellationToken cancellationToken)
         {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.FreelancerId, cancellationToken);
+            if (user == null || user.IsDeleted)
+            {
+                return new Result<MyProposalsResponseDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message = "Freelancer account not found or is deleted."
+                };
+            }
+
             var proposals = await _context.Proposals
                 .Include(p => p.JobPost)
                 .Include(p => p.Terms)
@@ -43,7 +56,7 @@ namespace ServiceImplementation.Implementations.Proposals
                 }
             }
 
-            return response;
+            return new Result<MyProposalsResponseDto> { Succeeded = true, Data = response };
         }
 
         private ProposalReadDTO MapToDto(Entities.Project.Proposal p)

@@ -326,6 +326,14 @@ public class ContractsControllerTests : IClassFixture<CustomWebApplicationFactor
         // that the auth guard is wired (TestAuthHandler behaviour confirms this indirectly).
         // The EARS requirement is covered by the [Authorize] attribute on the controller class.
         // We confirm by checking the GET my-contracts works with auth:
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        if (!context.Users.Any(u => u.Id == "default-test-user"))
+        {
+            context.Users.Add(new AppUser { Id = "default-test-user", UserName = "default", Email = "d@e.com", FullName = "Default" });
+            await context.SaveChangesAsync();
+        }
+
         var response = await _client.GetAsync("/api/contracts/my-contracts");
         response.StatusCode.Should().Be(HttpStatusCode.OK); // authorized ✔
     }

@@ -29,7 +29,11 @@ namespace Horr.Controllers
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             var result = await _mediator.Send(new CreateProposalCommand(dto, userId));
-            return CreatedAtAction(nameof(GetMyProposals), new { id = result.Id }, result);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result);
+            }
+            return CreatedAtAction(nameof(GetMyProposals), new { id = result.Data.Id }, result.Data);
         }
 
         [HttpGet("my-proposals")]
@@ -40,7 +44,8 @@ namespace Horr.Controllers
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             var result = await _mediator.Send(new GetMyProposalsQuery(userId));
-            return Ok(result);
+            if (!result.Succeeded) return BadRequest(result);
+            return Ok(result.Data);
         }
 
         [HttpDelete("{id}/withdraw")]
@@ -51,7 +56,11 @@ namespace Horr.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            await _mediator.Send(new WithdrawProposalCommand(id, userId));
+            var result = await _mediator.Send(new WithdrawProposalCommand(id, userId));
+            if (!result.Succeeded)
+            {
+                return BadRequest(result);
+            }
             return NoContent();
         }
     }

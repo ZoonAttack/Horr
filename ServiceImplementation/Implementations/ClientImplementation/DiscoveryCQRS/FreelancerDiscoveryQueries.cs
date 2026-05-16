@@ -2,6 +2,7 @@ using MediatR;
 using Services;
 using ServiceContracts.DTOs.UserDTOs.FreelancerManagement;
 using System.Collections.Generic;
+using ServiceContracts.DTOs.Responses;
 
 namespace ServiceImplementation.Implementations.ClientImplementation.DiscoveryCQRS
 {
@@ -16,10 +17,11 @@ namespace ServiceImplementation.Implementations.ClientImplementation.DiscoveryCQ
         string? SortBy,
         bool SortDescending,
         int Page,
-        int PageSize) : IRequest<PagedResult<FreelancerReadDTO>>;
+        int PageSize,
+        string? ClientId = null) : IRequest<Result<PagedResult<FreelancerReadDTO>>>;
 
     public record GetSavedFreelancersQuery(
         string ClientId,
         int Page,
-        int PageSize) : IRequest<PagedResult<FreelancerReadDTO>>;
+        int PageSize) : IRequest<Result<PagedResult<FreelancerReadDTO>>>;
 }

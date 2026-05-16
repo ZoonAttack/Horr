@@ -176,6 +176,11 @@ public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFa
     {
         var currentUser = "msg-unk-user1";
         
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        context.Users.Add(new Entities.Users.User { Id = currentUser, UserName = currentUser, Email = "unk@e.com", FullName = "Unk" });
+        await context.SaveChangesAsync();
+        
         var request = new HttpRequestMessage(HttpMethod.Get, $"/api/conversations/unknown-conv/messages");
         request.Headers.Add("X-Test-UserId", currentUser);
         request.Headers.Add("X-Test-UserRole", "Freelancer");

@@ -3,13 +3,14 @@ using Entities;
 using Entities.Payment;
 using Entities.Enums;
 using ServiceContracts.DTOs.Wallet;
+using ServiceContracts.DTOs.Responses;
 using ServiceImplementation.Exceptions;
 using ServiceImplementation.Mappings;
 using Microsoft.EntityFrameworkCore;
 
 namespace ServiceImplementation.Implementations.Wallet
 {
-    public class ReviewWithdrawalRequestCommandHandler : IRequestHandler<ReviewWithdrawalRequestCommand, WithdrawalRequestDto>
+    public class ReviewWithdrawalRequestCommandHandler : IRequestHandler<ReviewWithdrawalRequestCommand, Result<WithdrawalRequestDto>>
     {
         private readonly AppDbContext _context;
 
@@ -18,7 +19,7 @@ namespace ServiceImplementation.Implementations.Wallet
             _context = context;
         }
 
-        public async Task<WithdrawalRequestDto> Handle(ReviewWithdrawalRequestCommand request, CancellationToken cancellationToken)
+        public async Task<Result<WithdrawalRequestDto>> Handle(ReviewWithdrawalRequestCommand request, CancellationToken cancellationToken)
         {
             var withdrawalRequest = await _context.WithdrawalRequests
                 .FirstOrDefaultAsync(r => r.Id == request.RequestId, cancellationToken);
@@ -83,13 +84,7 @@ namespace ServiceImplementation.Implementations.Wallet
                 await _context.SaveChangesAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
 
-                return withdrawalRequest.ToDto();
-            }
-            catch
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                throw;
-            }
+            return new Result<WithdrawalRequestDto> { Succeeded = true, Data = withdrawalRequest.ToDto() };
         }
     }
 }

@@ -2,13 +2,15 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Entities;
 using Entities.Project;
+using ServiceContracts.DTOs.Responses;
 using ServiceContracts.DTOs.Proposal;
 using ServiceImplementation.Exceptions;
+using ServiceImplementation.Helpers;
 using System.Text.RegularExpressions;
 
 namespace ServiceImplementation.Implementations.Proposals
 {
-    public class CreateProposalCommandHandler : IRequestHandler<CreateProposalCommand, ProposalReadDTO>
+    public class CreateProposalCommandHandler : IRequestHandler<CreateProposalCommand, Result<ProposalReadDTO>>
     {
         private readonly AppDbContext _context;
 
@@ -17,14 +19,26 @@ namespace ServiceImplementation.Implementations.Proposals
             _context = context;
         }
 
-        public async Task<ProposalReadDTO> Handle(CreateProposalCommand request, CancellationToken cancellationToken)
+        public async Task<Result<ProposalReadDTO>> Handle(CreateProposalCommand request, CancellationToken cancellationToken)
         {
             var dto = request.Dto;
 
-            // 1. Domain Validation
+            // 1. Verify user is not deleted
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.FreelancerId, cancellationToken);
+            if (user == null || user.IsDeleted)
+            {
+                return new Result<ProposalReadDTO>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message = "Freelancer account not found or is deleted."
+                };
+            }
+
+            // 2. Domain Validation
             Validate(dto);
 
-            // 2. Verify user is a registered freelancer
+            // 3. Verify user is a registered freelancer
             var freelancerExists = await _context.Freelancers
                 .AnyAsync(f => f.UserId == request.FreelancerId, cancellationToken);
 
@@ -33,7 +47,7 @@ namespace ServiceImplementation.Implementations.Proposals
                 throw new NotFoundException("You are not registered as a freelancer. Please complete your freelancer profile first.");
             }
 
-            // 3. Check for duplicate proposal
+            // 4. Check for duplicate proposal
             var exists = await _context.Proposals
                 .AnyAsync(p => p.FreelancerId == request.FreelancerId && p.JobPostId == dto.JobPostId, cancellationToken);
 
@@ -42,17 +56,17 @@ namespace ServiceImplementation.Implementations.Proposals
                 throw new ConflictException("You have already submitted a proposal for this job post.");
             }
 
-            // 4. Verify job post exists
+            // 5. Verify job post exists
             var job = await _context.JobPosts.FindAsync(new object[] { dto.JobPostId }, cancellationToken);
             if (job == null)
             {
                 throw new NotFoundException($"Job post with ID {dto.JobPostId} not found.");
             }
 
-            // 4. Calculate HORR Fee
+            // 6. Calculate HORR Fee
             decimal horrFee = Math.Round(dto.BidRate * 0.10m, 2);
 
-            // 5. Create entity
+            // 7. Create entity
             var proposal = new Proposal
             {
                 JobPostId = dto.JobPostId,
@@ -73,25 +87,29 @@ namespace ServiceImplementation.Implementations.Proposals
             _context.Proposals.Add(proposal);
             await _context.SaveChangesAsync(cancellationToken);
 
-            return new ProposalReadDTO
+            return new Result<ProposalReadDTO>
             {
-                Id = proposal.Id,
-                JobPostId = proposal.JobPostId,
-                JobPostTitle = job.Title,
-                FreelancerId = proposal.FreelancerId,
-                SubmitAsType = proposal.SubmitAsType,
-                BidRate = proposal.BidRate,
-                HORRFee = proposal.HORRFee,
-                CoverLetter = proposal.CoverLetter,
-                Status = proposal.Status,
-                CreatedAt = proposal.CreatedAt,
-                Terms = proposal.Terms.Select(t => new ProposalTermReadDTO
+                Succeeded = true,
+                Data = new ProposalReadDTO
                 {
-                    Id = t.Id,
-                    MilestoneTitle = t.MilestoneTitle,
-                    Amount = t.Amount,
-                    DueDate = t.DueDate
-                }).ToList()
+                    Id = proposal.Id,
+                    JobPostId = proposal.JobPostId,
+                    JobPostTitle = job.Title,
+                    FreelancerId = proposal.FreelancerId,
+                    SubmitAsType = proposal.SubmitAsType,
+                    BidRate = proposal.BidRate,
+                    HORRFee = proposal.HORRFee,
+                    CoverLetter = proposal.CoverLetter,
+                    Status = proposal.Status,
+                    CreatedAt = proposal.CreatedAt,
+                    Terms = proposal.Terms.Select(t => new ProposalTermReadDTO
+                    {
+                        Id = t.Id,
+                        MilestoneTitle = t.MilestoneTitle,
+                        Amount = t.Amount,
+                        DueDate = t.DueDate
+                    }).ToList()
+                }
             };
         }
 

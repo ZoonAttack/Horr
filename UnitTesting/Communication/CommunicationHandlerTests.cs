@@ -12,6 +12,7 @@ using Moq;
 using ServiceContracts.DTOs.Chat;
 using ServiceImplementation.Exceptions;
 using ServiceImplementation.Implementations.Communication;
+using ServiceContracts.DTOs.Responses;
 using System.Text;
 
 namespace UnitTesting.Communication
@@ -69,7 +70,8 @@ namespace UnitTesting.Communication
             var result = await handler.Handle(command, CancellationToken.None);
 
             // Assert
-            var message = await _context.Messages.FirstAsync(m => m.Id == result.Id);
+            result.Succeeded.Should().BeTrue();
+            var message = await _context.Messages.FirstAsync(m => m.Id == result.Data.Id);
             message.Status.Should().Be(MessageStatus.Unread);
         }
 
@@ -90,7 +92,8 @@ namespace UnitTesting.Communication
             var result = await handler.Handle(command, CancellationToken.None);
 
             // Assert
-            var attachments = await _context.Attachments.Where(a => a.MessageId == result.Id).ToListAsync();
+            result.Succeeded.Should().BeTrue();
+            var attachments = await _context.Attachments.Where(a => a.MessageId == result.Data.Id).ToListAsync();
             attachments.Should().HaveCount(2);
             attachments.Should().ContainSingle(a => a.FileType == ".jpg");
             attachments.Should().ContainSingle(a => a.FileType == ".pdf");
@@ -145,8 +148,9 @@ namespace UnitTesting.Communication
             var result = await handler.Handle(query, CancellationToken.None);
 
             // Assert
-            result.Should().ContainSingle(c => c.Id == "conv-1");
-            result.First(c => c.Id == "conv-1").UnreadCount.Should().Be(3);
+            result.Succeeded.Should().BeTrue();
+            result.Data.Should().ContainSingle(c => c.Id == "conv-1");
+            result.Data.First(c => c.Id == "conv-1").UnreadCount.Should().Be(3);
         }
 
         // 5. Assert GetConversations: seed message with 60-char body → LastMessagePreview ends with "..." and total length = 53
@@ -166,7 +170,8 @@ namespace UnitTesting.Communication
             var result = await handler.Handle(query, CancellationToken.None);
 
             // Assert
-            var preview = result.First(c => c.Id == "conv-1").LastMessagePreview;
+            result.Succeeded.Should().BeTrue();
+            var preview = result.Data.First(c => c.Id == "conv-1").LastMessagePreview;
             preview.Should().EndWith("...");
             preview.Length.Should().Be(53);
         }
@@ -219,8 +224,9 @@ namespace UnitTesting.Communication
             var result = await handler.Handle(query, CancellationToken.None);
 
             // Assert
-            result.Items.First().Body.Should().Be("New");
-            result.Items.First().SentAt.Should().BeOnOrAfter(result.Items.Last().SentAt);
+            result.Succeeded.Should().BeTrue();
+            result.Data.Items.First().Body.Should().Be("New");
+            result.Data.Items.First().SentAt.Should().BeOnOrAfter(result.Data.Items.Last().SentAt);
         }
 
         // 8. Assert GetMessages: soft-deleted message does not appear in results
@@ -240,8 +246,9 @@ namespace UnitTesting.Communication
             var result = await handler.Handle(query, CancellationToken.None);
 
             // Assert
-            result.Items.Should().HaveCount(1);
-            result.Items.Should().ContainSingle(m => m.Body == "Visible");
+            result.Succeeded.Should().BeTrue();
+            result.Data.Items.Should().HaveCount(1);
+            result.Data.Items.Should().ContainSingle(m => m.Body == "Visible");
         }
 
         // 9. Assert GetMessages: unknown conversationId throws NotFoundException
@@ -254,10 +261,11 @@ namespace UnitTesting.Communication
             var query = new GetMessagesQuery("unknown-conv", "user-1");
 
             // Act
-            Func<Task> act = async () => await handler.Handle(query, CancellationToken.None);
-
+            var result = await handler.Handle(query, CancellationToken.None);
+ 
             // Assert
-            await act.Should().ThrowAsync<NotFoundException>();
+            result.Succeeded.Should().BeFalse();
+            result.ErrorCode.Should().Be("CONVERSATION_NOT_FOUND");
         }
     }
 }

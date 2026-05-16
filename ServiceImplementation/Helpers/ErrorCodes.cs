@@ -36,5 +36,15 @@ namespace ServiceImplementation.Helpers
         public const string InvalidOfferParties  = "INVALID_OFFER_PARTIES";
         public const string MilestonesRequired   = "MILESTONES_REQUIRED";
         public const string ContractNotFound     = "CONTRACT_NOT_FOUND";
+        
+        // ── Project / Category / Skill ────────────────────────────────────
+        public const string CategoryNotFound     = "CATEGORY_NOT_FOUND";
+        public const string CategoryAlreadyExists = "CATEGORY_ALREADY_EXISTS";
+        public const string SkillNotFound        = "SKILL_NOT_FOUND";
+        public const string SkillAlreadyAdded    = "SKILL_ALREADY_ADDED";
+
+        // ── Generic / State ───────────────────────────────────────────────
+        public const string InvalidState         = "INVALID_STATE";
+        public const string AlreadyReviewed      = "ALREADY_REVIEWED";
     }
 }

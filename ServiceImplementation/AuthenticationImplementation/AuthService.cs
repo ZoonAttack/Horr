@@ -249,13 +249,13 @@ namespace ServiceImplementation.Authentication
         public async Task<Result<AuthResponse>> ConfirmEmailAsync(string userId, string token)
         {
             var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
+            if (user == null || user.IsDeleted)
             {
                 return new Result<AuthResponse>
                 {
                     Succeeded = false,
-                    ErrorCode = ErrorCodes.UserNotFound,
-                    Message   = "User not found."
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message   = "User not found or account is deleted."
                 };
             }
 
@@ -284,14 +284,14 @@ namespace ServiceImplementation.Authentication
         public async Task<Result<AuthResponse>> ResendConfirmationEmailAsync(string email)
         {
             var user = await _userManager.FindByEmailAsync(email);
-            if (user == null)
+            if (user == null || user.IsDeleted)
             {
                 return new Result<AuthResponse>
                 {
                     Succeeded = false,
-                    ErrorCode = ErrorCodes.UserNotFound,
+                    ErrorCode = ErrorCodes.AccountDeleted,
                     Message   = "Invalid request.",
-                    Errors    = new List<string> { "User not found." }
+                    Errors    = new List<string> { "User not found or account is deleted." }
                 };
             }
 
@@ -342,14 +342,14 @@ namespace ServiceImplementation.Authentication
                 .Include(x => x.User)
                 .SingleOrDefaultAsync(x => x.Token == refreshToken);
 
-            if (storedToken == null)
+            if (storedToken == null || storedToken.User == null || storedToken.User.IsDeleted)
             {
                 return new Result<AuthResponse>
                 {
                     Succeeded = false,
-                    ErrorCode = ErrorCodes.TokenInvalid,
-                    Message   = "Token not found.",
-                    Errors    = new List<string> { "The provided refresh token does not exist." }
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message   = "Token invalid or account is deleted.",
+                    Errors    = new List<string> { "The provided refresh token is invalid or associated account is deleted." }
                 };
             }
 
@@ -432,6 +432,31 @@ namespace ServiceImplementation.Authentication
                 };
         }
 
+        public async Task<Result<bool>> LogoutAsync(string refreshToken)
+        {
+            var storedToken = await _context.RefreshTokens
+                .SingleOrDefaultAsync(x => x.Token == refreshToken);
+
+            if (storedToken == null)
+            {
+                return new Result<bool>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.TokenInvalid,
+                    Message   = "Token not found."
+                };
+            }
+
+            storedToken.Revoked = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return new Result<bool>
+            {
+                Succeeded = true,
+                Message   = "Logged out successfully."
+            };
+        }
+
         #region helpers
 
         private async Task<bool> SendEmailHelperAsync(Entities.Users.User user)
@@ -461,6 +486,16 @@ namespace ServiceImplementation.Authentication
             var accessToken  = _tokenService.GenerateAccessToken(authClaims);
             var refreshToken = _tokenService.GenerateRefreshToken();
 
+            // Store refresh token in database
+            _context.RefreshTokens.Add(new RefreshToken
+            {
+                Token   = refreshToken,
+                UserId  = user.Id,
+                Created = DateTime.UtcNow,
+                Expires = DateTime.UtcNow.AddDays(7) // Match your cookie/policy expiry
+            });
+
+            await _context.SaveChangesAsync();
             await _userManager.UpdateAsync(user);
 
             return new AuthResponse

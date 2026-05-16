@@ -3,8 +3,6 @@ using MediatR;
 using ServiceContracts.DTOs.Contract;
 using ServiceContracts.DTOs.Responses;
 using Services;
-using ServiceContracts.DTOs.Contract;
-using Services;
 
 namespace ServiceImplementation.Implementations.Contracts
 {

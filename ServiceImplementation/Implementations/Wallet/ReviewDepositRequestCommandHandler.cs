@@ -3,6 +3,7 @@ using Entities;
 using Entities.Payment;
 using Entities.Enums;
 using ServiceContracts.DTOs.Wallet;
+using ServiceContracts.DTOs.Responses;
 using ServiceImplementation.Exceptions;
 using ServiceImplementation.Mappings;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace ServiceImplementation.Implementations.Wallet
 {
-    public class ReviewDepositRequestCommandHandler : IRequestHandler<ReviewDepositRequestCommand, DepositRequestDto>
+    public class ReviewDepositRequestCommandHandler : IRequestHandler<ReviewDepositRequestCommand, Result<DepositRequestDto>>
     {
         private readonly AppDbContext _context;
 
@@ -19,7 +20,7 @@ namespace ServiceImplementation.Implementations.Wallet
             _context = context;
         }
 
-        public async Task<DepositRequestDto> Handle(ReviewDepositRequestCommand request, CancellationToken cancellationToken)
+        public async Task<Result<DepositRequestDto>> Handle(ReviewDepositRequestCommand request, CancellationToken cancellationToken)
         {
             var depositRequest = await _context.DepositRequests
                 .FirstOrDefaultAsync(r => r.Id == request.RequestId, cancellationToken);
@@ -80,7 +81,7 @@ namespace ServiceImplementation.Implementations.Wallet
                     await transaction.CommitAsync(cancellationToken);
                 }
 
-                return depositRequest.ToDto();
+                return new Result<DepositRequestDto> { Succeeded = true, Data = depositRequest.ToDto() };
             }
             catch
             {

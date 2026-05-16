@@ -29,7 +29,8 @@ namespace Horr.Controllers
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             var result = await _mediator.Send(new GetConversationsQuery(userId));
-            return Ok(result);
+            if (!result.Succeeded) return BadRequest(result);
+            return Ok(result.Data);
         }
 
         [HttpGet("{id}/messages")]
@@ -41,7 +42,20 @@ namespace Horr.Controllers
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             var result = await _mediator.Send(new GetMessagesQuery(id, userId, page, pageSize));
-            return Ok(result);
+            if (!result.Succeeded)
+            {
+                if (result.ErrorCode == "CONVERSATION_NOT_FOUND")
+                {
+                    return NotFound(new ProblemDetails
+                    {
+                        Status = 404,
+                        Title = "Conversation Not Found",
+                        Detail = result.Message
+                    });
+                }
+                return BadRequest(result);
+            }
+            return Ok(result.Data);
         }
 
         [HttpPost("{id}/messages")]
@@ -60,7 +74,11 @@ namespace Horr.Controllers
             }
 
             var result = await _mediator.Send(new SendMessageCommand(id, userId, body, files));
-            return StatusCode(201, result);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result);
+            }
+            return StatusCode(201, result.Data);
         }
     }
 }
