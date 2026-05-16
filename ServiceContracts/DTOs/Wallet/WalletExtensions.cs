@@ -5,9 +5,9 @@ namespace ServiceContracts.DTOs.Wallet
     public static class WalletExtensions
     {
         /// <summary>
-        /// Converts Wallet entity to WalletReadDTO
+        /// Converts WalletBalance entity to WalletReadDTO
         /// </summary>
-        public static WalletReadDTO Wallet_To_WalletRead(this Entities.Payment.Wallet wallet)
+        public static WalletReadDTO Wallet_To_WalletRead(this Entities.Payment.WalletBalance wallet)
         {
             if (wallet == null)
             {
@@ -16,42 +16,41 @@ namespace ServiceContracts.DTOs.Wallet
 
             return new WalletReadDTO
             {
-                Id = wallet.Id.ToString(),
+                Id = wallet.Id,
                 UserId = wallet.UserId,
-                Balance = wallet.Balance,
-                CreatedAt = wallet.CreatedAt,
-                UpdatedAt = wallet.UpdatedAt
+                Balance = wallet.BalanceEGP,
+                UpdatedAt = wallet.LastUpdatedAt
             };
         }
 
         /// <summary>
-        /// Converts WalletCreateDTO to Wallet entity
+        /// Converts WalletCreateDTO to WalletBalance entity
         /// </summary>
-        public static Entities.Payment.Wallet WalletCreate_To_Wallet(this WalletCreateDTO createDto)
+        public static Entities.Payment.WalletBalance WalletCreate_To_Wallet(this WalletCreateDTO createDto)
         {
             if (createDto == null)
             {
                 return null;
             }
 
-            return new Entities.Payment.Wallet
+            return new Entities.Payment.WalletBalance
             {
                 UserId = createDto.UserId,
-                Balance = 0
+                BalanceEGP = 0
             };
         }
 
         /// <summary>
-        /// Applies WalletUpdateDTO to an existing Wallet entity
+        /// Applies WalletUpdateDTO to an existing WalletBalance entity
         /// </summary>
-        public static void WalletUpdate_To_Wallet(this Entities.Payment.Wallet wallet, WalletUpdateDTO updateDto)
+        public static void WalletUpdate_To_Wallet(this Entities.Payment.WalletBalance wallet, WalletUpdateDTO updateDto)
         {
             if (wallet == null || updateDto == null)
             {
                 return;
             }
 
-            wallet.Balance = updateDto.Balance;
+            wallet.BalanceEGP = updateDto.Balance;
         }
     }
 }

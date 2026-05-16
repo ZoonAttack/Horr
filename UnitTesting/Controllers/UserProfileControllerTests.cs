@@ -116,53 +116,5 @@ namespace UnitTesting.Controllers
             actionResult.Should().BeOfType<OkObjectResult>();
         }
 
-        [Fact]
-        public async Task GetPrivacy_ShouldReturnOk_WhenProfileExists()
-        {
-            // Arrange
-            var resultData = new UserProfileDto();
-            var result = new Result<UserProfileDto> { Succeeded = true, Data = resultData };
-            _profileSettingsMock.Setup(s => s.GetPrivacySettingsAsync("test-user-id"))
-                                .ReturnsAsync(result);
-
-            // Act
-            var actionResult = await _controller.GetPrivacy();
-
-            // Assert
-            var okResult = actionResult.Should().BeOfType<OkObjectResult>().Subject;
-            okResult.Value.Should().BeEquivalentTo(result);
-        }
-
-        [Fact]
-        public async Task GetPrivacy_ShouldReturnNotFound_WhenProfileMissing()
-        {
-            // Arrange
-            var result = new Result<UserProfileDto> { Succeeded = false, Data = null };
-            _profileSettingsMock.Setup(s => s.GetPrivacySettingsAsync("test-user-id"))
-                                .ReturnsAsync(result);
-
-            // Act
-            var actionResult = await _controller.GetPrivacy();
-
-            // Assert
-            var notFoundResult = actionResult.Should().BeOfType<NotFoundObjectResult>().Subject;
-            notFoundResult.Value.Should().Be("Freelancer profile not found for user.");
-        }
-
-        [Fact]
-        public async Task UpdatePrivacy_ShouldReturnOk_WhenSuccessful()
-        {
-            // Arrange
-            var dto = new PrivacyUpdateDto();
-            var result = new Result<UserProfileDto> { Succeeded = true };
-            _profileSettingsMock.Setup(s => s.UpdatePrivacySettingsAsync("test-user-id", dto))
-                                .ReturnsAsync(result);
-
-            // Act
-            var actionResult = await _controller.UpdatePrivacy(dto);
-
-            // Assert
-            actionResult.Should().BeOfType<OkObjectResult>();
-        }
     }
 }

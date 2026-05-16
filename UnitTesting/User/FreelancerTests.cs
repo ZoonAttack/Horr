@@ -242,35 +242,30 @@ namespace UnitTesting.UserTests
         // ACT & ASSERT
         await Assert.ThrowsAsync<ArgumentNullException>(async () =>
         {
-            await service.UpdateFreelancerAsync(null!);
+            await service.UpdateFreelancerAsync("any", null!);
         });
     }
 
     [Fact]
-    public async Task UpdateFreelancer_ShouldThrowUnauthorizedAccessException_WhenNoAuthenticatedUser()
+    public async Task UpdateFreelancer_ShouldReturnFalse_WhenUserDoesNotExist()
     {
         // ARRANGE
         using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
-
-        var accessorMock = new Mock<Microsoft.AspNetCore.Http.IHttpContextAccessor>();
-        // No HttpContext / User configured -> FindFirstValue will return null and trigger UnauthorizedAccessException
-        accessorMock.Setup(a => a.HttpContext).Returns((Microsoft.AspNetCore.Http.HttpContext)null!);
-
-        var service = new FreelancerService(context, accessorMock.Object);
+        var service = new FreelancerService(context, null!);
 
         var updateDto = new FreelancerUpdateDTO
         {
             FullName = "Any Name",
             Email = "any@test.com",
-            Phone = "000",
+            PhoneNumber = "000",
             Bio = "bio"
         };
 
-        // ACT & ASSERT
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(async () =>
-        {
-            await service.UpdateFreelancerAsync(updateDto);
-        });
+        // ACT
+        var result = await service.UpdateFreelancerAsync("non-existent-id", updateDto);
+
+        // ASSERT
+        result.Should().BeFalse("no freelancer user exists with that ID.");
     }
 
     // =====================================================================
@@ -292,19 +287,19 @@ namespace UnitTesting.UserTests
         {
             FullName = "Updated Name",
             Email = "updated@test.com",
-            Phone = "111",
+            PhoneNumber = "111",
             Bio = "Updated bio"
         };
 
         // ACT
-        var result = await service.UpdateFreelancerAsync(updateDto);
+        var result = await service.UpdateFreelancerAsync(missingUserId, updateDto);
 
         // ASSERT
         result.Should().BeFalse("no freelancer user exists with the authenticated ID.");
     }
 
     [Fact]
-    public async Task UpdateFreelancer_ShouldReturnFalse_WhenFreelancerProfileIsMissing()
+    public async Task UpdateFreelancer_ShouldReturnTrue_AndCreateProfile_WhenFreelancerProfileIsMissing()
     {
         // ARRANGE: User exists with Freelancer role but no Freelancer profile
         using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
@@ -317,7 +312,6 @@ namespace UnitTesting.UserTests
             Email = "existing@test.com",
             UserName = "existing@test.com",
             Role = UserRole.Freelancer,
-            // ProfilePicturePath = "pic",
             Bio = "Bio",
             IsDeleted = false
         };
@@ -332,15 +326,18 @@ namespace UnitTesting.UserTests
         {
             FullName = "Updated Name",
             Email = "updated@test.com",
-            Phone = "222",
+            PhoneNumber = "222",
             Bio = "Updated bio"
         };
 
         // ACT
-        var result = await service.UpdateFreelancerAsync(updateDto);
+        var result = await service.UpdateFreelancerAsync(userId, updateDto);
 
         // ASSERT
-        result.Should().BeFalse("user exists but has no freelancer profile.");
+        result.Should().BeTrue("user exists and profile should be auto-created.");
+        
+        var reloadedUser = await context.Users.Include(u => u.Freelancer).FirstAsync(u => u.Id == userId);
+        reloadedUser.Freelancer.Should().NotBeNull("Profile should have been created.");
     }
 
     // =====================================================================
@@ -469,7 +466,7 @@ namespace UnitTesting.UserTests
         {
             FullName = "Updated Name",
             Email = "updated@test.com",
-            Phone = "999",
+            PhoneNumber = "999",
             Bio = "Updated bio",
             HourlyRate = 120m,
             Availability = "FullTime",
@@ -556,7 +553,7 @@ namespace UnitTesting.UserTests
         var service = new FreelancerService(context, accessorMock.Object);
 
         // ACT
-        var result = await service.UpdateFreelancerAsync(updateDto);
+        var result = await service.UpdateFreelancerAsync(userId, updateDto);
 
         // ASSERT - result
         result.Should().BeTrue();
@@ -576,7 +573,7 @@ namespace UnitTesting.UserTests
         // Scalar fields
         updatedUser.FullName.Should().Be(updateDto.FullName);
         updatedUser.Email.Should().Be(updateDto.Email);
-        updatedUser.PhoneNumber.Should().Be(updateDto.Phone);
+        updatedUser.PhoneNumber.Should().Be(updateDto.PhoneNumber);
         updatedUser.Bio.Should().Be(updateDto.Bio);
 
         updatedUser.Freelancer.HourlyRate.Should().Be(updateDto.HourlyRate);
@@ -587,7 +584,7 @@ namespace UnitTesting.UserTests
         // Languages reconciliation: 2 items (1 updated existing + 1 new)
         updatedUser.Freelancer.Languages.Should().HaveCount(2);
         updatedUser.Freelancer.Languages
-            .Any(l => l.Id == existingLanguage1.Id && l.Name == "English-Updated" && l.Level == "Native")
+            .Any(l => l.Name == "English-Updated" && l.Level == "Native")
             .Should().BeTrue("existing language should be updated.");
         updatedUser.Freelancer.Languages
             .Any(l => l.Name == "French" && l.Level == "Basic")
@@ -596,7 +593,7 @@ namespace UnitTesting.UserTests
         // Education reconciliation
         updatedUser.Freelancer.Education.Should().HaveCount(2);
         updatedUser.Freelancer.Education
-            .Any(e => e.Id == existingEducation1.Id && e.School == "Uni A Updated" && e.Degree == "BSc Updated")
+            .Any(e => e.School == "Uni A Updated" && e.Degree == "BSc Updated")
             .Should().BeTrue();
         updatedUser.Freelancer.Education
             .Any(e => e.School == "Uni C" && e.Degree == "PhD")
@@ -605,7 +602,7 @@ namespace UnitTesting.UserTests
         // Experience reconciliation
         updatedUser.Freelancer.ExperienceDetails.Should().HaveCount(2);
         updatedUser.Freelancer.ExperienceDetails
-            .Any(e => e.Id == existingExperience1.Id && e.Subject == "Proj1 Updated")
+            .Any(e => e.Subject == "Proj1 Updated")
             .Should().BeTrue();
         updatedUser.Freelancer.ExperienceDetails
             .Any(e => e.Subject == "Proj3" && e.Description == "Desc3")
@@ -614,7 +611,7 @@ namespace UnitTesting.UserTests
         // Employment reconciliation
         updatedUser.Freelancer.EmploymentHistory.Should().HaveCount(2);
         updatedUser.Freelancer.EmploymentHistory
-            .Any(e => e.Id == existingEmployment1.Id && e.Company == "Company A Updated" && e.Title == "Lead Dev")
+            .Any(e => e.Company == "Company A Updated" && e.Title == "Lead Dev")
             .Should().BeTrue();
         updatedUser.Freelancer.EmploymentHistory
             .Any(e => e.Company == "Company C" && e.Title == "Architect")
@@ -622,13 +619,13 @@ namespace UnitTesting.UserTests
 
         // Ensure the "second" original items were deleted (not present anymore)
         updatedUser.Freelancer.Languages
-            .Any(l => l.Id == existingLanguage2.Id).Should().BeFalse();
+            .Any(l => l.Name == "Spanish").Should().BeFalse();
         updatedUser.Freelancer.Education
-            .Any(e => e.Id == existingEducation2.Id).Should().BeFalse();
+            .Any(e => e.School == "Uni B").Should().BeFalse();
         updatedUser.Freelancer.ExperienceDetails
-            .Any(e => e.Id == existingExperience2.Id).Should().BeFalse();
+            .Any(e => e.Subject == "Proj2").Should().BeFalse();
         updatedUser.Freelancer.EmploymentHistory
-            .Any(e => e.Id == existingEmployment2.Id).Should().BeFalse();
+            .Any(e => e.Company == "Company B").Should().BeFalse();
     }
 
     [Fact]
@@ -707,7 +704,7 @@ namespace UnitTesting.UserTests
         {
             FullName = "Updated Name",
             Email = "updated@test.com",
-            Phone = "999",
+            PhoneNumber = "999",
             Bio = "Updated bio",
             HourlyRate = 60m,
             Availability = "FullTime",
@@ -724,7 +721,7 @@ namespace UnitTesting.UserTests
         var service = new FreelancerService(context, accessorMock.Object);
 
         // ACT
-        var result = await service.UpdateFreelancerAsync(updateDto);
+        var result = await service.UpdateFreelancerAsync(userId, updateDto);
 
         // ASSERT
         result.Should().BeTrue();

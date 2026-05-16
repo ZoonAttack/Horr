@@ -8,6 +8,7 @@ using Entities.Token;
 using Entities.Common;
 using Entities.Users;
 using Entities.Users.FreelancerHelpers;
+using Entities.Verification;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System.Linq; // Needed for the OnModelCreating loop
@@ -19,7 +20,8 @@ namespace Entities
 
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         // User and Profile DbSets
-        public DbSet<UserVerification> UserVerifications { get; set; }
+
+        public DbSet<VerificationRequest> VerificationRequests { get; set; }
         public DbSet<Specialist> SpecialistProfiles { get; set; }
         public DbSet<Freelancer> Freelancers { get; set; }
         public DbSet<Client> Clients { get; set; }
@@ -60,7 +62,6 @@ namespace Entities
         // Payment, Wallet, and Transaction DbSets
         public DbSet<Payment.Payment> Payments { get; set; }
         public DbSet<PaymentMethod> PaymentMethods { get; set; }
-        public DbSet<Wallet> Wallets { get; set; }
         public DbSet<WalletBalance> WalletBalances { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<DepositRequest> DepositRequests { get; set; }
@@ -121,6 +122,35 @@ namespace Entities
             modelBuilder.Entity<User>()
                 .Property(u => u.UpdatedAt)
                 .HasDefaultValueSql(nowSql);
+                modelBuilder.Entity<User>()
+                    .Property(u => u.UpdatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                modelBuilder.Entity<Skill.Skill>()
+                    .Property(s => s.CreatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                modelBuilder.Entity<Skill.Skill>()
+                    .Property(s => s.UpdatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                modelBuilder.Entity<FreelancerSkill>()
+                    .Property(fs => fs.CreatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                modelBuilder.Entity<FreelancerSkill>()
+                    .Property(fs => fs.UpdatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                modelBuilder.Entity<PortfolioItem>()
+                    .Property(pi => pi.CreatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                modelBuilder.Entity<PortfolioItem>()
+                    .Property(pi => pi.UpdatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                modelBuilder.Entity<PortfolioMedia>()
+                    .Property(pm => pm.UploadedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            }
 
             modelBuilder.Entity<ServiceCatalogItem>(entity =>
             {
@@ -153,23 +183,42 @@ namespace Entities
             {
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql(nowSql);
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql(nowSql);
+                if (Database.ProviderName != "Microsoft.EntityFrameworkCore.Sqlite")
+                {
+                    entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+                    entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETDATE()");
+                }
             });
 
             modelBuilder.Entity<FreelancerSkill>(entity =>
             {
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql(nowSql);
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql(nowSql);
+                if (Database.ProviderName != "Microsoft.EntityFrameworkCore.Sqlite")
+                {
+                    entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+                    entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETDATE()");
+                }
             });
 
             modelBuilder.Entity<PortfolioItem>(entity =>
             {
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql(nowSql);
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql(nowSql);
+                if (Database.ProviderName != "Microsoft.EntityFrameworkCore.Sqlite")
+                {
+                    entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+                    entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETDATE()");
+                }
             });
 
             modelBuilder.Entity<PortfolioMedia>(entity =>
             {
                 entity.Property(e => e.UploadedAt).HasDefaultValueSql(nowSql);
+                if (Database.ProviderName != "Microsoft.EntityFrameworkCore.Sqlite")
+                {
+                    entity.Property(e => e.UploadedAt).HasDefaultValueSql("GETDATE()");
+                }
             });
 
             modelBuilder.Entity<Proposal>()

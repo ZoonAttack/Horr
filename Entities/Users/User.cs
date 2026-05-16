@@ -3,6 +3,7 @@ using Entities.Enums;
 using Entities.Payment;
 using Entities.Review;
 using Entities.Token;
+using Entities.Verification;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
@@ -60,11 +61,12 @@ public class User : IdentityUser
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     // --- Navigation Properties ---
-    public virtual UserVerification UserVerification { get; set; }
+
+    public virtual ICollection<VerificationRequest> VerificationRequests { get; set; } = new List<VerificationRequest>();
     public virtual Specialist SpecialistProfile { get; set; }
     public virtual Freelancer Freelancer { get; set; }
     public virtual Client Client { get; set; }
-    public virtual Wallet Wallet { get; set; }
+    public virtual WalletBalance Wallet { get; set; }
     public virtual ICollection<PaymentMethod> PaymentMethods { get; set; }
     public virtual ICollection<Message> SentMessages { get; set; } = new List<Message>();
     [InverseProperty("Reviewer")]

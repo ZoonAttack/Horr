@@ -6,7 +6,7 @@ namespace Services.Freelancer
     {
         public Task<FreelancerReadDTO> CreateFreelancerAsync(FreelancerCreateDTO freelancerCreationDTO);
 
-        public Task<bool> UpdateFreelancerAsync(FreelancerUpdateDTO freelancerUpdateDTO);
+        public Task<bool> UpdateFreelancerAsync(string userId, FreelancerUpdateDTO freelancerUpdateDTO);
 
         /// <summary>
         /// Freelancer viewing their own profile (full data)

@@ -13,8 +13,13 @@ using ServiceImplementation.Helpers;
 using Services.Authentication;
 using Services.Implementations;
 using System;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ServiceContracts.DTOs.FreelancerProfile;
+using Services.Freelancer;
+using ServiceContracts.DTOs.UserDTOs.FreelancerManagement;
+using Entities.Enums;
 
 namespace ServiceImplementation.Implementations.Settings
 {
@@ -23,12 +28,35 @@ namespace ServiceImplementation.Implementations.Settings
         private readonly AppDbContext _context;
         private readonly UserManager<User> _userManager;
         private readonly IEmailService _emailService;
+        private readonly IFreelancerService _freelancerService;
 
-        public ProfileSettings(UserManager<User> userManager, IEmailService emailService, AppDbContext context)
+        public ProfileSettings(UserManager<User> userManager, IEmailService emailService, AppDbContext context, IFreelancerService freelancerService)
         {
             _userManager  = userManager;
             _emailService = emailService;
             _context      = context;
+            _freelancerService = freelancerService;
+        }
+
+        private async Task<bool> ResolveAndSyncVerificationAsync(User user)
+        {
+            if (user.IsVerified)
+            {
+                return true;
+            }
+
+            var hasApprovedVerification = await _context.VerificationRequests
+                .AsNoTracking()
+                .AnyAsync(r => r.UserId == user.Id && r.Status == VerificationStatus.Approved);
+
+            if (!hasApprovedVerification)
+            {
+                return false;
+            }
+
+            user.IsVerified = true;
+            await _userManager.UpdateAsync(user);
+            return true;
         }
         
         public async Task<Result<UserProfileDto>> GetProfileAsync(string userId)
@@ -42,14 +70,125 @@ namespace ServiceImplementation.Implementations.Settings
                 Data = null
             };
 
-            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
+            var freelancer = await _context.Freelancers
+                .Include(f => f.Languages)
+                .Include(f => f.Education)
+                .Include(f => f.ExperienceDetails)
+                .Include(f => f.EmploymentHistory)
+                .FirstOrDefaultAsync(f => f.UserId == userId);
+
+            var isVerified = await ResolveAndSyncVerificationAsync(user);
+            var profileDto = user.ToUserProfileDto(freelancer: freelancer);
+            profileDto.IsVerified = isVerified;
 
             return new Result<UserProfileDto>
             {
                 Succeeded = true,
                 Errors = { },
                 Message = "Profile retrieved successfully.",
-                Data = user.ToUserProfileDto(freelancer: freelancer)
+                Data = profileDto
+            };
+        }
+
+        public async Task<Result<PublicProfileDto>> GetPublicProfileAsync(string userIdHash)
+        {
+            var user = await _context.Users
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.FreelancerSkills)
+                        .ThenInclude(fs => fs.Skill)
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.Languages)
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.Education)
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.EmploymentHistory)
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.PortfolioItems)
+                        .ThenInclude(pi => pi.Media)
+                .FirstOrDefaultAsync(u => u.Id.StartsWith(userIdHash));
+
+            if (user == null || user.IsDeleted) return new Result<PublicProfileDto>
+            {
+                Succeeded = false,
+                Errors = { "User not found." },
+                Message = "Failed to retrieve public profile.",
+                Data = null
+            };
+
+            var freelancer = user.Freelancer;
+            var isVerified = await ResolveAndSyncVerificationAsync(user);
+
+            var workHistory = await _context.Contracts
+                .Include(c => c.ContractReviews)
+                .Include(c => c.JobPost)
+                .Where(c => c.FreelancerId == user.Id && (c.Status == ContractStatus.Completed || c.Status == ContractStatus.Closed))
+                .Select(c => new EmploymentDto
+                {
+                    Company = "HORR Platform",
+                    Title = c.JobPost != null ? c.JobPost.Title : (c.CustomJobDescription ?? "Contract"),
+                    DateRange = $"{c.StartedAt:MMM yyyy} - {(c.ClosedAt.HasValue ? c.ClosedAt.Value.ToString("MMM yyyy") : "Present")}",
+                    Description = c.ContractReviews.FirstOrDefault(r => r.ReviewerId != user.Id) != null 
+                        ? c.ContractReviews.FirstOrDefault(r => r.ReviewerId != user.Id)!.Comment 
+                        : ""
+                }).ToListAsync();
+
+            var publicProfile = new PublicProfileDto
+            {
+                FullName = user.FullName,
+                Title = freelancer?.Title,
+                Bio = user.Bio,
+                City = user.City,
+                Country = user.Country,
+                ProfilePicturePath = user.ProfilePicturePath,
+                TrustScore = user.TrustScore,
+                IsVerified = isVerified,
+                ExperienceLevel = (int)(freelancer?.ExperienceLevel ?? Entities.Enums.ExperienceLevel.Beginner),
+                YearsOfExperience = freelancer?.YearsOfExperience,
+
+                TotalEarnings = "$0", 
+                TotalJobs = workHistory.Count,
+                TotalHours = 0,
+
+                Skills = freelancer?.FreelancerSkills.Select(s => s.Skill.Name).ToList() ?? new List<string>(),
+                Portfolio = freelancer?.PortfolioItems.Where(pi => !pi.IsDeleted).Select(pi => new PortfolioItemDto
+                {
+                    Id = pi.Id,
+                    Title = pi.Title,
+                    Description = pi.Description,
+                    Role = pi.Role,
+                    VisitLink = pi.VisitLink,
+                    ThumbnailUrl = pi.ThumbnailUrl,
+                    Media = pi.Media.Select(m => new PortfolioMediaDto
+                    {
+                        Id = m.Id,
+                        FileUrl = m.FileUrl,
+                        FileType = m.FileType
+                    }).ToList(),
+                    CreatedAt = pi.CreatedAt
+                }).ToList() ?? new List<PortfolioItemDto>(),
+
+                Languages = freelancer?.Languages.Select(l => new LanguageDto
+                {
+                    Name = l.Name,
+                    Level = l.Level
+                }).ToList() ?? new List<LanguageDto>(),
+
+                Education = freelancer?.Education.Select(e => new EducationDto
+                {
+                    School = e.School,
+                    Degree = e.Degree,
+                    FieldOfStudy = e.FieldOfStudy,
+                    Year = e.DateEnd?.Year ?? e.DateStart.Year
+                }).ToList() ?? new List<EducationDto>(),
+
+                EmploymentHistory = workHistory
+            };
+
+            return new Result<PublicProfileDto>
+            {
+                Succeeded = true,
+                Message = "Public profile retrieved successfully.",
+                Data = publicProfile
             };
         }
 
@@ -144,7 +283,7 @@ namespace ServiceImplementation.Implementations.Settings
             };
         }
 
-        public async Task<Result<UserProfileDto>> UpdateBioAsync(string userId, string newBio)
+        public async Task<Result<UserProfileDto>> UpdateBioAsync(string userId, string? newBio)
         {
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null || user.IsDeleted) return new Result<UserProfileDto>
@@ -155,18 +294,10 @@ namespace ServiceImplementation.Implementations.Settings
                 Data = null
             };
 
-            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
-            if (freelancer == null) return new Result<UserProfileDto>
-            {
-                Succeeded = false,
-                Errors = { "Freelancer profile not found." },
-                Message = "Failed to update bio.",
-                Data = null
-            };
+            user.Bio = newBio;
+            await _userManager.UpdateAsync(user);
 
-            freelancer.Bio = newBio;
-            _context.Freelancers.Update(freelancer);
-            await _context.SaveChangesAsync();
+            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
 
             return new Result<UserProfileDto>
             {
@@ -248,7 +379,9 @@ namespace ServiceImplementation.Implementations.Settings
             }
 
             if (dto.Bio != null)
+            {
                 user.Bio = dto.Bio;
+            }
 
             await _userManager.UpdateAsync(user);
 
@@ -292,73 +425,6 @@ namespace ServiceImplementation.Implementations.Settings
             };
         }
 
-        public async Task<Result<UserProfileDto>> GetPrivacySettingsAsync(string userId)
-        {
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null || user.IsDeleted)
-            {
-                return new Result<UserProfileDto>
-                {
-                    Succeeded = false,
-                    ErrorCode = ErrorCodes.UserNotFound,
-                    Message   = "Failed to retrieve privacy settings.",
-                    Errors    = new List<string> { "User not found." }
-                };
-            }
-
-            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
-
-            return new Result<UserProfileDto>
-            {
-                Succeeded = true,
-                Message   = "Privacy settings retrieved successfully.",
-                Data      = user.ToUserProfileDto(freelancer: freelancer)
-            };
-        }
-
-        public async Task<Result<UserProfileDto>> UpdatePrivacySettingsAsync(string userId, PrivacyUpdateDto dto)
-        {
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null || user.IsDeleted)
-            {
-                return new Result<UserProfileDto>
-                {
-                    Succeeded = false,
-                    ErrorCode = ErrorCodes.UserNotFound,
-                    Message   = "Failed to update privacy settings.",
-                    Errors    = new List<string> { "User not found." }
-                };
-            }
-
-            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
-            if (freelancer == null)
-            {
-                return new Result<UserProfileDto>
-                {
-                    Succeeded = false,
-                    ErrorCode = ErrorCodes.FreelancerNotFound,
-                    Message   = "Failed to update privacy settings.",
-                    Errors    = new List<string> { "Freelancer profile not found." }
-                };
-            }
-
-            if (dto.Visibility.HasValue)
-                freelancer.VisibilityPreference = dto.Visibility.Value;
-
-            if (dto.ExperienceLevel.HasValue)
-                freelancer.ExperienceLevel = dto.ExperienceLevel.Value;
-
-            _context.Freelancers.Update(freelancer);
-            await _context.SaveChangesAsync();
-
-            return new Result<UserProfileDto>
-            {
-                Succeeded = true,
-                Message   = "Privacy settings updated successfully.",
-                Data      = user.ToUserProfileDto(freelancer: freelancer)
-            };
-        }
-
         public async Task<Result<UserProfileDto>> CreateBillingAsync(string userId, PaymentMethodCreateDTO dto)
         {
             var user = await _userManager.FindByIdAsync(userId);
@@ -381,6 +447,70 @@ namespace ServiceImplementation.Implementations.Settings
                 Succeeded = true,
                 Message   = "Payment method added successfully.",
                 Data      = user.ToUserProfileDto()
+            };
+        }
+
+        public async Task<Result<UserProfileDto>> UpdateFreelancerDetailsAsync(string userId, FreelancerUpdateDTO updateDto)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null || user.IsDeleted) return new Result<UserProfileDto>
+            {
+                Succeeded = false,
+                Errors = { "User not found." },
+                Message = "Failed to update freelancer details.",
+                Data = null
+            };
+
+            // Call the shared freelancer update logic
+            var success = await _freelancerService.UpdateFreelancerAsync(userId, updateDto);
+            if (!success) return new Result<UserProfileDto>
+            {
+                Succeeded = false,
+                Errors = { "Failed to update freelancer profile." },
+                Message = "Failed to update freelancer details.",
+                Data = null
+            };
+
+            // Fetch the updated freelancer entity for the response
+            var freelancer = await _context.Freelancers
+                .Include(f => f.Languages)
+                .Include(f => f.Education)
+                .Include(f => f.EmploymentHistory)
+                .FirstOrDefaultAsync(f => f.UserId == userId);
+
+            return new Result<UserProfileDto>
+            {
+                Succeeded = true,
+                Message = "Freelancer details updated successfully.",
+                Errors = { },
+                Data = user.ToUserProfileDto(freelancer: freelancer)
+            };
+        }
+
+        public async Task<Result<UserProfileDto>> GetFreelancerDetailsAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null || user.IsDeleted) return new Result<UserProfileDto>
+            {
+                Succeeded = false,
+                Errors = { "User not found." },
+                Message = "Failed to retrieve freelancer details.",
+                Data = null
+            };
+
+            var freelancer = await _context.Freelancers
+                .Include(f => f.Languages)
+                .Include(f => f.Education)
+                .Include(f => f.ExperienceDetails)
+                .Include(f => f.EmploymentHistory)
+                .FirstOrDefaultAsync(f => f.UserId == userId);
+
+            return new Result<UserProfileDto>
+            {
+                Succeeded = true,
+                Message = "Freelancer details retrieved successfully.",
+                Errors = { },
+                Data = user.ToUserProfileDto(freelancer: freelancer)
             };
         }
     }

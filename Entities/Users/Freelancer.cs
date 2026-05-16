@@ -29,7 +29,6 @@ namespace Entities.Users
 
         public int? YearsOfExperience { get; set; }
 
-        public Enums.Visibility VisibilityPreference { get; set; } = Enums.Visibility.Public;
         public Enums.ExperienceLevel ExperienceLevel { get; set; } = Enums.ExperienceLevel.Beginner;
 
         [MaxLength(255)]
@@ -39,8 +38,7 @@ namespace Entities.Users
         [MaxLength(120)]
         public string? Title { get; set; }
 
-        [MaxLength(1000)]
-        public string? Bio { get; set; }
+
 
 
         public DateTime CreatedAt { get; set; }
@@ -59,6 +57,6 @@ namespace Entities.Users
         public virtual ICollection<FreelancerEducation> Education { get; set; } = new List<FreelancerEducation>();
         public virtual ICollection<FreelancerExperienceDetail> ExperienceDetails { get; set; } = new List<FreelancerExperienceDetail>();
         public virtual ICollection<FreelancerEmployment> EmploymentHistory { get; set; } = new List<FreelancerEmployment>();
-        
+        public virtual ICollection<PortfolioItem> PortfolioItems { get; set; } = new List<PortfolioItem>();
     }
 }

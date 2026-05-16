@@ -7,6 +7,6 @@ namespace Services.DTOs.UserDTOs.Client
         public string FullName { get; set; }
         public string Email { get; set; }
         public string Phone { get; set; }
-        public string Bio { get; set; }
+        public string? Bio { get; set; }
     }
 }

@@ -1,5 +1,6 @@
 using Entities;
 using Entities.Token;
+using Entities.Payment;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
@@ -108,13 +109,14 @@ namespace ServiceImplementation.Authentication
                 Email         = dto.Email,
                 FullName      = dto.FirstName + " " + dto.LastName,
                 PhoneNumber   = dto.PhoneNumber,
-                Bio           = dto.Bio           ?? string.Empty,
+                Bio           = dto.Bio,
                 Address       = dto.Address       ?? string.Empty,
                 City          = dto.City          ?? string.Empty,
                 Country       = dto.Country       ?? string.Empty,
                 StateProvince = dto.StateProvince ?? string.Empty,
                 TimeZone      = dto.TimeZone      ?? "UTC+02:00",
-                ZipCode       = dto.ZipCode       ?? string.Empty
+                ZipCode       = dto.ZipCode       ?? string.Empty,
+                Role          = dto.Role
             };
 
             var createResult = await _userManager.CreateAsync(user, dto.Password);
@@ -159,6 +161,16 @@ namespace ServiceImplementation.Authentication
                 });
                 await _context.SaveChangesAsync();
             }
+
+            // 6. Initialize Wallet
+            _context.WalletBalances.Add(new WalletBalance
+            {
+                UserId = user.Id,
+                BalanceEGP = 0,
+                LastUpdatedAt = DateTime.UtcNow
+            });
+            await _context.SaveChangesAsync();
+
             try
             {
                 bool sent = await SendEmailHelperAsync(user);

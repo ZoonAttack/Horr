@@ -65,34 +65,27 @@ namespace ServiceImplementation.Implementations.FreelancerImplementation
         /// <param name="freelancer"></param>
         /// <param name="incomingDtos"></param>
         /// <param name="freelancerId"></param>
-        private void ReconcileLanguages(Freelancer freelancer, ICollection<LanguageUpdateDto> incomingDtos, string freelancerId)
+        private void ReconcileLanguages(Freelancer freelancer, ICollection<LanguageUpdateDto>? incomingDtos, string freelancerId)
         {
-            var existing = freelancer.Languages;
-            var incomingIds = incomingDtos.Where(dto => dto.Id.HasValue).Select(dto => dto.Id.Value).ToList();
+            if (incomingDtos == null) return;
 
-            // 1. DELETE: Identify existing records whose IDs are NOT present in the incoming DTO list.
-            var itemsToDelete = existing.Where(e => !incomingIds.Contains(e.Id)).ToList();
-            if (itemsToDelete.Any())
-            {
-                _db.FreelancerLanguages.RemoveRange(itemsToDelete);
-            }
+            // 1. Load existing records directly from the DB context for this freelancer
+            var existing = _db.FreelancerLanguages
+                .Where(l => l.FreelancerId == freelancerId)
+                .ToList();
 
-            // 2. ADD/UPDATE:
+            // 2. Remove all existing
+            _db.FreelancerLanguages.RemoveRange(existing);
+
+            // 3. Add new ones from DTO
             foreach (var dto in incomingDtos)
             {
-                if (dto.Id.HasValue)
+                _db.FreelancerLanguages.Add(new FreelancerLanguage
                 {
-                    // UPDATE: Item exists, find it and modify
-                    var entity = existing.First(e => e.Id == dto.Id.Value);
-                    entity.Name = dto.Name;
-                    entity.Level = dto.Level;
-                }
-                else
-                {
-                    // ADD: Item is new (Id is null), create entity and add
-                    var newEntity = dto.ToEntity(freelancerId);
-                    existing.Add(newEntity);
-                }
+                    FreelancerId = freelancerId,
+                    Name = dto.Name,
+                    Level = dto.Level
+                });
             }
         }
 
@@ -102,33 +95,27 @@ namespace ServiceImplementation.Implementations.FreelancerImplementation
         /// <param name="freelancer"></param>
         /// <param name="incomingDtos"></param>
         /// <param name="freelancerId"></param>
-        private void ReconcileEducation(Freelancer freelancer, ICollection<EducationUpdateDto> incomingDtos, string freelancerId)
+        private void ReconcileEducation(Freelancer freelancer, ICollection<EducationUpdateDto>? incomingDtos, string freelancerId)
         {
-            var existing = freelancer.Education;
-            var incomingIds = incomingDtos.Where(dto => dto.Id.HasValue).Select(dto => dto.Id.Value).ToList();
+            if (incomingDtos == null) return;
 
-            var itemsToDelete = existing.Where(e => !incomingIds.Contains(e.Id)).ToList();
-            if (itemsToDelete.Any())
-            {
-                _db.FreelancerEducation.RemoveRange(itemsToDelete);
-            }
+            var existing = _db.FreelancerEducation
+                .Where(e => e.FreelancerId == freelancerId)
+                .ToList();
+
+            _db.FreelancerEducation.RemoveRange(existing);
 
             foreach (var dto in incomingDtos)
             {
-                if (dto.Id.HasValue)
+                _db.FreelancerEducation.Add(new FreelancerEducation
                 {
-                    var entity = existing.First(e => e.Id == dto.Id.Value);
-                    entity.School = dto.School;
-                    entity.DateStart = dto.DateStart;
-                    entity.DateEnd = dto.DateEnd;
-                    entity.Degree = dto.Degree;
-                    entity.FieldOfStudy = dto.FieldOfStudy;
-                }
-                else
-                {
-                    var newEntity = dto.ToEntity(freelancerId);
-                    existing.Add(newEntity);
-                }
+                    FreelancerId = freelancerId,
+                    School = dto.School ?? string.Empty,
+                    Degree = dto.Degree ?? string.Empty,
+                    FieldOfStudy = dto.FieldOfStudy ?? string.Empty,
+                    DateStart = dto.DateStart ?? DateTime.UtcNow,
+                    DateEnd = dto.DateEnd
+                });
             }
         }
 
@@ -138,30 +125,24 @@ namespace ServiceImplementation.Implementations.FreelancerImplementation
         /// <param name="freelancer"></param>
         /// <param name="incomingDtos"></param>
         /// <param name="freelancerId"></param>
-        private void ReconcileExperienceDetails(Freelancer freelancer, ICollection<ExperienceDetailUpdateDto> incomingDtos, string freelancerId)
+        private void ReconcileExperienceDetails(Freelancer freelancer, ICollection<ExperienceDetailUpdateDto>? incomingDtos, string freelancerId)
         {
-            var existing = freelancer.ExperienceDetails;
-            var incomingIds = incomingDtos.Where(dto => dto.Id.HasValue).Select(dto => dto.Id.Value).ToList();
+            if (incomingDtos == null) return;
 
-            var itemsToDelete = existing.Where(e => !incomingIds.Contains(e.Id)).ToList();
-            if (itemsToDelete.Any())
-            {
-                _db.FreelancerExperienceDetails.RemoveRange(itemsToDelete);
-            }
+            var existing = _db.FreelancerExperienceDetails
+                .Where(e => e.FreelancerId == freelancerId)
+                .ToList();
+
+            _db.FreelancerExperienceDetails.RemoveRange(existing);
 
             foreach (var dto in incomingDtos)
             {
-                if (dto.Id.HasValue)
+                _db.FreelancerExperienceDetails.Add(new FreelancerExperienceDetail
                 {
-                    var entity = existing.First(e => e.Id == dto.Id.Value);
-                    entity.Subject = dto.Subject;
-                    entity.Description = dto.Description;
-                }
-                else
-                {
-                    var newEntity = dto.ToEntity(freelancerId);
-                    existing.Add(newEntity);
-                }
+                    FreelancerId = freelancerId,
+                    Subject = dto.Subject,
+                    Description = dto.Description
+                });
             }
         }
 
@@ -171,47 +152,29 @@ namespace ServiceImplementation.Implementations.FreelancerImplementation
         /// <param name="freelancer"></param>
         /// <param name="incomingDtos"></param>
         /// <param name="freelancerId"></param>
-        private void ReconcileEmployment(Freelancer freelancer, ICollection<EmploymentUpdateDto> incomingDtos, string freelancerId)
+        private void ReconcileEmployment(Freelancer freelancer, ICollection<EmploymentUpdateDto>? incomingDtos, string freelancerId)
         {
-            var existing = freelancer.EmploymentHistory;
-            var incomingIds = incomingDtos.Where(dto => dto.Id.HasValue).Select(dto => dto.Id.Value).ToList();
+            if (incomingDtos == null) return;
 
-            var itemsToDelete = existing.Where(e => !incomingIds.Contains(e.Id)).ToList();
-            if (itemsToDelete.Any())
-            {
-                _db.FreelancerEmploymentHistory.RemoveRange(itemsToDelete);
-            }
+            var existing = _db.FreelancerEmploymentHistory
+                .Where(e => e.FreelancerId == freelancerId)
+                .ToList();
+
+            _db.FreelancerEmploymentHistory.RemoveRange(existing);
 
             foreach (var dto in incomingDtos)
             {
-                if (dto.Id.HasValue)
+                _db.FreelancerEmploymentHistory.Add(new FreelancerEmployment
                 {
-                    var entity = existing.First(e => e.Id == dto.Id.Value);
-                    entity.Company = dto.Company;
-                    entity.City = dto.City;
-                    entity.Country = dto.Country;
-                    entity.Title = dto.Title;
-                    entity.CurrentlyWorkThere = dto.CurrentlyWorkThere;
-                    entity.FromDate = dto.FromDate;
-                    entity.ToDate = dto.ToDate;
-                }
-                else
-                {
-                    FreelancerEmployment newEntity = new FreelancerEmployment
-                    {
-                        Id = dto.Id ?? 0,
-                        FreelancerId = freelancerId,
-                        Company = dto.Company,
-                        City = dto.City,
-                        Country = dto.Country,
-                        Title = dto.Title,
-                        CurrentlyWorkThere = dto.CurrentlyWorkThere,
-                        FromDate = dto.FromDate,
-                        ToDate = dto.ToDate
-                    };
-
-                    existing.Add(newEntity);
-                }
+                    FreelancerId = freelancerId,
+                    Company = dto.Company ?? string.Empty,
+                    City = dto.City ?? string.Empty,
+                    Country = dto.Country ?? string.Empty,
+                    Title = dto.Title ?? string.Empty,
+                    CurrentlyWorkThere = dto.CurrentlyWorkThere ?? false,
+                    FromDate = dto.FromDate ?? DateTime.UtcNow,
+                    ToDate = dto.ToDate
+                });
             }
         }
 
@@ -517,18 +480,14 @@ namespace ServiceImplementation.Implementations.FreelancerImplementation
             };
         }
 
-        public async Task<bool> UpdateFreelancerAsync(FreelancerUpdateDTO freelancerUpdateDTO)
+        public async Task<bool> UpdateFreelancerAsync(string userId, FreelancerUpdateDTO freelancerUpdateDTO)
         {
             if (freelancerUpdateDTO == null)
             {
                 throw new ArgumentNullException(nameof(freelancerUpdateDTO));
             }
 
-            // getting the authenticated user id
-            string currentId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? throw new UnauthorizedAccessException("Unable to retrieve the authenticated user ID.");
-
-            // 1. fetch the existing user
+            // 1. fetch the existing user with the strict role check (as it was)
             var user = await _db.Users
                 .Include(u => u.Freelancer)
                     .ThenInclude(f => f.Languages)
@@ -541,12 +500,55 @@ namespace ServiceImplementation.Implementations.FreelancerImplementation
                 .Include(u => u.Freelancer)
                     .ThenInclude(f => f.FreelancerSkills)
                         .ThenInclude(fs => fs.Skill)
+                .FirstOrDefaultAsync(u => u.Id == userId && u.Role == Entities.Enums.UserRole.Freelancer && !u.IsDeleted);
 
-                .FirstOrDefaultAsync(u => u.Id == currentId && u.Role == Entities.Enums.UserRole.Freelancer && !u.IsDeleted);
-
-            if (user == null || user.Freelancer == null)
+            // If not found with the strict role check, the user mentioned they are seeing users with Role 0 (Client) 
+            // even if they have a freelancer record. Let's try to find them and fix the role if they have a profile.
+            if (user == null)
             {
+                user = await _db.Users
+                    .Include(u => u.Freelancer)
+                        .ThenInclude(f => f.Languages)
+                    .Include(u => u.Freelancer)
+                        .ThenInclude(f => f.Education)
+                    .Include(u => u.Freelancer)
+                        .ThenInclude(f => f.ExperienceDetails)
+                    .Include(u => u.Freelancer)
+                        .ThenInclude(f => f.EmploymentHistory)
+                    .Include(u => u.Freelancer)
+                        .ThenInclude(f => f.FreelancerSkills)
+                            .ThenInclude(fs => fs.Skill)
+                    .FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
+
+                if (user != null && user.Freelancer != null)
+                {
+                    // Fix the role mismatch discovered by the user
+                    user.Role = Entities.Enums.UserRole.Freelancer;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            if (user == null)
+            {
+                // Log or track why the user wasn't found
                 return false;
+            }
+
+            if (user.Freelancer == null)
+            {
+                user.Freelancer = new Freelancer
+                {
+                    UserId = user.Id,
+                    Title = freelancerUpdateDTO.Title ?? "Freelancer",
+                    HourlyRate = freelancerUpdateDTO.HourlyRate ?? 0,
+                    Availability = freelancerUpdateDTO.Availability ?? "More than 30 hrs/week",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _db.Freelancers.Add(user.Freelancer);
             }
 
             // 2. update the base user and freelancer properties

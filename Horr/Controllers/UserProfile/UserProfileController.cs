@@ -30,6 +30,24 @@ namespace Horr.Controllers.UserProfile
             return Ok(response);
         }
 
+        [HttpGet("freelancer-details")]
+        public async Task<IActionResult> GetFreelancerDetails()
+        {
+            var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            var result = await _profileSettingsService.GetFreelancerDetailsAsync(userId);
+            if (!result.Succeeded) return BadRequest(result.Errors);
+            return Ok(result.Data);
+        }
+
+        [HttpGet("public/{userIdHash}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPublicProfile(string userIdHash)
+        {
+            var response = await _profileSettingsService.GetPublicProfileAsync(userIdHash);
+            if (!response.Succeeded) return NotFound(response.Errors);
+            return Ok(response);
+        }
+
         [HttpPatch("name")]
         public async Task<IActionResult> UpdateName([FromBody] string fullname)
         {
@@ -63,7 +81,7 @@ namespace Horr.Controllers.UserProfile
         }
 
         [HttpPatch("bio")]
-        public async Task<IActionResult> UpdateBio([FromBody] string bio)
+        public async Task<IActionResult> UpdateBio([FromBody] string? bio)
         {
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
             var response = await _profileSettingsService.UpdateBioAsync(userId, bio);
@@ -116,28 +134,28 @@ namespace Horr.Controllers.UserProfile
             return Ok(new { message = "Location updated successfully." });
         }
 
-        [HttpGet("privacy")]
-        public async Task<IActionResult> GetPrivacy()
+        [HttpPatch("freelancer-details")]
+        public async Task<IActionResult> UpdateFreelancerDetails([FromBody] ServiceContracts.DTOs.UserDTOs.FreelancerManagement.FreelancerUpdateDTO dto)
         {
-            var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
-            var response = await _profileSettingsService.GetPrivacySettingsAsync(userId);
-
-            if (response.Data == null) return NotFound("Freelancer profile not found for user.");
-
-            return Ok(response);
-        }
-
-        [HttpPatch("privacy")]
-        public async Task<IActionResult> UpdatePrivacy([FromBody] PrivacyUpdateDto dto)
-        {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (!ModelState.IsValid) 
+            {
+                var errors = ModelState.ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
+                );
+                return BadRequest(new { errors });
+            }
 
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
-            var response = await _profileSettingsService.UpdatePrivacySettingsAsync(userId, dto);
+            var response = await _profileSettingsService.UpdateFreelancerDetailsAsync(userId, dto);
 
-            if (!response.Succeeded) return NotFound("Freelancer profile not found.");
+            if (!response.Succeeded) 
+            {
+                return BadRequest(new { errors = response.Errors, message = response.Message });
+            }
 
-            return Ok(new { message = "Privacy settings updated successfully." });
+            return Ok(new { message = "Freelancer details updated successfully.", data = response.Data });
         }
+
     }
 }

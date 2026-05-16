@@ -21,15 +21,7 @@ namespace Entities.Enums
     }
 
 
-    /// <summary>
-    /// Represents the status of a user verification request.
-    /// </summary>
-    public enum VerificationStatus
-    {
-        Pending,
-        Approved,
-        Rejected
-    }
+
 
     /// <summary>
     /// Represents the status of a client project.
