@@ -84,7 +84,13 @@ namespace ServiceImplementation.Implementations.Wallet
                 await _context.SaveChangesAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
 
-            return new Result<WithdrawalRequestDto> { Succeeded = true, Data = withdrawalRequest.ToDto() };
-        }
+                return new Result<WithdrawalRequestDto> { Succeeded = true, Data = withdrawalRequest.ToDto() };
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return new Result<WithdrawalRequestDto> { Succeeded = false, Message = "An error occurred while reviewing the withdrawal request.", Errors = new List<string> { ex.Message } };
+            }
+    }
     }
 }
