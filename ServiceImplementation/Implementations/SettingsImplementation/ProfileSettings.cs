@@ -37,6 +37,27 @@ namespace ServiceImplementation.Implementations.Settings
             _context      = context;
             _freelancerService = freelancerService;
         }
+
+        private async Task<bool> ResolveAndSyncVerificationAsync(User user)
+        {
+            if (user.IsVerified)
+            {
+                return true;
+            }
+
+            var hasApprovedVerification = await _context.VerificationRequests
+                .AsNoTracking()
+                .AnyAsync(r => r.UserId == user.Id && r.Status == VerificationStatus.Approved);
+
+            if (!hasApprovedVerification)
+            {
+                return false;
+            }
+
+            user.IsVerified = true;
+            await _userManager.UpdateAsync(user);
+            return true;
+        }
         
         public async Task<Result<UserProfileDto>> GetProfileAsync(string userId)
         {
@@ -56,12 +77,16 @@ namespace ServiceImplementation.Implementations.Settings
                 .Include(f => f.EmploymentHistory)
                 .FirstOrDefaultAsync(f => f.UserId == userId);
 
+            var isVerified = await ResolveAndSyncVerificationAsync(user);
+            var profileDto = user.ToUserProfileDto(freelancer: freelancer);
+            profileDto.IsVerified = isVerified;
+
             return new Result<UserProfileDto>
             {
                 Succeeded = true,
                 Errors = { },
                 Message = "Profile retrieved successfully.",
-                Data = user.ToUserProfileDto(freelancer: freelancer)
+                Data = profileDto
             };
         }
 
@@ -91,6 +116,7 @@ namespace ServiceImplementation.Implementations.Settings
             };
 
             var freelancer = user.Freelancer;
+            var isVerified = await ResolveAndSyncVerificationAsync(user);
 
             var workHistory = await _context.Contracts
                 .Include(c => c.ContractReviews)
@@ -115,7 +141,7 @@ namespace ServiceImplementation.Implementations.Settings
                 Country = user.Country,
                 ProfilePicturePath = user.ProfilePicturePath,
                 TrustScore = user.TrustScore,
-                IsVerified = user.IsVerified,
+                IsVerified = isVerified,
                 ExperienceLevel = (int)(freelancer?.ExperienceLevel ?? Entities.Enums.ExperienceLevel.Beginner),
                 YearsOfExperience = freelancer?.YearsOfExperience,
 

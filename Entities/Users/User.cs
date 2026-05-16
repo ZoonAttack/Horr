@@ -66,7 +66,7 @@ public class User : IdentityUser
     public virtual Specialist SpecialistProfile { get; set; }
     public virtual Freelancer Freelancer { get; set; }
     public virtual Client Client { get; set; }
-    public virtual Wallet Wallet { get; set; }
+    public virtual WalletBalance Wallet { get; set; }
     public virtual ICollection<PaymentMethod> PaymentMethods { get; set; }
     public virtual ICollection<Message> SentMessages { get; set; } = new List<Message>();
     [InverseProperty("Reviewer")]

@@ -55,8 +55,8 @@ namespace ServiceImplementation.Implementations.Contracts
             var totalAmount = request.Milestones.Sum(m => m.Amount);
 
             // 2. Check Wallet Balance
-            var wallet = await _context.Wallets.FirstOrDefaultAsync(w => w.UserId == request.ClientId, cancellationToken);
-            if (wallet == null || wallet.Balance < totalAmount)
+            var wallet = await _context.WalletBalances.FirstOrDefaultAsync(w => w.UserId == request.ClientId, cancellationToken);
+            if (wallet == null || wallet.BalanceEGP < totalAmount)
             {
                 return new Result<ContractDto>
                 {

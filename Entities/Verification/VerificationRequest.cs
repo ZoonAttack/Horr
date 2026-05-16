@@ -10,8 +10,7 @@ namespace Entities.Verification
     public class VerificationRequest
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public string Id { get; set; }
+        public string Id { get; set; } = Guid.NewGuid().ToString();
 
         [Required]
         public string UserId { get; set; }
@@ -30,8 +29,7 @@ namespace Entities.Verification
         [MaxLength(500)]
         public string? RejectionReason { get; set; }
 
-        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
-        public DateTime SubmittedAt { get; set; }
+        public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime? ReviewedAt { get; set; }
 

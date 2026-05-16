@@ -62,7 +62,6 @@ namespace Entities
         // Payment, Wallet, and Transaction DbSets
         public DbSet<Payment.Payment> Payments { get; set; }
         public DbSet<PaymentMethod> PaymentMethods { get; set; }
-        public DbSet<Wallet> Wallets { get; set; }
         public DbSet<WalletBalance> WalletBalances { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<DepositRequest> DepositRequests { get; set; }

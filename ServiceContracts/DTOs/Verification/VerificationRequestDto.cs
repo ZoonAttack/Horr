@@ -11,6 +11,7 @@ namespace ServiceContracts.DTOs.Verification
         public string BackImageUrl { get; set; }
         public string SelfieUrl { get; set; }
         public int Status { get; set; }           // 0=Pending, 1=Approved, 2=Rejected
+        public bool IsVerified { get; set; }
         public string? RejectionReason { get; set; }
         public DateTime SubmittedAt { get; set; }
         public DateTime? ReviewedAt { get; set; }

@@ -74,7 +74,7 @@ namespace Horr.Controllers
             _context.VerificationRequests.Add(request);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetMyStatus), new { }, MapToDto(request, user.FullName));
+            return CreatedAtAction(nameof(GetMyStatus), new { }, MapToDto(request, user.FullName, user.IsVerified));
         }
 
         [HttpGet("my-status")]
@@ -92,7 +92,7 @@ namespace Horr.Controllers
 
             if (request == null) return Ok(null);
 
-            return Ok(MapToDto(request, user.FullName));
+            return Ok(MapToDto(request, user.FullName, user.IsVerified));
         }
 
         [HttpGet("pending")]
@@ -105,7 +105,7 @@ namespace Horr.Controllers
                 .OrderBy(r => r.SubmittedAt)
                 .ToListAsync();
 
-            return Ok(requests.Select(r => MapToDto(r, r.User?.FullName ?? "Unknown")).ToList());
+            return Ok(requests.Select(r => MapToDto(r, r.User?.FullName ?? "Unknown", r.User?.IsVerified ?? false)).ToList());
         }
 
         [HttpGet("all")]
@@ -117,7 +117,7 @@ namespace Horr.Controllers
                 .OrderByDescending(r => r.SubmittedAt)
                 .ToListAsync();
 
-            return Ok(requests.Select(r => MapToDto(r, r.User?.FullName ?? "Unknown")).ToList());
+            return Ok(requests.Select(r => MapToDto(r, r.User?.FullName ?? "Unknown", r.User?.IsVerified ?? false)).ToList());
         }
 
         [HttpPost("review")]
@@ -144,6 +144,7 @@ namespace Horr.Controllers
                 if (request.User != null)
                 {
                     request.User.IsVerified = true;
+                    _context.Users.Update(request.User);
                 }
             }
             else
@@ -157,7 +158,7 @@ namespace Horr.Controllers
 
             await _context.SaveChangesAsync();
 
-            return Ok(MapToDto(request, request.User?.FullName ?? "Unknown"));
+            return Ok(MapToDto(request, request.User?.FullName ?? "Unknown", request.User?.IsVerified ?? false));
         }
 
         private List<string> ValidateImages(IFormFile front, IFormFile back, IFormFile selfie)
@@ -202,7 +203,7 @@ namespace Horr.Controllers
             return $"/uploads/verification/{fileName}";
         }
 
-        private VerificationRequestDto MapToDto(VerificationRequest request, string fullName)
+        private VerificationRequestDto MapToDto(VerificationRequest request, string fullName, bool isVerified)
         {
             return new VerificationRequestDto
             {
@@ -213,6 +214,7 @@ namespace Horr.Controllers
                 BackImageUrl = request.BackImageUrl,
                 SelfieUrl = request.SelfieUrl,
                 Status = (int)request.Status,
+                IsVerified = isVerified,
                 RejectionReason = request.RejectionReason,
                 SubmittedAt = request.SubmittedAt,
                 ReviewedAt = request.ReviewedAt

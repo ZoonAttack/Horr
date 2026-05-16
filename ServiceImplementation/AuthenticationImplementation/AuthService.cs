@@ -1,5 +1,6 @@
 using Entities;
 using Entities.Token;
+using Entities.Payment;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
@@ -160,6 +161,16 @@ namespace ServiceImplementation.Authentication
                 });
                 await _context.SaveChangesAsync();
             }
+
+            // 6. Initialize Wallet
+            _context.WalletBalances.Add(new WalletBalance
+            {
+                UserId = user.Id,
+                BalanceEGP = 0,
+                LastUpdatedAt = DateTime.UtcNow
+            });
+            await _context.SaveChangesAsync();
+
             try
             {
                 bool sent = await SendEmailHelperAsync(user);
