@@ -22,22 +22,58 @@ namespace ServiceImplementation.Implementations.Wallet
         {
             await ValidateAsync(request, cancellationToken);
 
-            var withdrawalRequest = new WithdrawalRequest
+            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            try
             {
-                FreelancerId = request.FreelancerId,
-                Amount = request.Amount,
-                Method = request.Method,
-                InstapayUsername = request.InstapayUsername,
-                BankAccountDetails = request.BankAccountDetails,
-                EWalletNumber = request.EWalletNumber,
-                Status = WithdrawalStatus.Pending,
-                SubmittedAt = DateTime.UtcNow
-            };
+                var wallet = await _context.WalletBalances
+                    .FirstOrDefaultAsync(w => w.UserId == request.FreelancerId, cancellationToken);
 
-            _context.WithdrawalRequests.Add(withdrawalRequest);
-            await _context.SaveChangesAsync(cancellationToken);
+                // Re-check balance inside transaction
+                if (wallet == null || wallet.BalanceEGP < request.Amount)
+                {
+                    throw new ValidationException("Insufficient wallet balance.");
+                }
 
-            return withdrawalRequest.ToDto();
+                var withdrawalRequest = new WithdrawalRequest
+                {
+                    FreelancerId = request.FreelancerId,
+                    Amount = request.Amount,
+                    Method = request.Method,
+                    InstapayUsername = request.InstapayUsername,
+                    BankAccountDetails = request.BankAccountDetails,
+                    EWalletNumber = request.EWalletNumber,
+                    Status = WithdrawalStatus.Pending,
+                    SubmittedAt = DateTime.UtcNow
+                };
+
+                _context.WithdrawalRequests.Add(withdrawalRequest);
+
+                // Deduct balance (hold funds)
+                wallet.BalanceEGP -= request.Amount;
+                wallet.LastUpdatedAt = DateTime.UtcNow;
+
+                // Add transaction record
+                var financialTransaction = new Transaction
+                {
+                    UserId = request.FreelancerId,
+                    Amount = request.Amount,
+                    Direction = TransactionDirection.Debit,
+                    Type = TransactionType.Withdrawal,
+                    Description = $"Withdrawal Request Submitted: {request.Method}",
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.Transactions.Add(financialTransaction);
+
+                await _context.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+
+                return withdrawalRequest.ToDto();
+            }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
         }
 
         private async Task ValidateAsync(SubmitWithdrawalRequestCommand request, CancellationToken cancellationToken)
