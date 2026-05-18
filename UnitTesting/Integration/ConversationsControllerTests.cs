@@ -191,4 +191,86 @@ public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFa
         var body = await response.Content.ReadAsStringAsync();
         body.ToLower().Should().Contain("title"); // Verify ProblemDetails shape
     }
+
+    [Fact]
+    public async Task SendMessage_Should_InitiateNewConversation_WhenItDoesNotExist_AndFormDataProvided_Integration()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var currentUser = "client-int-sender";
+        var otherUser = "freelancer-int-receiver";
+        var newConversationId = "conv-new-int-1";
+        var jobId = "job-int-123";
+
+        // Seed users
+        if (!await context.Users.AnyAsync(u => u.Id == currentUser))
+            context.Users.Add(new Entities.Users.User { Id = currentUser, UserName = currentUser, Email = $"{currentUser}@example.com", FullName = currentUser });
+
+        if (!await context.Users.AnyAsync(u => u.Id == otherUser))
+            context.Users.Add(new Entities.Users.User { Id = otherUser, UserName = otherUser, Email = $"{otherUser}@example.com", FullName = otherUser });
+
+        // Seed category and job
+        if (!await context.Categories.AnyAsync(c => c.Id == "cat-int-1"))
+            context.Categories.Add(new Entities.Project.Category { Id = "cat-int-1", Name = "Int Category", Slug = "int-category" });
+
+        if (!await context.JobPosts.AnyAsync(j => j.Id == jobId))
+            context.JobPosts.Add(new Entities.Project.JobPost { Id = jobId, Title = "Int Job", Description = "Desc", CategoryId = "cat-int-1", ClientId = currentUser });
+
+        await context.SaveChangesAsync();
+
+        var form = new MultipartFormDataContent();
+        form.Add(new StringContent("Dynamic Conversation Initiation Test Message"), "body");
+        form.Add(new StringContent(jobId), "jobPostId");
+        form.Add(new StringContent(otherUser), "receiverId");
+
+        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/conversations/{newConversationId}/messages");
+        request.Headers.Add("X-Test-UserId", currentUser);
+        request.Headers.Add("X-Test-UserRole", "Client");
+        request.Content = form;
+
+        var response = await _client.SendAsync(request);
+        var body = await response.Content.ReadAsStringAsync();
+        response.StatusCode.Should().Be(HttpStatusCode.Created, body);
+
+        // Verify conversation is created in database
+        using var checkScope = _factory.Services.CreateScope();
+        var checkContext = checkScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var conversation = await checkContext.Conversations.FirstOrDefaultAsync(c => c.Id == newConversationId);
+        conversation.Should().NotBeNull();
+        conversation.JobPostId.Should().Be(jobId);
+
+        var participants = await checkContext.ConversationParticipants.Where(p => p.ConversationId == newConversationId).ToListAsync();
+        participants.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task SendMessage_Should_Return_BadRequest_WhenConversationDoesNotExist_AndJobPostNotFound_Integration()
+    {
+        var currentUser = "client-int-sender-fail";
+        var otherUser = "freelancer-int-receiver-fail";
+        var newConversationId = "conv-new-int-fail";
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        if (!await context.Users.AnyAsync(u => u.Id == currentUser))
+            context.Users.Add(new Entities.Users.User { Id = currentUser, UserName = currentUser, Email = $"{currentUser}@example.com", FullName = currentUser });
+
+        if (!await context.Users.AnyAsync(u => u.Id == otherUser))
+            context.Users.Add(new Entities.Users.User { Id = otherUser, UserName = otherUser, Email = $"{otherUser}@example.com", FullName = otherUser });
+
+        await context.SaveChangesAsync();
+
+        var form = new MultipartFormDataContent();
+        form.Add(new StringContent("Failing Initiation Test Message"), "body");
+        form.Add(new StringContent("non-existent-job-id"), "jobPostId");
+        form.Add(new StringContent(otherUser), "receiverId");
+
+        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/conversations/{newConversationId}/messages");
+        request.Headers.Add("X-Test-UserId", currentUser);
+        request.Headers.Add("X-Test-UserRole", "Client");
+        request.Content = form;
+
+        var response = await _client.SendAsync(request);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
 }

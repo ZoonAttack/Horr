@@ -63,7 +63,12 @@ namespace Horr.Controllers
         [ProducesResponseType(typeof(MessageDto), 201)]
         [ProducesResponseType(404)]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> SendMessage(string id, [FromForm] string body, [FromForm] List<IFormFile>? files)
+        public async Task<IActionResult> SendMessage(
+            string id, 
+            [FromForm] string body, 
+            [FromForm] List<IFormFile>? files,
+            [FromForm] string? jobPostId = null,
+            [FromForm] string? receiverId = null)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
@@ -73,7 +78,7 @@ namespace Horr.Controllers
                 return BadRequest("Message body is required.");
             }
 
-            var result = await _mediator.Send(new SendMessageCommand(id, userId, body, files));
+            var result = await _mediator.Send(new SendMessageCommand(id, userId, body, files, jobPostId, receiverId));
             if (!result.Succeeded)
             {
                 return BadRequest(result);
