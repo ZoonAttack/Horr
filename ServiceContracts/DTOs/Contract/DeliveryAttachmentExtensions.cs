@@ -11,7 +11,7 @@ namespace ServiceContracts.DTOs.Contract
             return new AttachmentDto
             {
                 Id = attachment.Id,
-                WorkDeliveryId = attachment.WorkDeliveryId,
+                WorkDeliveryId = attachment.WorkDeliveryId ?? 0,
                 FileUrl = attachment.FileUrl,
                 FileType = attachment.FileType,
                 UploadedAt = attachment.UploadedAt

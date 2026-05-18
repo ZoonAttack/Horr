@@ -86,8 +86,11 @@ namespace Entities.Enums
         Pending,
         Approved,
         Rejected,
-        UnderReview
+        UnderReview,
+        RevisionRequested,
+        Disputed
     }
+
 
     /// <summary>
     /// Represents the status of a payment.
@@ -300,4 +303,50 @@ namespace Entities.Enums
         Declined,
         Withdrawn
     }
+
+    public enum AttachmentType
+    {
+        File,
+        Link
+    }
+
+    public enum MilestoneStatus
+    {
+        Unfunded,
+        Funded,
+        Delivered,
+        Released,
+        Disputed
+    }
+
+    public enum EscrowTransactionType
+    {
+        ClientFunded,
+        ReleasedToFreelancer,
+        RefundedToClient,
+        PlatformFeeDeducted
+    }
+
+    public enum EscrowStatus
+    {
+        Held,
+        Released,
+        Refunded
+    }
+
+    public enum RevisionStatus
+    {
+        Pending,
+        AcceptedBySpecialist,
+        Resolved
+    }
+
+    public enum DisputeStatus
+    {
+        Open,
+        UnderReview,
+        ResolvedForClient,
+        ResolvedForFreelancer
+    }
 }
+

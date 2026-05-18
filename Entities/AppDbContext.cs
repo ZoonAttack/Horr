@@ -76,6 +76,10 @@ namespace Entities
         public DbSet<WorkDelivery> WorkDeliveries { get; set; }
         public DbSet<DeliveryAttachment> DeliveryAttachments { get; set; }
         public DbSet<ContractMilestone> ContractMilestones { get; set; }
+        public DbSet<ContractDelivery> ContractDeliveries { get; set; }
+        public DbSet<EscrowTransaction> EscrowTransactions { get; set; }
+        public DbSet<RevisionRequest> RevisionRequests { get; set; }
+        public DbSet<Dispute> Disputes { get; set; }
 
         // Job Management DbSets
         public DbSet<JobPost> JobPosts { get; set; }
@@ -100,6 +104,12 @@ namespace Entities
             modelBuilder.Entity<ServiceCatalogItem>().HasQueryFilter(s => !s.IsDeleted);
             modelBuilder.Entity<DepositRequest>().HasQueryFilter(d => !d.IsDeleted);
             modelBuilder.Entity<WithdrawalRequest>().HasQueryFilter(w => !w.IsDeleted);
+            modelBuilder.Entity<ContractDelivery>().HasQueryFilter(cd => !cd.IsDeleted);
+            modelBuilder.Entity<DeliveryAttachment>().HasQueryFilter(da => !da.IsDeleted);
+            modelBuilder.Entity<ContractMilestone>().HasQueryFilter(cm => !cm.IsDeleted);
+            modelBuilder.Entity<EscrowTransaction>().HasQueryFilter(et => !et.IsDeleted);
+            modelBuilder.Entity<RevisionRequest>().HasQueryFilter(rr => !rr.IsDeleted);
+            modelBuilder.Entity<Dispute>().HasQueryFilter(d => !d.IsDeleted);
 
 
             // ---------------------------------------------------------
