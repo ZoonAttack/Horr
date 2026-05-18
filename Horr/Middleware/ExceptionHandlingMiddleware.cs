@@ -60,6 +60,13 @@ namespace Horr.Middleware
                     problemDetails.Status = (int)HttpStatusCode.UnprocessableEntity;
                     break;
 
+                case ForbiddenException:
+                case UnauthorizedAccessException:
+                    context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+                    problemDetails.Title = "Forbidden";
+                    problemDetails.Status = (int)HttpStatusCode.Forbidden;
+                    break;
+
                 case ConflictException:
                     context.Response.StatusCode = (int)HttpStatusCode.Conflict;
                     problemDetails.Title = "Conflict";

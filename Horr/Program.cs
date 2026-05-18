@@ -67,6 +67,7 @@ namespace Horr
             builder.Services.AddScoped<ServiceContracts.Client.IClientProfileService, ServiceImplementation.Implementations.ClientImplementation.ClientProfileService>();
             builder.Services.AddScoped<IWalletService, WalletService>();
             builder.Services.AddScoped<IEscrowService, EscrowService>();
+            builder.Services.AddHostedService<ServiceImplementation.Implementations.Contracts.DeliveryAutoCompleteService>();
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
             // MediatR Registration

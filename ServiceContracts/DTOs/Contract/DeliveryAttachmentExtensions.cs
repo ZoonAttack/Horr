@@ -1,3 +1,4 @@
+using System;
 using Entities.Project;
 
 namespace ServiceContracts.DTOs.Contract
@@ -12,9 +13,33 @@ namespace ServiceContracts.DTOs.Contract
             {
                 Id = attachment.Id,
                 WorkDeliveryId = attachment.WorkDeliveryId ?? 0,
+                DeliveryId = attachment.DeliveryId,
                 FileUrl = attachment.FileUrl,
                 FileType = attachment.FileType,
-                UploadedAt = attachment.UploadedAt
+                UploadedAt = attachment.UploadedAt,
+                Type = attachment.Type,
+                FileName = attachment.FileName,
+                StoragePath = attachment.StoragePath,
+                Url = attachment.Url
+            };
+        }
+
+        public static DeliveryAttachment ToEntity(this AttachmentDto dto)
+        {
+            if (dto == null) return null!;
+
+            return new DeliveryAttachment
+            {
+                Id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id,
+                WorkDeliveryId = dto.WorkDeliveryId == 0 ? null : dto.WorkDeliveryId,
+                DeliveryId = dto.DeliveryId,
+                FileUrl = dto.FileUrl ?? string.Empty,
+                FileType = dto.FileType ?? string.Empty,
+                UploadedAt = dto.UploadedAt == default ? DateTime.UtcNow : dto.UploadedAt,
+                Type = dto.Type,
+                FileName = dto.FileName,
+                StoragePath = dto.StoragePath,
+                Url = dto.Url
             };
         }
     }
