@@ -16,6 +16,8 @@ using Services.Client;
 using ServiceImplementation.Implementations.ClientImplementation;
 using Services.Freelancer;
 using ServiceImplementation.Implementations.FreelancerImplementation;
+using Services.Wallet;
+using ServiceImplementation.Implementations.Wallet;
 
 namespace Horr
 {
@@ -63,6 +65,8 @@ namespace Horr
             builder.Services.AddScoped<Services.Client.IJobService, ServiceImplementation.Implementations.ClientImplementation.JobService>();
             builder.Services.AddScoped<IFreelancerService, FreelancerService>();
             builder.Services.AddScoped<ServiceContracts.Client.IClientProfileService, ServiceImplementation.Implementations.ClientImplementation.ClientProfileService>();
+            builder.Services.AddScoped<IWalletService, WalletService>();
+            builder.Services.AddScoped<IEscrowService, EscrowService>();
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
             // MediatR Registration

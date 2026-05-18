@@ -168,7 +168,7 @@ namespace UnitTesting.Wallet
         }
 
         [Fact]
-        public async Task ReviewWithdrawal_Rejected_UpdatesStatusButNotBalance()
+        public async Task ReviewWithdrawal_Rejected_RestoresBalance()
         {
             // Arrange
             var userId = "u1";
@@ -188,7 +188,7 @@ namespace UnitTesting.Wallet
             var wallet = await _context.WalletBalances.FirstAsync(w => w.UserId == userId);
 
             Assert.Equal(WithdrawalStatus.Rejected, updated!.Status);
-            Assert.Equal(500, wallet.BalanceEGP); // Should NOT change
+            Assert.Equal(600, wallet.BalanceEGP); // Should increase from 500 to 600 (refunded)
         }
 
         [Fact]
