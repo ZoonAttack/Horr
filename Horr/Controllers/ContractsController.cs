@@ -153,5 +153,27 @@ namespace Horr.Controllers
             }
             return BadRequest(result.Errors);
         }
+        [HttpGet("{id}/deliveries")]
+        [ProducesResponseType(typeof(IEnumerable<ContractDeliveryDto>), 200)]
+        public async Task<IActionResult> GetContractDeliveries(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            // Note: Currently no role-based restriction in command, but logic can be verified.
+            var result = await _mediator.Send(new GetContractDeliveriesQuery(id));
+            return Ok(result);
+        }
+
+        [HttpGet("{id}/escrow")]
+        [ProducesResponseType(typeof(EscrowSummaryDto), 200)]
+        public async Task<IActionResult> GetEscrowSummary(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var result = await _mediator.Send(new GetEscrowSummaryQuery(id));
+            return Ok(result);
+        }
     }
 }
