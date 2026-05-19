@@ -57,6 +57,7 @@ namespace Horr
             // 2. REGISTER YOUR CUSTOM SERVICES (DI)
             // ==========================================
             // This tells ASP.NET: "When a controller asks for IAuthService, give them AuthService"
+            builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IProfileSettings, ProfileSettings>();
