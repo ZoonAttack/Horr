@@ -160,7 +160,8 @@ namespace ServiceImplementation.Authentication
             {
                 _context.Clients.Add(new Entities.Users.Client
                 {
-                    UserId = user.Id
+                    UserId = user.Id,
+                    CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow
                 });
                 await _context.SaveChangesAsync();
             }
