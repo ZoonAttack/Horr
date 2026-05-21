@@ -10,6 +10,8 @@ namespace ServiceImplementation.Implementations.Communication
         string ConversationId,
         string SenderId,
         string Body,
-        List<IFormFile>? Files = null
+        List<IFormFile>? Files = null,
+        string? JobPostId = null,
+        string? ReceiverId = null
     ) : IRequest<Result<MessageDto>>;
 }

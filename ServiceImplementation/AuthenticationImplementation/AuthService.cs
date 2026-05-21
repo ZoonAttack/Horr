@@ -1,5 +1,6 @@
 using Entities;
 using Entities.Token;
+using Microsoft.AspNetCore.Http;
 using Entities.Payment;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
@@ -23,14 +24,16 @@ namespace ServiceImplementation.Authentication
         private readonly IEmailService _emailService;
         private readonly IConfiguration _configuration;
         private readonly AppDbContext _context;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public AuthService(UserManager<Entities.Users.User> userManager, ITokenService tokenService, IEmailService emailService, AppDbContext context, IConfiguration configuration)
+        public AuthService(UserManager<Entities.Users.User> userManager, ITokenService tokenService, IEmailService emailService, AppDbContext context, IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
         {
             _userManager   = userManager;
             _tokenService  = tokenService;
             _emailService  = emailService;
             _context       = context;
             _configuration = configuration;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<Result<AuthResponse>> LoginAsync(LoginRequestDTO dto)
@@ -157,7 +160,8 @@ namespace ServiceImplementation.Authentication
             {
                 _context.Clients.Add(new Entities.Users.Client
                 {
-                    UserId = user.Id
+                    UserId = user.Id,
+                    CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow
                 });
                 await _context.SaveChangesAsync();
             }
@@ -377,6 +381,7 @@ namespace ServiceImplementation.Authentication
 
             // Rotate: mark old token as used, generate new pair
             storedToken.Revoked = DateTime.UtcNow;
+            storedToken.RevokedByIp = GetClientIpAddress();
 
             var newAccessToken  = _tokenService.GenerateAccessToken(await GetUserClaimsAsync(storedToken.User));
             var newRefreshToken = _tokenService.GenerateRefreshToken();
@@ -386,7 +391,8 @@ namespace ServiceImplementation.Authentication
                 Token   = newRefreshToken,
                 UserId  = storedToken.UserId,
                 Created = DateTime.UtcNow,
-                Expires = DateTime.UtcNow.AddDays(7)
+                Expires = DateTime.UtcNow.AddDays(7),
+                CreatedByIp = GetClientIpAddress()
             });
 
             await _context.SaveChangesAsync();
@@ -448,6 +454,7 @@ namespace ServiceImplementation.Authentication
             }
 
             storedToken.Revoked = DateTime.UtcNow;
+            storedToken.RevokedByIp = GetClientIpAddress();
             await _context.SaveChangesAsync();
 
             return new Result<bool>
@@ -486,13 +493,34 @@ namespace ServiceImplementation.Authentication
             var accessToken  = _tokenService.GenerateAccessToken(authClaims);
             var refreshToken = _tokenService.GenerateRefreshToken();
 
+            var clientIp = GetClientIpAddress();
+
+            // Limit concurrent active sessions to 3 devices per user
+            var activeTokens = await _context.RefreshTokens
+                .Where(t => t.UserId == user.Id && t.Revoked == null && t.Expires > DateTime.UtcNow)
+                .OrderBy(t => t.Created)
+                .ToListAsync();
+
+            const int MaxConcurrentSessions = 3;
+            if (activeTokens.Count >= MaxConcurrentSessions)
+            {
+                // Revoke the oldest sessions exceeding the limit (e.g., if we have 3 active, we need to revoke 1 to make room)
+                var tokensToRevoke = activeTokens.Take(activeTokens.Count - MaxConcurrentSessions + 1);
+                foreach (var token in tokensToRevoke)
+                {
+                    token.Revoked = DateTime.UtcNow;
+                    token.RevokedByIp = clientIp;
+                }
+            }
+
             // Store refresh token in database
             _context.RefreshTokens.Add(new RefreshToken
             {
                 Token   = refreshToken,
                 UserId  = user.Id,
                 Created = DateTime.UtcNow,
-                Expires = DateTime.UtcNow.AddDays(7) // Match your cookie/policy expiry
+                Expires = DateTime.UtcNow.AddDays(7), // Match your cookie/policy expiry
+                CreatedByIp = clientIp
             });
 
             await _context.SaveChangesAsync();
@@ -506,6 +534,12 @@ namespace ServiceImplementation.Authentication
                 RefreshToken = refreshToken,
                 isEmailConfirmed = true // Always true here since login already verified this
             };
+        }
+
+        private string GetClientIpAddress()
+        {
+            var ip = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+            return string.IsNullOrEmpty(ip) ? "127.0.0.1" : ip;
         }
 
         #endregion

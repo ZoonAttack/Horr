@@ -267,5 +267,103 @@ namespace UnitTesting.Communication
             result.Succeeded.Should().BeFalse();
             result.ErrorCode.Should().Be("CONVERSATION_NOT_FOUND");
         }
+
+        private async Task SeedJobData()
+        {
+            var category = new Entities.Project.Category { Id = "cat-1", Name = "Test Category", Slug = "test-category" };
+            var job = new Entities.Project.JobPost 
+            { 
+                Id = "job-123", 
+                Title = "Test Job", 
+                Description = "Description", 
+                CategoryId = "cat-1", 
+                ClientId = "user-1" 
+            };
+            _context.Categories.Add(category);
+            _context.JobPosts.Add(job);
+            await _context.SaveChangesAsync();
+        }
+
+        [Fact]
+        public async Task SendMessage_Should_InitiateNewConversation_WhenItDoesNotExist_AndFormDataProvided()
+        {
+            // Arrange
+            await SeedBaseData();
+            await SeedJobData();
+            var handler = new SendMessageCommandHandler(_context, _mockHubContext.Object);
+            
+            var command = new SendMessageCommand(
+                "new-conv-id", 
+                "user-1", 
+                "Initial message regarding job", 
+                null, 
+                "job-123", 
+                "user-2"
+            );
+
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Succeeded.Should().BeTrue();
+            result.Data.Body.Should().Be("Initial message regarding job");
+
+            var conversation = await _context.Conversations.FirstOrDefaultAsync(c => c.Id == "new-conv-id");
+            conversation.Should().NotBeNull();
+            conversation.JobPostId.Should().Be("job-123");
+
+            var participants = await _context.ConversationParticipants.Where(p => p.ConversationId == "new-conv-id").ToListAsync();
+            participants.Should().HaveCount(2);
+            participants.Should().ContainSingle(p => p.UserId == "user-1");
+            participants.Should().ContainSingle(p => p.UserId == "user-2");
+        }
+
+        [Fact]
+        public async Task SendMessage_Should_FailToInitiate_WhenItDoesNotExist_AndFormDataMissing()
+        {
+            // Arrange
+            await SeedBaseData();
+            var handler = new SendMessageCommandHandler(_context, _mockHubContext.Object);
+            
+            var command = new SendMessageCommand(
+                "new-conv-id", 
+                "user-1", 
+                "Initial message", 
+                null, 
+                null, 
+                null
+            );
+
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Succeeded.Should().BeFalse();
+            result.ErrorCode.Should().Be("CONVERSATION_NOT_FOUND");
+        }
+
+        [Fact]
+        public async Task SendMessage_Should_FailToInitiate_WhenJobPostDoesNotExist()
+        {
+            // Arrange
+            await SeedBaseData();
+            var handler = new SendMessageCommandHandler(_context, _mockHubContext.Object);
+            
+            var command = new SendMessageCommand(
+                "new-conv-id", 
+                "user-1", 
+                "Initial message", 
+                null, 
+                "non-existent-job", 
+                "user-2"
+            );
+
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Succeeded.Should().BeFalse();
+            result.ErrorCode.Should().Be("JOB_NOT_FOUND");
+        }
     }
 }
