@@ -32,6 +32,7 @@ namespace ServiceContracts.DTOs.Wallet.PaymentMethods
                 UserId = userId,
                 MethodName = createDto.MethodName.ToString(),
                 AccountIdentifier = createDto.AccountIdentifier,
+                CreatedAt = DateTime.UtcNow
             };
         }
     }

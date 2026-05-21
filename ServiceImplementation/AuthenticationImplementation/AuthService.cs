@@ -160,7 +160,8 @@ namespace ServiceImplementation.Authentication
             {
                 _context.Clients.Add(new Entities.Users.Client
                 {
-                    UserId = user.Id
+                    UserId = user.Id,
+                    CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow
                 });
                 await _context.SaveChangesAsync();
             }
@@ -492,6 +493,26 @@ namespace ServiceImplementation.Authentication
             var accessToken  = _tokenService.GenerateAccessToken(authClaims);
             var refreshToken = _tokenService.GenerateRefreshToken();
 
+            var clientIp = GetClientIpAddress();
+
+            // Limit concurrent active sessions to 3 devices per user
+            var activeTokens = await _context.RefreshTokens
+                .Where(t => t.UserId == user.Id && t.Revoked == null && t.Expires > DateTime.UtcNow)
+                .OrderBy(t => t.Created)
+                .ToListAsync();
+
+            const int MaxConcurrentSessions = 3;
+            if (activeTokens.Count >= MaxConcurrentSessions)
+            {
+                // Revoke the oldest sessions exceeding the limit (e.g., if we have 3 active, we need to revoke 1 to make room)
+                var tokensToRevoke = activeTokens.Take(activeTokens.Count - MaxConcurrentSessions + 1);
+                foreach (var token in tokensToRevoke)
+                {
+                    token.Revoked = DateTime.UtcNow;
+                    token.RevokedByIp = clientIp;
+                }
+            }
+
             // Store refresh token in database
             _context.RefreshTokens.Add(new RefreshToken
             {
@@ -499,7 +520,7 @@ namespace ServiceImplementation.Authentication
                 UserId  = user.Id,
                 Created = DateTime.UtcNow,
                 Expires = DateTime.UtcNow.AddDays(7), // Match your cookie/policy expiry
-                CreatedByIp = GetClientIpAddress()
+                CreatedByIp = clientIp
             });
 
             await _context.SaveChangesAsync();

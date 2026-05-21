@@ -70,15 +70,39 @@ namespace ServiceImplementation.Implementations.Settings
                 Data = null
             };
 
-            var freelancer = await _context.Freelancers
-                .Include(f => f.Languages)
-                .Include(f => f.Education)
-                .Include(f => f.ExperienceDetails)
-                .Include(f => f.EmploymentHistory)
-                .FirstOrDefaultAsync(f => f.UserId == userId);
+            // Retrieve role-specific freelancer profile information if they are a freelancer
+            Freelancer? freelancer = null;
+            if (user.Role == UserRole.Freelancer)
+            {
+                freelancer = await _context.Freelancers
+                    .Include(f => f.Languages)
+                    .Include(f => f.Education)
+                    .Include(f => f.ExperienceDetails)
+                    .Include(f => f.EmploymentHistory)
+                    .FirstOrDefaultAsync(f => f.UserId == userId);
+            }
+
+            // Retrieve wallet balance
+            var wallet = await _context.WalletBalances.FirstOrDefaultAsync(w => w.UserId == userId);
+            var balance = wallet?.BalanceEGP ?? 0m;
+
+            // Retrieve payment methods
+            var paymentMethods = await _context.PaymentMethods
+                .Where(pm => pm.UserId == userId)
+                .ToListAsync();
+            var paymentMethodDtos = paymentMethods.Select(pm => pm.ToPaymentMethodRead()).ToList();
+
+            // Retrieve notifications flag
+            var hasNotifications = await _context.Messages
+                .AnyAsync(m => m.Status == MessageStatus.Unread && m.SenderId != userId &&
+                               _context.ConversationParticipants.Any(cp => cp.ConversationId == m.ConversationId && cp.UserId == userId));
 
             var isVerified = await ResolveAndSyncVerificationAsync(user);
-            var profileDto = user.ToUserProfileDto(freelancer: freelancer);
+            var profileDto = user.ToUserProfileDto(
+                freelancer: freelancer, 
+                balance: balance, 
+                paymentMethods: paymentMethodDtos,
+                hasNotifications: hasNotifications);
             profileDto.IsVerified = isVerified;
 
             return new Result<UserProfileDto>
