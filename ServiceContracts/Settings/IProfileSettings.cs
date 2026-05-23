@@ -5,6 +5,7 @@ using ServiceContracts.DTOs.Responses;
 using ServiceContracts.DTOs.Settings;
 using ServiceContracts.DTOs.Wallet.PaymentMethods;
 using ServiceContracts.DTOs.UserDTOs;
+using ServiceContracts.DTOs.UserDTOs.FreelancerManagement;
 
 namespace ServiceContracts.Settings
 {
@@ -12,18 +13,19 @@ namespace ServiceContracts.Settings
     {
         Task<Result<UserProfileDto>> GetProfileAsync(string userId);
         Task<Result<PublicProfileDto>> GetPublicProfileAsync(string userIdHash);
-        Task<Result<UserProfileDto>> UpdateFullNameAsync(string userId, string newName);
-        Task<Result<UserProfileDto>> UpdateEmailAsync(string userId, string newEmail);
-        Task<Result<UserProfileDto>> UpdateTitleAsync(string userId, string newTitle);
-        Task<Result<UserProfileDto>> UpdateBioAsync(string userId, string? newBio);
-        Task<Result<UserProfileDto>> UpdateExperienceAsync(string userId, ExperienceUpdateDto dto);
-        Task<Result<UserProfileDto>> CreateBillingAsync(string userId, PaymentMethodCreateDTO dto);
+        Task<Result<string>> UpdateFullNameAsync(string userId, string newName);
+        Task<Result<string>> UpdateEmailAsync(string userId, string newEmail);
+        Task<Result<string>> UpdateTitleAsync(string userId, string newTitle);
+        Task<Result<string?>> UpdateBioAsync(string userId, string? newBio);
+        Task<Result<ExperienceUpdateDto>> UpdateExperienceAsync(string userId, ExperienceUpdateDto dto);
+        Task<Result<PaymentMethodReadDTO>> CreateBillingAsync(string userId, PaymentMethodCreateDTO dto);
+        Task<Result<PaymentMethodReadDTO>> UpdateBillingAsync(string userId, string billingId, PaymentMethodUpdateDTO dto);
 
-        //Task<Result<UserProfileDto>> UpdateBillingAsync(string userId, CreateBillingDTO);
+        Task<Result<bool>> DeleteBillingAsync(string userId, string id);
 
-        Task<Result<UserProfileDto>> UpdateAccountAsync(string userId, AccountUpdateDto dto);
-        Task<Result<UserProfileDto>> UpdateLocationAsync(string userId, LocationUpdateDto dto);
-        Task<Result<UserProfileDto>> UpdateFreelancerDetailsAsync(string userId, ServiceContracts.DTOs.UserDTOs.FreelancerManagement.FreelancerUpdateDTO updateDto);
+        Task<Result<AccountUpdateDto>> UpdateAccountAsync(string userId, AccountUpdateDto dto);
+        Task<Result<LocationUpdateDto>> UpdateLocationAsync(string userId, LocationUpdateDto dto);
+        Task<Result<FreelancerReadDTO>> UpdateFreelancerDetailsAsync(string userId, FreelancerUpdateDTO updateDto);
         Task<Result<UserProfileDto>> GetFreelancerDetailsAsync(string userId);
     }
 }

@@ -17,7 +17,7 @@ namespace ServiceContracts.DTOs.Wallet.PaymentMethods
             {
                 Id = method.Id.ToString(),
                 UserId = method.UserId,
-                MethodName = method.MethodName,
+                MethodName = method.Method,
                 AccountIdentifier = method.AccountIdentifier,
                 CreatedAt = method.CreatedAt
             };
@@ -30,7 +30,7 @@ namespace ServiceContracts.DTOs.Wallet.PaymentMethods
             return new PaymentMethod
             {
                 UserId = userId,
-                MethodName = createDto.MethodName.ToString(),
+                Method = createDto.MethodName,
                 AccountIdentifier = createDto.AccountIdentifier,
                 CreatedAt = DateTime.UtcNow
             };

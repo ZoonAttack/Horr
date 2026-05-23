@@ -24,7 +24,7 @@ namespace Entities.Payment
 
             [Required]
             [MaxLength(50)]
-            public string? MethodName { get; set; } // e.g., "InstaPay", "Vodafone Cash"
+            public PaymentMethodTypes? Method { get; set; } // e.g., "InstaPay", "Vodafone Cash"
 
             [Required]
             [MaxLength(100)]
