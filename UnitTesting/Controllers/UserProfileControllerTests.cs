@@ -41,7 +41,7 @@ namespace UnitTesting.Controllers
         public async Task UpdateName_ShouldReturnOk_WhenSuccessful()
         {
             // Arrange
-            var result = new Result<UserProfileDto> { Succeeded = true };
+            var result = new Result<string> { Succeeded = true, Data = "New Name" };
             _profileSettingsMock.Setup(s => s.UpdateFullNameAsync("test-user-id", "New Name"))
                                 .ReturnsAsync(result);
 
@@ -57,7 +57,7 @@ namespace UnitTesting.Controllers
         public async Task UpdateName_ShouldReturnNotFound_WhenFailed()
         {
             // Arrange
-            var result = new Result<UserProfileDto> { Succeeded = false, Errors = new List<string> { "Not found" } };
+            var result = new Result<string> { Succeeded = false, Errors = new List<string> { "Not found" } };
             _profileSettingsMock.Setup(s => s.UpdateFullNameAsync("test-user-id", "New Name"))
                                 .ReturnsAsync(result);
 
@@ -73,7 +73,7 @@ namespace UnitTesting.Controllers
         public async Task UpdateEmail_ShouldReturnOk_WhenSuccessful()
         {
             // Arrange
-            var result = new Result<UserProfileDto> { Succeeded = true, Message = "Email updated" };
+            var result = new Result<string> { Succeeded = true, Message = "Email updated", Data = "test@test.com" };
             _profileSettingsMock.Setup(s => s.UpdateEmailAsync("test-user-id", "test@test.com"))
                                 .ReturnsAsync(result);
 
@@ -89,7 +89,7 @@ namespace UnitTesting.Controllers
         {
             // Arrange
             var dto = new PaymentMethodCreateDTO();
-            var result = new Result<UserProfileDto> { Succeeded = true };
+            var result = new Result<PaymentMethodReadDTO> { Succeeded = true, Data = new PaymentMethodReadDTO() };
             _profileSettingsMock.Setup(s => s.CreateBillingAsync("test-user-id", dto))
                                 .ReturnsAsync(result);
 
@@ -105,7 +105,7 @@ namespace UnitTesting.Controllers
         {
             // Arrange
             var dto = new LocationUpdateDto();
-            var result = new Result<UserProfileDto> { Succeeded = true };
+            var result = new Result<LocationUpdateDto> { Succeeded = true, Data = dto };
             _profileSettingsMock.Setup(s => s.UpdateLocationAsync("test-user-id", dto))
                                 .ReturnsAsync(result);
 

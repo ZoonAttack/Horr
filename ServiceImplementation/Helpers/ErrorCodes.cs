@@ -22,6 +22,7 @@ namespace ServiceImplementation.Helpers
         public const string MissingReceiptNumber = "MISSING_RECEIPT_NUMBER";
         public const string MissingReceiptPhoto  = "MISSING_RECEIPT_PHOTO";
         public const string MissingPaymentDetails = "MISSING_PAYMENT_DETAILS";
+        public const string PaymentMethodNotFound = "PAYMENT_METHOD_NOT_FOUND";
 
         // ── User / Client / Freelancer ────────────────────────────────────
         public const string UserNotFound         = "USER_NOT_FOUND";
@@ -46,5 +47,6 @@ namespace ServiceImplementation.Helpers
         // ── Generic / State ───────────────────────────────────────────────
         public const string InvalidState         = "INVALID_STATE";
         public const string AlreadyReviewed      = "ALREADY_REVIEWED";
+
     }
 }

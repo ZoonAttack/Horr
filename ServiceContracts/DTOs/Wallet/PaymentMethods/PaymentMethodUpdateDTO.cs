@@ -1,10 +1,12 @@
 
 
+using Entities.Enums;
+
 namespace ServiceContracts.DTOs.Wallet.PaymentMethods
 {
     public class PaymentMethodUpdateDTO
     {
-        public string MethodName { get; set; }
+        public PaymentMethodTypes Method { get; set; }
         public string AccountIdentifier { get; set; }
     }
 }

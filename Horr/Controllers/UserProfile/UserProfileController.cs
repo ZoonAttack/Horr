@@ -51,24 +51,22 @@ namespace Horr.Controllers.UserProfile
         [HttpPatch("name")]
         public async Task<IActionResult> UpdateName([FromBody] string fullname)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);//This is for MVC. For API, another validation is required
+            if (!ModelState.IsValid) return BadRequest(ModelState);
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
             var response = await _profileSettingsService.UpdateFullNameAsync(userId, fullname);
             if (!response.Succeeded) return NotFound(response.Errors);
-            return Ok(new { message = "Name updated successfully.",  data = response });
+            return Ok(new { message = "Name updated successfully.",  data = response.Data });
         }
 
         [HttpPatch("email")]
         public async Task<IActionResult> UpdateEmail([FromBody] string email)
         {
-            //Feels like the name is misleading.. gotta change it later!
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
 
             var response = await _profileSettingsService.UpdateEmailAsync(userId, email);
-            //Changing the actual email is an Authentication concern. so this service only sends the confirmation email
             if (!response.Succeeded) return NotFound(response.Errors);
-            return Ok(new { message = response.Message, data = response });
+            return Ok(new { message = response.Message, data = response.Data });
         }
 
         [HttpPatch("title")]
@@ -77,7 +75,7 @@ namespace Horr.Controllers.UserProfile
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
             var response = await _profileSettingsService.UpdateTitleAsync(userId, title);
             if (!response.Succeeded) return NotFound(response.Errors);
-            return Ok(new { message = "Title updated successfully.", data = response });
+            return Ok(new { message = "Title updated successfully.", data = response.Data });
         }
 
         [HttpPatch("bio")]
@@ -86,7 +84,7 @@ namespace Horr.Controllers.UserProfile
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
             var response = await _profileSettingsService.UpdateBioAsync(userId, bio);
             if (!response.Succeeded) return NotFound(response.Errors);
-            return Ok(new { message = "Bio updated successfully.", data = response });
+            return Ok(new { message = "Bio updated successfully.", data = response.Data });
         }
 
         [HttpPatch("experience-level")]
@@ -95,17 +93,33 @@ namespace Horr.Controllers.UserProfile
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
             var response = await _profileSettingsService.UpdateExperienceAsync(userId, dto);
             if (!response.Succeeded) return BadRequest(response.Errors);
-            return Ok(new { message = "Experience updated successfully.", data = response });
+            return Ok(new { message = "Experience updated successfully.", data = response.Data });
         }
 
         [HttpPost("payment-method")]
         public async Task<IActionResult> CreatePaymentMethod([FromBody] PaymentMethodCreateDTO dto)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
             var response = await _profileSettingsService.CreateBillingAsync(userId, dto);
             if (!response.Succeeded) return NotFound("User not found.");
-            return Ok(new { message = "Billing information created successfully." });
+            return Ok(new { message = "Billing information created successfully.", data = response.Data });
+        }
+        [HttpPut("payment-method/{id}")]
+        public async Task<IActionResult> UpdatePaymentMethod([FromRoute] string id, [FromBody] PaymentMethodUpdateDTO dto)
+        {
+            var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            var response = await _profileSettingsService.UpdateBillingAsync(userId, id, dto);
+            if (!response.Succeeded) return NotFound("User not found.");
+            return Ok(response.Data);
+        }
+
+        [HttpDelete("payment-method/{id}")]
+        public async Task<IActionResult> DeletePaymentMethod([FromRoute] string id)
+        {
+            var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            var response = await _profileSettingsService.DeleteBillingAsync(userId, id);
+            if (!response.Succeeded) return NotFound("User not found.");
+            return NoContent();
         }
 
         //[HttpPatch("account")]
