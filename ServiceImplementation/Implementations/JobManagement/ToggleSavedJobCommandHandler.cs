@@ -61,6 +61,16 @@ namespace ServiceImplementation.Implementations.JobManagement
                     SavedAt = DateTime.UtcNow
                 });
                 isSaved = true;
+
+                // Automatically track the save interaction
+                _context.Interactions.Add(new Entities.Users.Interactions
+                {
+                    UserId = request.FreelancerId,
+                    TargetId = request.JobPostId,
+                    TargetType = "job",
+                    Action = Entities.Enums.InteractionTypes.Save,
+                    CreatedAt = DateTime.UtcNow
+                });
             }
 
             await _context.SaveChangesAsync(cancellationToken);

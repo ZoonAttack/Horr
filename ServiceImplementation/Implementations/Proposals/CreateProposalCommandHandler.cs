@@ -85,6 +85,17 @@ namespace ServiceImplementation.Implementations.Proposals
             };
 
             _context.Proposals.Add(proposal);
+
+            // Automatically track the apply interaction
+            _context.Interactions.Add(new Entities.Users.Interactions
+            {
+                UserId = request.FreelancerId,
+                TargetId = dto.JobPostId,
+                TargetType = "job",
+                Action = Entities.Enums.InteractionTypes.Apply,
+                CreatedAt = DateTime.UtcNow
+            });
+
             await _context.SaveChangesAsync(cancellationToken);
 
             return new Result<ProposalReadDTO>
