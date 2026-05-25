@@ -104,7 +104,7 @@ namespace Horr.Controllers.UserProfile
             if (!response.Succeeded) return NotFound("User not found.");
             return Ok(new { message = "Billing information created successfully.", data = response.Data });
         }
-        [HttpPut("payment-method/{id}")]
+        [HttpPatch("payment-method/{id}")]
         public async Task<IActionResult> UpdatePaymentMethod([FromRoute] string id, [FromBody] PaymentMethodUpdateDTO dto)
         {
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
