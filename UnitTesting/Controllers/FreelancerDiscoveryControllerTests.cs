@@ -13,6 +13,7 @@ using Xunit;
 using MediatR;
 using ServiceImplementation.Implementations.ClientImplementation.DiscoveryCQRS;
 using System.Threading;
+using ServiceContracts.DTOs.Skill.FreelancerSkill;
 
 namespace UnitTesting.Controllers
 {
@@ -44,7 +45,25 @@ namespace UnitTesting.Controllers
             // Arrange
             var data = new PagedResult<FreelancerReadDTO>
             {
-                Items = new List<FreelancerReadDTO> { new FreelancerReadDTO { Id = "freelancer1" } },
+                Items = new List<FreelancerReadDTO>
+                {
+                    new FreelancerReadDTO
+                    {
+                        Id = "freelancer1",
+                        FullName = "Jane Doe",
+                        Title = "Senior Designer",
+                        ProfilePicturePath = "/avatars/jane.jpg",
+                        IsVerified = true,
+                        TrustScore = 95.0M,
+                        AverageRating = 4.8,
+                        TotalReviews = 12,
+                        IsSaved = true,
+                        Skills = new List<FreelancerSkillReadDTO>
+                        {
+                            new FreelancerSkillReadDTO { SkillName = "Figma", ProficiencyLevel = Entities.Enums.ProficiencyLevel.Expert }
+                        }
+                    }
+                },
                 TotalCount = 1,
                 Page = 1,
                 PageSize = 10
@@ -98,7 +117,25 @@ namespace UnitTesting.Controllers
             // Arrange
             var data = new PagedResult<FreelancerReadDTO>
             {
-                Items = new List<FreelancerReadDTO> { new FreelancerReadDTO { Id = "freelancer1" } },
+                Items = new List<FreelancerReadDTO>
+                {
+                    new FreelancerReadDTO
+                    {
+                        Id = "freelancer1",
+                        FullName = "Jane Doe",
+                        Title = "Senior Designer",
+                        ProfilePicturePath = "/avatars/jane.jpg",
+                        IsVerified = true,
+                        TrustScore = 95.0M,
+                        AverageRating = 4.8,
+                        TotalReviews = 12,
+                        IsSaved = true,
+                        Skills = new List<FreelancerSkillReadDTO>
+                        {
+                            new FreelancerSkillReadDTO { SkillName = "Figma", ProficiencyLevel = Entities.Enums.ProficiencyLevel.Expert }
+                        }
+                    }
+                },
                 TotalCount = 1,
                 Page = 1,
                 PageSize = 10

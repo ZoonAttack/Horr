@@ -37,8 +37,10 @@ namespace ServiceImplementation.Implementations.ClientImplementation.DiscoveryCQ
                 }
             }
             var query = _context.Users
+                .Include(u => u.ReviewsReceived)
                 .Include(u => u.Freelancer)
                     .ThenInclude(f => f.FreelancerSkills)
+                        .ThenInclude(fs => fs.Skill)
                 .Include(u => u.Freelancer)
                     .ThenInclude(f => f.Languages)
                 .Include(u => u.Freelancer)
@@ -111,7 +113,25 @@ namespace ServiceImplementation.Implementations.ClientImplementation.DiscoveryCQ
                 .Take(request.PageSize)
                 .ToListAsync(cancellationToken);
 
-            var dtos = items.Select(u => u.Freelancer_To_FreelancerRead()).ToList();
+            var savedFreelancerIds = new HashSet<string>();
+            if (!string.IsNullOrEmpty(request.ClientId))
+            {
+                savedFreelancerIds = (await _context.SavedFreelancers
+                    .Where(sf => sf.ClientId == request.ClientId)
+                    .Select(sf => sf.FreelancerId)
+                    .ToListAsync(cancellationToken))
+                    .ToHashSet();
+            }
+
+            var dtos = items.Select(u =>
+            {
+                var validReviews = u.ReviewsReceived?.Where(r => !r.IsDeleted).ToList() ?? new List<Entities.Review.Review>();
+                double avgRating = validReviews.Any() ? Math.Round(validReviews.Average(r => r.Rating), 1) : 0.0;
+                int totalReviews = validReviews.Count;
+                bool isSaved = savedFreelancerIds.Contains(u.Id);
+
+                return u.Freelancer_To_FreelancerRead(isSaved, avgRating, totalReviews);
+            }).ToList();
 
             return new Result<PagedResult<FreelancerReadDTO>>
             {
@@ -151,8 +171,10 @@ namespace ServiceImplementation.Implementations.ClientImplementation.DiscoveryCQ
             var query = _context.SavedFreelancers
                 .Include(sf => sf.Freelancer)
                     .ThenInclude(f => f.User)
+                        .ThenInclude(u => u.ReviewsReceived)
                 .Include(sf => sf.Freelancer)
                     .ThenInclude(f => f.FreelancerSkills)
+                        .ThenInclude(fs => fs.Skill)
                 .Include(sf => sf.Freelancer)
                     .ThenInclude(f => f.Languages)
                 .Include(sf => sf.Freelancer)
@@ -174,7 +196,15 @@ namespace ServiceImplementation.Implementations.ClientImplementation.DiscoveryCQ
             // Note: f.User is the Entities.Users.User object that contains Freelancer_To_FreelancerRead()
             var dtos = savedItems
                 .Where(sf => sf.Freelancer != null && sf.Freelancer.User != null)
-                .Select(sf => sf.Freelancer.User.Freelancer_To_FreelancerRead())
+                .Select(sf =>
+                {
+                    var u = sf.Freelancer.User;
+                    var validReviews = u.ReviewsReceived?.Where(r => !r.IsDeleted).ToList() ?? new List<Entities.Review.Review>();
+                    double avgRating = validReviews.Any() ? Math.Round(validReviews.Average(r => r.Rating), 1) : 0.0;
+                    int totalReviews = validReviews.Count;
+
+                    return u.Freelancer_To_FreelancerRead(isSaved: true, averageRating: avgRating, totalReviews: totalReviews);
+                })
                 .ToList();
 
             return new Result<PagedResult<FreelancerReadDTO>>
