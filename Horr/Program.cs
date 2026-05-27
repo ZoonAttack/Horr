@@ -18,6 +18,10 @@ using ServiceContracts;
 using ServiceImplementation.Implementations;
 using Services.Freelancer;
 using ServiceImplementation.Implementations.FreelancerImplementation;
+using ServiceContracts.AI;
+using ServiceContracts.Recommendations;
+using ServiceImplementation.Implementations.AI;
+using ServiceImplementation.Implementations.Recommendations;
 
 namespace Horr
 {
@@ -69,6 +73,9 @@ namespace Horr
             builder.Services.AddScoped<ICategoryService, CategoryService>();
             builder.Services.AddScoped<ISkillService, SkillService>();
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+            builder.Services.AddHttpClient();
+            builder.Services.AddScoped<IGeminiService, GeminiService>();
+            builder.Services.AddScoped<IRecommendationService, RecommendationService>();
 
             // MediatR Registration
             builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(AuthService).Assembly));
