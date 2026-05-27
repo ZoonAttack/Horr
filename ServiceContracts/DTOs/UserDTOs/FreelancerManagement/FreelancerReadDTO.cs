@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Entities.Enums;
+using ServiceContracts.DTOs.Skill.FreelancerSkill;
 // Assuming your helper DTOs (LanguageReadDto, etc.) are in the same namespace or referenced.
 
 namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
@@ -13,12 +14,17 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
         public string FullName { get; set; }
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
+        public string? ProfilePicturePath { get; set; }
         public bool IsVerified { get; set; }
         public decimal TrustScore { get; set; }
+        public double AverageRating { get; set; }
+        public int TotalReviews { get; set; }
+        public bool IsSaved { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 
         // --- Freelancer Profile Properties ---
+        public string? Title { get; set; }
         public string? Bio { get; set; }
         public decimal? HourlyRate { get; set; }
         public string Availability { get; set; }
@@ -45,5 +51,8 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
 
         // 4. Employment [company, city, country, title, currently work there or not, from date, to date]
         public ICollection<EmploymentReadDto> EmploymentHistory { get; set; } = new List<EmploymentReadDto>();
+
+        // 5. Skills tags
+        public ICollection<FreelancerSkillReadDTO> Skills { get; set; } = new List<FreelancerSkillReadDTO>();
     }
 }

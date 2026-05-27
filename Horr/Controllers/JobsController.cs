@@ -91,5 +91,35 @@ namespace Horr.Controllers
             if (!result.Succeeded) return BadRequest(result);
             return Ok(result.Data);
         }
+
+        [HttpPut("update-job/{id}")]
+        [Authorize(Policy = "ClientOnly")]
+        public async Task<IActionResult> UpdateJob(string id, [FromBody] JobDetailsDto jobDetails)
+        {
+            string userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var result = await _jobService.UpdateJobAsync(userId, id, jobDetails);
+            if (result.Succeeded)
+            {
+                return Ok(result.Data);
+            }
+            return BadRequest(result);
+        }
+
+        [HttpDelete("delete-job/{id}")]
+        [Authorize(Policy = "ClientOnly")]
+        public async Task<IActionResult> DeleteJob(string id)
+        {
+            string userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var result = await _jobService.DeleteJobAsync(userId, id);
+            if (result.Succeeded)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
     }
 }
