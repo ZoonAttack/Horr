@@ -1,6 +1,12 @@
 namespace Entities.Enums
 {
-
+    public enum InteractionTypes
+    {
+        View,
+        Save,
+        Apply,
+        Hire
+    }
 
     /// <summary>
     /// Represents the user role types in the system.

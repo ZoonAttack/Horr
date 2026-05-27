@@ -86,6 +86,8 @@ namespace Entities
         public DbSet<JobInvitation> JobInvitations { get; set; }
         public DbSet<Category> Categories { get; set; }
 
+
+        public DbSet<Interactions> Interactions { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

@@ -47,6 +47,17 @@ namespace ServiceImplementation.Implementations.ClientImplementation.DiscoveryCQ
             };
 
             _context.SavedFreelancers.Add(savedFreelancer);
+
+            // Automatically track the save freelancer interaction
+            _context.Interactions.Add(new Entities.Users.Interactions
+            {
+                UserId = request.ClientId,
+                TargetId = request.FreelancerId,
+                TargetType = "freelancer",
+                Action = Entities.Enums.InteractionTypes.Save,
+                CreatedAt = DateTime.UtcNow
+            });
+
             var result = await _context.SaveChangesAsync(cancellationToken);
             return new Result<bool> { Succeeded = result > 0, Data = result > 0 };
         }
