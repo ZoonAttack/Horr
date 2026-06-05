@@ -18,10 +18,10 @@ namespace ServiceImplementation.Implementations.ClientImplementation.DiscoveryCQ
         bool SortDescending,
         int Page,
         int PageSize,
-        string? ClientId = null) : IRequest<Result<PagedResult<FreelancerReadDTO>>>;
+        string? ClientId = null) : IRequest<Result<PagedResult<FreelancerSearchResultDTO>>>;
 
     public record GetSavedFreelancersQuery(
         string ClientId,
         int Page,
-        int PageSize) : IRequest<Result<PagedResult<FreelancerReadDTO>>>;
+        int PageSize) : IRequest<Result<PagedResult<FreelancerSearchResultDTO>>>;
 }

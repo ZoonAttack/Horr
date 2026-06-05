@@ -43,17 +43,16 @@ namespace UnitTesting.Controllers
         public async Task SearchFreelancers_ShouldReturnOk_WithPagedResult()
         {
             // Arrange
-            var data = new PagedResult<FreelancerReadDTO>
+            var data = new PagedResult<FreelancerSearchResultDTO>
             {
-                Items = new List<FreelancerReadDTO>
+                Items = new List<FreelancerSearchResultDTO>
                 {
-                    new FreelancerReadDTO
+                    new FreelancerSearchResultDTO
                     {
                         Id = "freelancer1",
                         FullName = "Jane Doe",
                         Title = "Senior Designer",
                         ProfilePicturePath = "/avatars/jane.jpg",
-                        IsVerified = true,
                         TrustScore = 95.0M,
                         AverageRating = 4.8,
                         TotalReviews = 12,
@@ -68,9 +67,9 @@ namespace UnitTesting.Controllers
                 Page = 1,
                 PageSize = 10
             };
-            var expectedResult = new Result<PagedResult<FreelancerReadDTO>> { Succeeded = true, Data = data };
+            var expectedResult = new Result<PagedResult<FreelancerSearchResultDTO>> { Succeeded = true, Data = data };
 
-            _mediatorMock.Setup(m => m.Send<Result<PagedResult<FreelancerReadDTO>>>(It.IsAny<SearchFreelancersQuery>(), It.IsAny<CancellationToken>()))
+            _mediatorMock.Setup(m => m.Send<Result<PagedResult<FreelancerSearchResultDTO>>>(It.IsAny<SearchFreelancersQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedResult);
 
             // Act
@@ -115,17 +114,16 @@ namespace UnitTesting.Controllers
         public async Task GetSavedFreelancers_ShouldReturnOk_WithPagedResult()
         {
             // Arrange
-            var data = new PagedResult<FreelancerReadDTO>
+            var data = new PagedResult<FreelancerSearchResultDTO>
             {
-                Items = new List<FreelancerReadDTO>
+                Items = new List<FreelancerSearchResultDTO>
                 {
-                    new FreelancerReadDTO
+                    new FreelancerSearchResultDTO
                     {
                         Id = "freelancer1",
                         FullName = "Jane Doe",
                         Title = "Senior Designer",
                         ProfilePicturePath = "/avatars/jane.jpg",
-                        IsVerified = true,
                         TrustScore = 95.0M,
                         AverageRating = 4.8,
                         TotalReviews = 12,
@@ -140,9 +138,9 @@ namespace UnitTesting.Controllers
                 Page = 1,
                 PageSize = 10
             };
-            var expectedResult = new Result<PagedResult<FreelancerReadDTO>> { Succeeded = true, Data = data };
+            var expectedResult = new Result<PagedResult<FreelancerSearchResultDTO>> { Succeeded = true, Data = data };
 
-            _mediatorMock.Setup(m => m.Send<Result<PagedResult<FreelancerReadDTO>>>(It.IsAny<GetSavedFreelancersQuery>(), It.IsAny<CancellationToken>()))
+            _mediatorMock.Setup(m => m.Send<Result<PagedResult<FreelancerSearchResultDTO>>>(It.IsAny<GetSavedFreelancersQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedResult);
 
             // Act

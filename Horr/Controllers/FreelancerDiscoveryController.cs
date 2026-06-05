@@ -21,7 +21,7 @@ namespace Horr.Controllers
         }
 
         [HttpGet("search")]
-        public async Task<ActionResult<PagedResult<FreelancerReadDTO>>> SearchFreelancers(
+        public async Task<ActionResult<PagedResult<FreelancerSearchResultDTO>>> SearchFreelancers(
             [FromQuery] string? searchQuery,
             [FromQuery] List<string>? skillIds,
             [FromQuery] decimal? minHourlyRate,
@@ -71,7 +71,7 @@ namespace Horr.Controllers
         }
 
         [HttpGet("saved")]
-        public async Task<ActionResult<PagedResult<FreelancerReadDTO>>> GetSavedFreelancers(
+        public async Task<ActionResult<PagedResult<FreelancerSearchResultDTO>>> GetSavedFreelancers(
             [FromQuery] int page = 1, 
             [FromQuery] int pageSize = 10)
         {

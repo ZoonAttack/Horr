@@ -85,6 +85,46 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
             return dto;
         }
 
+        public static FreelancerSearchResultDTO Freelancer_To_FreelancerSearchResult(this Entities.Users.User user)
+        {
+            return Freelancer_To_FreelancerSearchResult(user, false, 0.0, 0);
+        }
+
+        public static FreelancerSearchResultDTO Freelancer_To_FreelancerSearchResult(
+            this Entities.Users.User user, 
+            bool isSaved, 
+            double averageRating, 
+            int totalReviews)
+        {
+            if (user == null)
+            {
+                return null;
+            }
+
+            var dto = new FreelancerSearchResultDTO
+            {
+                Id = user.Id,
+                FullName = user.FullName,
+                Title = user.Freelancer?.Title,
+                ProfilePicturePath = user.ProfilePicturePath,
+                AverageRating = averageRating,
+                TotalReviews = totalReviews,
+                HourlyRate = user.Freelancer?.HourlyRate,
+                TrustScore = user.TrustScore,
+                Availability = user.Freelancer?.Availability ?? string.Empty,
+                Bio = user.Bio,
+                IsSaved = isSaved
+            };
+
+            if (user.Freelancer != null)
+            {
+                dto.Skills = user.Freelancer.FreelancerSkills?
+                    .Select(fs => fs.FreelancerSkill_To_FreelancerSkillRead()).ToList() ?? new List<FreelancerSkillReadDTO>();
+            }
+
+            return dto;
+        }
+
         // =========================================================
         // 2. CREATE DTO TO ENTITY (Mapping from FreelancerCreateDTO to Entities.Users.User)
         // =========================================================
