@@ -10,6 +10,7 @@ using ServiceImplementation.Exceptions;
 using ServiceContracts.DTOs.Responses;
 using ServiceImplementation.Helpers;
 using System.IO;
+using Microsoft.AspNetCore.Hosting;
 
 namespace ServiceImplementation.Implementations.Communication
 {
@@ -17,11 +18,13 @@ namespace ServiceImplementation.Implementations.Communication
     {
         private readonly AppDbContext _context;
         private readonly IHubContext<ChatHub> _hubContext;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public SendMessageCommandHandler(AppDbContext context, IHubContext<ChatHub> hubContext)
+        public SendMessageCommandHandler(AppDbContext context, IHubContext<ChatHub> hubContext, IWebHostEnvironment webHostEnvironment)
         {
             _context = context;
             _hubContext = hubContext;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         public async Task<Result<MessageDto>> Handle(SendMessageCommand request, CancellationToken cancellationToken)
@@ -101,51 +104,21 @@ namespace ServiceImplementation.Implementations.Communication
                 MessageType msgType = MessageType.Text;
                 string? textContent = request.Body;
 
-                // Handle file uploads validation
                 if (request.Files != null && request.Files.Count > 0)
                 {
                     var firstFile = request.Files[0];
                     var ext = Path.GetExtension(firstFile.FileName).ToLower();
-                    if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif")
+                    if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif" || ext == ".webp")
                     {
                         msgType = MessageType.Image;
                     }
-                    else if (ext == ".mp4" || ext == ".mov" || ext == ".avi" || ext == ".mkv")
+                    else if (ext == ".mp4" || ext == ".mov" || ext == ".avi" || ext == ".webm" || ext == ".mkv")
                     {
                         msgType = MessageType.Video;
                     }
                     else if (ext == ".pdf")
                     {
                         msgType = MessageType.Pdf;
-                    }
-
-                    // Check file size limits for all files
-                    foreach (var file in request.Files)
-                    {
-                        var fileExt = Path.GetExtension(file.FileName).ToLower();
-                        long limit = 10 * 1024 * 1024; // default 10MB
-                        if (fileExt == ".png" || fileExt == ".jpg" || fileExt == ".jpeg" || fileExt == ".gif")
-                        {
-                            limit = 10 * 1024 * 1024;
-                        }
-                        else if (fileExt == ".mp4" || fileExt == ".mov" || fileExt == ".avi" || fileExt == ".mkv")
-                        {
-                            limit = 100 * 1024 * 1024;
-                        }
-                        else if (fileExt == ".pdf")
-                        {
-                            limit = 15 * 1024 * 1024;
-                        }
-
-                        if (file.Length > limit)
-                        {
-                            return new Result<MessageDto>
-                            {
-                                Succeeded = false,
-                                ErrorCode = "FILE_TOO_LARGE",
-                                Message = $"File {file.FileName} exceeds the allowed limit."
-                            };
-                        }
                     }
                 }
 
@@ -167,7 +140,9 @@ namespace ServiceImplementation.Implementations.Communication
                 // Handle file uploads saving
                 if (request.Files != null && request.Files.Count > 0)
                 {
-                    var uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "chat");
+                    var webRootPath = _webHostEnvironment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                    var uploadPath = Path.Combine(webRootPath, "uploads", "chat", request.ChatId);
+                    
                     if (!Directory.Exists(uploadPath))
                     {
                         Directory.CreateDirectory(uploadPath);
@@ -178,7 +153,8 @@ namespace ServiceImplementation.Implementations.Communication
                         var file = request.Files[i];
                         if (file.Length > 0)
                         {
-                            var uniqueFileName = $"{Guid.NewGuid()}_{file.FileName}";
+                            var extension = Path.GetExtension(file.FileName);
+                            var uniqueFileName = $"{Guid.NewGuid()}{extension}";
                             var filePath = Path.Combine(uploadPath, uniqueFileName);
 
                             using (var stream = new FileStream(filePath, FileMode.Create))
@@ -186,7 +162,7 @@ namespace ServiceImplementation.Implementations.Communication
                                 await file.CopyToAsync(stream, cancellationToken);
                             }
 
-                            var fileUrlPath = $"/uploads/chat/{uniqueFileName}";
+                            var fileUrlPath = $"/uploads/chat/{request.ChatId}/{uniqueFileName}";
 
                             if (i == 0)
                             {

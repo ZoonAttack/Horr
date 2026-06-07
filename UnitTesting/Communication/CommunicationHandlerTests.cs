@@ -7,6 +7,7 @@ using FluentAssertions;
 using ServiceImplementation.Hubs;
 using MediatR;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -31,6 +32,7 @@ namespace UnitTesting.Communication
         private readonly Mock<IHubContext<ChatHub>> _mockHubContext;
         private readonly Mock<IHubClients> _mockClients;
         private readonly Mock<IClientProxy> _mockClientProxy;
+        private readonly Mock<IWebHostEnvironment> _mockWebHostEnvironment;
 
         public CommunicationHandlerTests()
         {
@@ -43,6 +45,9 @@ namespace UnitTesting.Communication
 
             _mockHubContext.Setup(h => h.Clients).Returns(_mockClients.Object);
             _mockClients.Setup(c => c.Group(It.IsAny<string>())).Returns(_mockClientProxy.Object);
+
+            _mockWebHostEnvironment = new Mock<IWebHostEnvironment>();
+            _mockWebHostEnvironment.Setup(w => w.WebRootPath).Returns(Directory.GetCurrentDirectory());
         }
 
         public void Dispose()
@@ -71,7 +76,7 @@ namespace UnitTesting.Communication
         {
             // Arrange
             await SeedBaseData();
-            var handler = new SendMessageCommandHandler(_context, _mockHubContext.Object);
+            var handler = new SendMessageCommandHandler(_context, _mockHubContext.Object, _mockWebHostEnvironment.Object);
             var command = new SendMessageCommand("conv-1", "user-1", "Hello World");
 
             // Act
@@ -89,7 +94,7 @@ namespace UnitTesting.Communication
         {
             // Arrange
             await SeedBaseData();
-            var handler = new SendMessageCommandHandler(_context, _mockHubContext.Object);
+            var handler = new SendMessageCommandHandler(_context, _mockHubContext.Object, _mockWebHostEnvironment.Object);
             
             var file1 = new FormFile(new MemoryStream(Encoding.UTF8.GetBytes("test")), 0, 4, "files", "test1.jpg");
             var file2 = new FormFile(new MemoryStream(Encoding.UTF8.GetBytes("test2")), 0, 5, "files", "test2.pdf");
@@ -114,7 +119,7 @@ namespace UnitTesting.Communication
         {
             // Arrange
             await SeedBaseData();
-            var handler = new SendMessageCommandHandler(_context, _mockHubContext.Object);
+            var handler = new SendMessageCommandHandler(_context, _mockHubContext.Object, _mockWebHostEnvironment.Object);
             var command = new SendMessageCommand("conv-1", "user-1", "Hello SignalR");
 
             // Act
@@ -295,7 +300,7 @@ namespace UnitTesting.Communication
             // Arrange
             await SeedBaseData();
             await SeedJobData();
-            var handler = new SendMessageCommandHandler(_context, _mockHubContext.Object);
+            var handler = new SendMessageCommandHandler(_context, _mockHubContext.Object, _mockWebHostEnvironment.Object);
             
             var command = new SendMessageCommand(
                 "new-conv-id", 
@@ -323,7 +328,7 @@ namespace UnitTesting.Communication
         {
             // Arrange
             await SeedBaseData();
-            var handler = new SendMessageCommandHandler(_context, _mockHubContext.Object);
+            var handler = new SendMessageCommandHandler(_context, _mockHubContext.Object, _mockWebHostEnvironment.Object);
             
             var command = new SendMessageCommand(
                 "new-conv-id", 
@@ -347,7 +352,7 @@ namespace UnitTesting.Communication
         {
             // Arrange
             await SeedBaseData();
-            var handler = new SendMessageCommandHandler(_context, _mockHubContext.Object);
+            var handler = new SendMessageCommandHandler(_context, _mockHubContext.Object, _mockWebHostEnvironment.Object);
             
             var command = new SendMessageCommand(
                 "new-conv-id", 

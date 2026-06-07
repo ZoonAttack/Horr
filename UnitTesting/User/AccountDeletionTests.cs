@@ -2,6 +2,7 @@ using Entities;
 using Entities.Users;
 using FluentAssertions;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using ServiceContracts.DTOs.Responses;
@@ -42,7 +43,9 @@ namespace UnitTesting.User
             await _context.SaveChangesAsync();
 
             var mockHubContext = new Mock<IHubContext<ChatHub>>();
-            var handler = new SendMessageCommandHandler(_context, mockHubContext.Object);
+            var mockWebHost = new Mock<IWebHostEnvironment>();
+            mockWebHost.Setup(w => w.WebRootPath).Returns(System.IO.Directory.GetCurrentDirectory());
+            var handler = new SendMessageCommandHandler(_context, mockHubContext.Object, mockWebHost.Object);
             var command = new SendMessageCommand("conv-1", "deleted-user", "Hello");
 
             // Act

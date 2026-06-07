@@ -78,6 +78,46 @@ namespace Horr.Controllers
                 return BadRequest("Message body is required.");
             }
 
+            if (files != null && files.Count > 0)
+            {
+                foreach (var file in files)
+                {
+                    var ext = Path.GetExtension(file.FileName).ToLower();
+                    long limit = 0;
+                    if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif" || ext == ".webp")
+                    {
+                        limit = 10 * 1024 * 1024; // 10MB
+                    }
+                    else if (ext == ".mp4" || ext == ".mov" || ext == ".avi" || ext == ".webm")
+                    {
+                        limit = 150 * 1024 * 1024; // 150MB
+                    }
+                    else if (ext == ".pdf")
+                    {
+                        limit = 20 * 1024 * 1024; // 20MB
+                    }
+                    else
+                    {
+                        return BadRequest(new ProblemDetails
+                        {
+                            Status = 400,
+                            Title = "Invalid File Extension",
+                            Detail = $"File extension {ext} is not allowed."
+                        });
+                    }
+
+                    if (file.Length > limit)
+                    {
+                        return BadRequest(new ProblemDetails
+                        {
+                            Status = 400,
+                            Title = "File Too Large",
+                            Detail = $"File {file.FileName} exceeds the allowed limit of {limit / (1024 * 1024)}MB."
+                        });
+                    }
+                }
+            }
+
             var result = await _mediator.Send(new SendMessageCommand(id, userId, body, files, contractId, receiverId));
             if (!result.Succeeded)
             {
