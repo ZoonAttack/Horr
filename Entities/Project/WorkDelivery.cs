@@ -27,6 +27,9 @@ namespace Entities.Project
 
         public ActionStatus ActionStatus { get; set; } = ActionStatus.NeedsAttention;
 
+        [Column(TypeName = "text")]
+        public string? RevisionNote { get; set; }
+
         // ── Navigation ────────────────────────────────────────────────────
         public virtual ICollection<DeliveryAttachment> Attachments { get; set; } = new List<DeliveryAttachment>();
     }

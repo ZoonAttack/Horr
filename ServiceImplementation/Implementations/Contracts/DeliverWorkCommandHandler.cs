@@ -12,16 +12,19 @@ using ServiceContracts.DTOs.Responses;
 using ServiceImplementation.Helpers;
 using ServiceContracts.DTOs.Contract;
 using ServiceImplementation.Exceptions;
+using ServiceContracts.Storage;
 
 namespace ServiceImplementation.Implementations.Contracts
 {
     public class DeliverWorkCommandHandler : IRequestHandler<DeliverWorkCommand, Result<WorkDeliveryDto>>
     {
         private readonly AppDbContext _context;
+        private readonly IFileStorageService _fileStorage;
 
-        public DeliverWorkCommandHandler(AppDbContext context)
+        public DeliverWorkCommandHandler(AppDbContext context, IFileStorageService fileStorage)
         {
             _context = context;
+            _fileStorage = fileStorage;
         }
 
         public async Task<Result<WorkDeliveryDto>> Handle(DeliverWorkCommand request, CancellationToken cancellationToken)
@@ -87,30 +90,19 @@ namespace ServiceImplementation.Implementations.Contracts
             // Handle file uploads
             if (request.Files != null && request.Files.Count > 0)
             {
-                var uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "deliveries");
-                if (!Directory.Exists(uploadPath))
-                {
-                    Directory.CreateDirectory(uploadPath);
-                }
-
                 foreach (var file in request.Files)
                 {
                     if (file.Length > 0)
                     {
-                        var fileName = $"{Guid.NewGuid()}_{file.FileName}";
-                        var filePath = Path.Combine(uploadPath, fileName);
+                        var storedFile = await _fileStorage.SaveAsync(file, "deliveries", cancellationToken);
 
-                        using (var stream = new FileStream(filePath, FileMode.Create))
-                        {
-                            await file.CopyToAsync(stream, cancellationToken);
-                        }
-
-                        // Entity only has FileUrl and FileType
                         var attachment = new DeliveryAttachment
                         {
                             WorkDelivery = delivery,
-                            FileUrl = $"/uploads/deliveries/{fileName}",
-                            FileType = Path.GetExtension(file.FileName)
+                            FileUrl = storedFile.FileUrl,
+                            OriginalFileName = storedFile.OriginalFileName,
+                            FileType = storedFile.FileType,
+                            FileSizeBytes = storedFile.FileSizeBytes
                         };
                         _context.DeliveryAttachments.Add(attachment);
                     }
@@ -119,17 +111,16 @@ namespace ServiceImplementation.Implementations.Contracts
 
             await _context.SaveChangesAsync(cancellationToken);
 
+            var dto = delivery.ToDto();
+            if (dto.Attachments == null || dto.Attachments.Count == 0)
+            {
+                dto.Attachments = delivery.Attachments?.Select(a => a.ToDto()).ToList() ?? new System.Collections.Generic.List<AttachmentDto>();
+            }
+
             return new Result<WorkDeliveryDto>
             {
                 Succeeded = true,
-                Data = new WorkDeliveryDto
-                {
-                    Id = delivery.Id,
-                    ContractId = delivery.ContractId,
-                    Note = delivery.Note,
-                    ActionStatus = delivery.ActionStatus,
-                    SubmittedAt = delivery.SubmittedAt
-                }
+                Data = dto
             };
         }
     }

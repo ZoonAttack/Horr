@@ -7,6 +7,7 @@ using ServiceImplementation.Implementations.Contracts;
 using ServiceImplementation.Implementations.Reviews;
 using System.Security.Claims;
 using Entities.Enums;
+using ServiceImplementation.Helpers;
 
 namespace Horr.Controllers
 {
@@ -105,6 +106,26 @@ namespace Horr.Controllers
                 return BadRequest(result);
             }
             return StatusCode(201, result.Data);
+        }
+
+        [HttpGet("{id}/deliveries/{deliveryId}/attachments/{attachmentId}/download")]
+        [ProducesResponseType(typeof(FileResult), 200)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(403)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> DownloadAttachment(int id, int deliveryId, int attachmentId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var result = await _mediator.Send(new DownloadAttachmentQuery(id, deliveryId, attachmentId, userId));
+            if (!result.Succeeded)
+            {
+                if (result.ErrorCode == ErrorCodes.Unauthorized) return Forbid();
+                return NotFound(result);
+            }
+
+            return PhysicalFile(result.Data.PhysicalPath, result.Data.ContentType, result.Data.OriginalFileName);
         }
 
         [HttpPost("{id}/complete")]

@@ -17,6 +17,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System;
 using Services;
+using ServiceContracts.Storage;
 
 namespace UnitTesting.Project
 {
@@ -136,7 +137,11 @@ namespace UnitTesting.Project
                     .Returns(Task.CompletedTask);
             var files = new List<IFormFile> { fileMock.Object };
 
-            var handler = new DeliverWorkCommandHandler(context);
+            var storageMock = new Mock<IFileStorageService>();
+            storageMock.Setup(s => s.SaveAsync(It.IsAny<IFormFile>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                       .ReturnsAsync(new StoredFileResult { FileUrl = "/uploads/deliveries/test.txt", OriginalFileName = "test.txt", FileType = ".txt", FileSizeBytes = ms.Length });
+
+            var handler = new DeliverWorkCommandHandler(context, storageMock.Object);
             var command = new DeliverWorkCommand(contract.Id, "Here is my work", freelancerId, files);
 
             // Act
@@ -211,7 +216,8 @@ namespace UnitTesting.Project
             context.Contracts.Add(contract);
             await context.SaveChangesAsync();
 
-            var handler = new DeliverWorkCommandHandler(context);
+            var storageMock = new Mock<IFileStorageService>();
+            var handler = new DeliverWorkCommandHandler(context, storageMock.Object);
             var command = new DeliverWorkCommand(30, "note", freelancerId, new List<IFormFile>());
 
             var result = await handler.Handle(command, CancellationToken.None);

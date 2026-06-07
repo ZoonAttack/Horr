@@ -1,4 +1,5 @@
 using Entities.Project;
+using System.Linq;
 
 namespace ServiceContracts.DTOs.Contract
 {
@@ -13,8 +14,10 @@ namespace ServiceContracts.DTOs.Contract
                 Id = delivery.Id,
                 ContractId = delivery.ContractId,
                 Note = delivery.Note,
+                RevisionNote = delivery.RevisionNote,
                 ActionStatus = delivery.ActionStatus,
-                SubmittedAt = delivery.SubmittedAt
+                SubmittedAt = delivery.SubmittedAt,
+                Attachments = delivery.Attachments?.Select(a => a.ToDto()).ToList() ?? new()
             };
         }
     }
