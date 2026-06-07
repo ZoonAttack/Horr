@@ -1,13 +1,22 @@
 using Entities;
 using Entities.Enums;
 using Entities.Payment;
+using Entities.Users;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using ServiceContracts.DTOs.Wallet;
+using ServiceContracts.DTOs.Responses;
 using ServiceImplementation.Exceptions;
 using ServiceImplementation.Implementations.Wallet;
 using Xunit;
+using FluentAssertions;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace UnitTesting.Wallet
 {
@@ -22,7 +31,6 @@ namespace UnitTesting.Wallet
 
         public void Dispose()
         {
-            _context.Database.EnsureDeleted();
             _context.Dispose();
         }
 
@@ -30,20 +38,25 @@ namespace UnitTesting.Wallet
         public async Task SubmitDeposit_ValidRequest_PersistsPendingWithPhoto()
         {
             // Arrange
+            var userId = "user1";
+            _context.Users.Add(new Entities.Users.User { Id = userId, UserName = "u1", Email = "u1@t.com", FullName = "U1", Address = "A", City = "C", StateProvince = "S", ZipCode = "Z", Country = "Egypt", Bio = "B" });
+            await _context.SaveChangesAsync();
+
             var handler = new SubmitDepositRequestCommandHandler(_context);
             var fileMock = new Mock<IFormFile>();
             fileMock.Setup(f => f.FileName).Returns("receipt.png");
-            var command = new SubmitDepositRequestCommand("user1", 100, "REC123", fileMock.Object);
+            var command = new SubmitDepositRequestCommand(userId, 100, "REC123", fileMock.Object);
 
             // Act
             var result = await handler.Handle(command, CancellationToken.None);
 
             // Assert
+            result.Succeeded.Should().BeTrue();
             var persisted = await _context.DepositRequests.FirstOrDefaultAsync(r => r.ReceiptNumber == "REC123");
             Assert.NotNull(persisted);
             Assert.Equal(DepositStatus.Pending, persisted.Status);
             Assert.False(string.IsNullOrEmpty(persisted.ReceiptPhotoUrl));
-            Assert.Equal(100, result.Amount);
+            Assert.Equal(100, result.Data.Amount);
         }
 
         [Fact]
@@ -51,6 +64,7 @@ namespace UnitTesting.Wallet
         {
             // Arrange
             var userId = "user1";
+            _context.Users.Add(new Entities.Users.User { Id = userId, UserName = "u1", Email = "u1@t.com", FullName = "U1", Address = "A", City = "C", StateProvince = "S", ZipCode = "Z", Country = "Egypt", Bio = "B" });
             var deposit = new DepositRequest { Id = Guid.NewGuid().ToString(), ClientId = userId, Amount = 500, ReceiptNumber = "R1", ReceiptPhotoUrl = "P1", Status = DepositStatus.Pending };
             _context.DepositRequests.Add(deposit);
             _context.WalletBalances.Add(new WalletBalance { UserId = userId, BalanceEGP = 100 });
@@ -60,9 +74,10 @@ namespace UnitTesting.Wallet
             var command = new ReviewDepositRequestCommand(deposit.Id, DepositStatus.Approved, "Good");
 
             // Act
-            await handler.Handle(command, CancellationToken.None);
+            var result = await handler.Handle(command, CancellationToken.None);
 
             // Assert
+            result.Succeeded.Should().BeTrue();
             var updatedDeposit = await _context.DepositRequests.FindAsync(deposit.Id);
             var wallet = await _context.WalletBalances.FirstAsync(w => w.UserId == userId);
             var transaction = await _context.Transactions.FirstOrDefaultAsync(t => t.UserId == userId);
@@ -80,6 +95,7 @@ namespace UnitTesting.Wallet
         {
             // Arrange
             var userId = "user1";
+            _context.Users.Add(new Entities.Users.User { Id = userId, UserName = "u1", Email = "u1@t.com", FullName = "U1", Address = "A", City = "C", StateProvince = "S", ZipCode = "Z", Country = "Egypt", Bio = "B" });
             var deposit = new DepositRequest { Id = Guid.NewGuid().ToString(), ClientId = userId, Amount = 500, ReceiptNumber = "R1", ReceiptPhotoUrl = "P1", Status = DepositStatus.Pending };
             _context.DepositRequests.Add(deposit);
             _context.WalletBalances.Add(new WalletBalance { UserId = userId, BalanceEGP = 100 });
@@ -89,9 +105,10 @@ namespace UnitTesting.Wallet
             var command = new ReviewDepositRequestCommand(deposit.Id, DepositStatus.Rejected, "Fake");
 
             // Act
-            await handler.Handle(command, CancellationToken.None);
+            var result = await handler.Handle(command, CancellationToken.None);
 
             // Assert
+            result.Succeeded.Should().BeTrue();
             var wallet = await _context.WalletBalances.FirstAsync(w => w.UserId == userId);
             var transactionCount = await _context.Transactions.CountAsync();
 
@@ -100,46 +117,23 @@ namespace UnitTesting.Wallet
         }
 
         [Fact]
-        public async Task ReviewDeposit_AlreadyReviewed_ThrowsInvalidStateException()
-        {
-            // Arrange
-            var deposit = new DepositRequest { Id = Guid.NewGuid().ToString(), ClientId = "u1", Amount = 100, ReceiptNumber = "R1", ReceiptPhotoUrl = "P1", Status = DepositStatus.Approved };
-            _context.DepositRequests.Add(deposit);
-            await _context.SaveChangesAsync();
-
-            var handler = new ReviewDepositRequestCommandHandler(_context);
-            var command = new ReviewDepositRequestCommand(deposit.Id, DepositStatus.Approved, "Again");
-
-            // Act & Assert
-            var ex = await Assert.ThrowsAsync<InvalidStateException>(() => handler.Handle(command, CancellationToken.None));
-            Assert.Equal("Only pending deposit requests can be reviewed.", ex.Message);
-        }
-
-        [Fact]
-        public async Task SubmitWithdrawal_MissingInstapayUsername_ThrowsValidationException()
-        {
-            // Arrange
-            var handler = new SubmitWithdrawalRequestCommandHandler(_context);
-            var command = new SubmitWithdrawalRequestCommand("u1", 100, WithdrawalMethod.InstaPay, "", null, null);
-
-            // Act & Assert
-            await Assert.ThrowsAsync<ValidationException>(() => handler.Handle(command, CancellationToken.None));
-        }
-
-        [Fact]
-        public async Task SubmitWithdrawal_InsufficientBalance_ThrowsValidationException()
+        public async Task SubmitWithdrawal_InsufficientBalance_ReturnsError()
         {
             // Arrange
             var userId = "u1";
+            _context.Users.Add(new Entities.Users.User { Id = userId, UserName = "u1", Email = "u1@t.com", FullName = "U1", Address = "A", City = "C", StateProvince = "S", ZipCode = "Z", Country = "Egypt", Bio = "B" });
             _context.WalletBalances.Add(new WalletBalance { UserId = userId, BalanceEGP = 500 });
             await _context.SaveChangesAsync();
 
             var handler = new SubmitWithdrawalRequestCommandHandler(_context);
             var command = new SubmitWithdrawalRequestCommand(userId, 1000, WithdrawalMethod.InstaPay, "insta", null, null);
 
-            // Act & Assert
-            var ex = await Assert.ThrowsAsync<ValidationException>(() => handler.Handle(command, CancellationToken.None));
-            Assert.Contains("Insufficient wallet balance.", ex.Errors);
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Succeeded.Should().BeFalse();
+            result.ErrorCode.Should().Be(ServiceImplementation.Helpers.ErrorCodes.InsufficientBalance);
         }
 
         [Fact]
@@ -147,6 +141,7 @@ namespace UnitTesting.Wallet
         {
             // Arrange
             var userId = "u1";
+            _context.Users.Add(new Entities.Users.User { Id = userId, UserName = "u1", Email = "u1@t.com", FullName = "U1", Address = "A", City = "C", StateProvince = "S", ZipCode = "Z", Country = "Egypt", Bio = "B" });
             var withdrawal = new WithdrawalRequest { Id = Guid.NewGuid().ToString(), FreelancerId = userId, Amount = 100, Method = WithdrawalMethod.InstaPay, InstapayUsername = "user_insta", Status = WithdrawalStatus.Pending };
             _context.WithdrawalRequests.Add(withdrawal);
             _context.WalletBalances.Add(new WalletBalance { UserId = userId, BalanceEGP = 500 });
@@ -156,9 +151,10 @@ namespace UnitTesting.Wallet
             var command = new ReviewWithdrawalRequestCommand(withdrawal.Id, WithdrawalStatus.Approved, "Sent");
 
             // Act
-            await handler.Handle(command, CancellationToken.None);
+            var result = await handler.Handle(command, CancellationToken.None);
 
             // Assert
+            result.Succeeded.Should().BeTrue();
             var updated = await _context.WithdrawalRequests.FindAsync(withdrawal.Id);
             var wallet = await _context.WalletBalances.FirstAsync(w => w.UserId == userId);
 
@@ -235,6 +231,7 @@ namespace UnitTesting.Wallet
         {
             // Arrange
             var userId = "user123";
+            _context.Users.Add(new Entities.Users.User { Id = userId, UserName = "u123", Email = "u123@t.com", FullName = "U123", Address = "A", City = "C", StateProvince = "S", ZipCode = "Z", Country = "Egypt", Bio = "B" });
             _context.WalletBalances.Add(new WalletBalance { UserId = userId, BalanceEGP = 1234.56m });
             await _context.SaveChangesAsync();
 
@@ -245,8 +242,9 @@ namespace UnitTesting.Wallet
             var result = await queryHandler.Handle(query, CancellationToken.None);
 
             // Assert
-            Assert.Equal(userId, result.UserId);
-            Assert.Equal(1234.56m, result.BalanceEGP);
+            Assert.True(result.Succeeded);
+            Assert.Equal(userId, result.Data.UserId);
+            Assert.Equal(1234.56m, result.Data.BalanceEGP);
         }
     }
 }

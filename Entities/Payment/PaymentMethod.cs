@@ -24,17 +24,17 @@ namespace Entities.Payment
 
             [Required]
             [MaxLength(50)]
-            public string? MethodName { get; set; } // e.g., "InstaPay", "Vodafone Cash"
+            public PaymentMethodTypes? Method { get; set; } // e.g., "InstaPay", "Vodafone Cash"
 
             [Required]
             [MaxLength(100)]
             public string AccountIdentifier { get; set; } // e.g., InstaPay ID or E-Wallet Phone Number
 
-            [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
-            public DateTime CreatedAt { get; set; }
 
-            // --- Navigation Properties ---
-            public virtual ICollection<FundRequest> FundRequests { get; set; } = new List<FundRequest>();
+            public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // --- Navigation Properties ---
+        public virtual ICollection<FundRequest> FundRequests { get; set; } = new List<FundRequest>();
             public virtual ICollection<WithdrawalRequest> WithdrawalRequests { get; set; } = new List<WithdrawalRequest>();
     }
 }

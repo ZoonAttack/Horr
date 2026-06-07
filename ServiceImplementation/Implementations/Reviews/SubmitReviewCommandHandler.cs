@@ -9,10 +9,11 @@ using Entities.Enums;
 using ServiceContracts.DTOs.Review;
 using ServiceImplementation.Exceptions;
 using ServiceImplementation.Helpers;
+using ServiceContracts.DTOs.Responses;
 
 namespace ServiceImplementation.Implementations.Reviews
 {
-    public class SubmitReviewCommandHandler : IRequestHandler<SubmitReviewCommand, ContractReviewReadDTO>
+    public class SubmitReviewCommandHandler : IRequestHandler<SubmitReviewCommand, Result<ContractReviewReadDTO>>
     {
         private readonly AppDbContext _context;
 
@@ -21,8 +22,19 @@ namespace ServiceImplementation.Implementations.Reviews
             _context = context;
         }
 
-        public async Task<ContractReviewReadDTO> Handle(SubmitReviewCommand request, CancellationToken cancellationToken)
+        public async Task<Result<ContractReviewReadDTO>> Handle(SubmitReviewCommand request, CancellationToken cancellationToken)
         {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.ReviewerId, cancellationToken);
+            if (user == null || user.IsDeleted)
+            {
+                return new Result<ContractReviewReadDTO>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message = "Account not found or is deleted."
+                };
+            }
+
             var contract = await _context.Contracts
                 .Include(c => c.WorkDeliveries)
                 .Include(c => c.ContractReviews)
@@ -30,27 +42,67 @@ namespace ServiceImplementation.Implementations.Reviews
 
             if (contract == null)
             {
-                throw new NotFoundException($"Contract with ID {request.ContractId} not found.");
+                return new Result<ContractReviewReadDTO>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.ContractNotFound,
+                    Message = $"Contract with ID {request.ContractId} not found."
+                };
             }
 
-            var errors = new System.Collections.Generic.List<string>();
             if (request.Dto.Rating < 1 || request.Dto.Rating > 5)
             {
-                errors.Add("Rating must be between 1 and 5.");
-            }
-            if (errors.Any())
-            {
-                throw new ValidationException("Validation failed", errors);
+                return new Result<ContractReviewReadDTO>
+                {
+                    Succeeded = false,
+                    ErrorCode = "INVALID_RATING",
+                    Message = "Rating must be between 1 and 5."
+                };
             }
 
             // Check if reviewer is part of the contract
             if (contract.ClientId != request.ReviewerId && contract.FreelancerId != request.ReviewerId)
             {
-                throw new UnauthorizedAccessException("Unauthorized: Only clients or freelancers associated with the contract can submit a review.");
+                return new Result<ContractReviewReadDTO>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.Unauthorized,
+                    Message = "Unauthorized: Only clients or freelancers associated with the contract can submit a review."
+                };
             }
 
             // State Guard
-            ContractStateGuard.EnsureCanSubmitReview(contract, request.ReviewerId);
+            try 
+            {
+                ContractStateGuard.EnsureCanSubmitReview(contract, request.ReviewerId);
+            }
+            catch (ConflictException ex)
+            {
+                return new Result<ContractReviewReadDTO>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.AlreadyReviewed,
+                    Message = ex.Message
+                };
+            }
+            catch (InvalidStateException ex)
+            {
+                return new Result<ContractReviewReadDTO>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.InvalidState,
+                    Message = ex.Message
+                };
+            }
+            catch (Exception ex)
+            {
+                return new Result<ContractReviewReadDTO>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.InvalidState,
+                    Message = ex.Message
+                };
+            }
 
             // Create review
             var review = new ContractReview
@@ -65,7 +117,6 @@ namespace ServiceImplementation.Implementations.Reviews
             _context.ContractReviews.Add(review);
             
             // Per EARS: Transition to Completed if both parties have reviewed
-            // We check the existing reviews plus the one being added.
             bool clientReviewExists = contract.ContractReviews.Any(r => r.ReviewerId == contract.ClientId) || request.ReviewerId == contract.ClientId;
             bool freelancerReviewExists = contract.ContractReviews.Any(r => r.ReviewerId == contract.FreelancerId) || request.ReviewerId == contract.FreelancerId;
 
@@ -76,7 +127,7 @@ namespace ServiceImplementation.Implementations.Reviews
 
             await _context.SaveChangesAsync(cancellationToken);
 
-            return new ContractReviewReadDTO
+            var dto = new ContractReviewReadDTO
             {
                 Id = review.Id,
                 ContractId = review.ContractId,
@@ -85,6 +136,8 @@ namespace ServiceImplementation.Implementations.Reviews
                 Comment = review.Comment,
                 CreatedAt = review.CreatedAt
             };
+
+            return new Result<ContractReviewReadDTO> { Succeeded = true, Data = dto };
         }
     }
 }

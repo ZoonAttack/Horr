@@ -1,5 +1,6 @@
 using Entities.Enums;
 using ServiceContracts.DTOs.UserDTOs.FreelancerManagement;
+using ServiceContracts.DTOs.Wallet.PaymentMethods;
 
 namespace ServiceContracts.DTOs.UserDTOs
 {
@@ -8,6 +9,11 @@ namespace ServiceContracts.DTOs.UserDTOs
         public string Id { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public string? Email { get; set; }
+        public string? UserName { get; set; }
+        public UserRole Role { get; set; }
+        public bool HasNotifications { get; set; }
+        public decimal Balance { get; set; }
+        public List<PaymentMethodReadDTO> PaymentMethods { get; set; } = new List<PaymentMethodReadDTO>();
         public string? PhoneNumber { get; set; }
         
         // Location
@@ -44,7 +50,13 @@ namespace ServiceContracts.DTOs.UserDTOs
 
     public static class UserProfileDtoExtensions
     {
-        public static UserProfileDto ToUserProfileDto(this Entities.Users.User user, string? pendingEmail = null, Entities.Users.Freelancer? freelancer = null)
+        public static UserProfileDto ToUserProfileDto(
+            this Entities.Users.User user, 
+            string? pendingEmail = null, 
+            Entities.Users.Freelancer? freelancer = null,
+            decimal balance = 0,
+            List<PaymentMethodReadDTO>? paymentMethods = null,
+            bool hasNotifications = false)
         {
             if (user == null) return null!;
             return new UserProfileDto
@@ -52,6 +64,11 @@ namespace ServiceContracts.DTOs.UserDTOs
                 Id = user.Id,
                 FullName = user.FullName,
                 Email = user.Email,
+                UserName = user.UserName,
+                Role = user.Role,
+                HasNotifications = hasNotifications,
+                Balance = balance,
+                PaymentMethods = paymentMethods ?? new List<PaymentMethodReadDTO>(),
                 PhoneNumber = user.PhoneNumber,
                 Address = user.Address,
                 City = user.City,

@@ -70,15 +70,39 @@ namespace ServiceImplementation.Implementations.Settings
                 Data = null
             };
 
-            var freelancer = await _context.Freelancers
-                .Include(f => f.Languages)
-                .Include(f => f.Education)
-                .Include(f => f.ExperienceDetails)
-                .Include(f => f.EmploymentHistory)
-                .FirstOrDefaultAsync(f => f.UserId == userId);
+            // Retrieve role-specific freelancer profile information if they are a freelancer
+            Freelancer? freelancer = null;
+            if (user.Role == UserRole.Freelancer)
+            {
+                freelancer = await _context.Freelancers
+                    .Include(f => f.Languages)
+                    .Include(f => f.Education)
+                    .Include(f => f.ExperienceDetails)
+                    .Include(f => f.EmploymentHistory)
+                    .FirstOrDefaultAsync(f => f.UserId == userId);
+            }
+
+            // Retrieve wallet balance
+            var wallet = await _context.WalletBalances.FirstOrDefaultAsync(w => w.UserId == userId);
+            var balance = wallet?.BalanceEGP ?? 0m;
+
+            // Retrieve payment methods
+            var paymentMethods = await _context.PaymentMethods
+                .Where(pm => pm.UserId == userId)
+                .ToListAsync();
+            var paymentMethodDtos = paymentMethods.Select(pm => pm.ToPaymentMethodRead()).ToList();
+
+            // Retrieve notifications flag
+            var hasNotifications = await _context.Messages
+                .AnyAsync(m => m.Status == MessageStatus.Unread && m.SenderId != userId &&
+                               _context.ConversationParticipants.Any(cp => cp.ConversationId == m.ConversationId && cp.UserId == userId));
 
             var isVerified = await ResolveAndSyncVerificationAsync(user);
-            var profileDto = user.ToUserProfileDto(freelancer: freelancer);
+            var profileDto = user.ToUserProfileDto(
+                freelancer: freelancer, 
+                balance: balance, 
+                paymentMethods: paymentMethodDtos,
+                hasNotifications: hasNotifications);
             profileDto.IsVerified = isVerified;
 
             return new Result<UserProfileDto>
@@ -192,12 +216,12 @@ namespace ServiceImplementation.Implementations.Settings
             };
         }
 
-        public async Task<Result<UserProfileDto>> UpdateFullNameAsync(string userId, string newName)
+        public async Task<Result<string>> UpdateFullNameAsync(string userId, string newName)
         {
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null || user.IsDeleted)
             {
-                return new Result<UserProfileDto>
+                return new Result<string>
                 {
                     Succeeded = false,
                     ErrorCode = ErrorCodes.UserNotFound,
@@ -209,20 +233,20 @@ namespace ServiceImplementation.Implementations.Settings
             user.FullName = newName;
             await _userManager.UpdateAsync(user);
 
-            return new Result<UserProfileDto>
+            return new Result<string>
             {
                 Succeeded = true,
                 Message   = "Full name updated successfully.",
-                Data      = user.ToUserProfileDto()
+                Data      = user.FullName
             };
         }
 
-        public async Task<Result<UserProfileDto>> UpdateEmailAsync(string userId, string newEmail)
+        public async Task<Result<string>> UpdateEmailAsync(string userId, string newEmail)
         {
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null || user.IsDeleted)
             {
-                return new Result<UserProfileDto>
+                return new Result<string>
                 {
                     Succeeded = false,
                     ErrorCode = ErrorCodes.UserNotFound,
@@ -235,13 +259,13 @@ namespace ServiceImplementation.Implementations.Settings
             var emailSent         = await _emailService.SendConfirmationEmailAsync(userId, newEmail, confirmationToken);
 
             return emailSent
-                ? new Result<UserProfileDto>
+                ? new Result<string>
                 {
                     Succeeded = true,
                     Message   = "Confirmation email sent to new address. Please confirm to complete the update.",
-                    Data      = user.ToUserProfileDto(pendingEmail: newEmail)
+                    Data      = newEmail
                 }
-                : new Result<UserProfileDto>
+                : new Result<string>
                 {
                     Succeeded = false,
                     ErrorCode = ErrorCodes.EmailSendFailed,
@@ -250,10 +274,10 @@ namespace ServiceImplementation.Implementations.Settings
                 };
         }
 
-        public async Task<Result<UserProfileDto>> UpdateTitleAsync(string userId, string newTitle)
+        public async Task<Result<string>> UpdateTitleAsync(string userId, string newTitle)
         {
             var user = await _userManager.FindByIdAsync(userId);
-            if (user == null || user.IsDeleted) return new Result<UserProfileDto>
+            if (user == null || user.IsDeleted) return new Result<string>
             {
                 Succeeded = false,
                 Errors = { "User not found." },
@@ -262,7 +286,7 @@ namespace ServiceImplementation.Implementations.Settings
             };
 
             var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
-            if (freelancer == null) return new Result<UserProfileDto>
+            if (freelancer == null) return new Result<string>
             {
                 Succeeded = false,
                 Errors = { "Freelancer profile not found." },
@@ -274,19 +298,19 @@ namespace ServiceImplementation.Implementations.Settings
             _context.Freelancers.Update(freelancer);
             await _context.SaveChangesAsync();
 
-            return new Result<UserProfileDto>
+            return new Result<string>
             {
                 Succeeded = true,
                 Errors = { },
                 Message = "Title updated successfully.",
-                Data = user.ToUserProfileDto(freelancer: freelancer)
+                Data = freelancer.Title
             };
         }
 
-        public async Task<Result<UserProfileDto>> UpdateBioAsync(string userId, string? newBio)
+        public async Task<Result<string?>> UpdateBioAsync(string userId, string? newBio)
         {
             var user = await _userManager.FindByIdAsync(userId);
-            if (user == null || user.IsDeleted) return new Result<UserProfileDto>
+            if (user == null || user.IsDeleted) return new Result<string?>
             {
                 Succeeded = false,
                 Errors = { "User not found." },
@@ -297,21 +321,19 @@ namespace ServiceImplementation.Implementations.Settings
             user.Bio = newBio;
             await _userManager.UpdateAsync(user);
 
-            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
-
-            return new Result<UserProfileDto>
+            return new Result<string?>
             {
                 Succeeded = true,
                 Errors = { },
                 Message = "Bio updated successfully.",
-                Data = user.ToUserProfileDto(freelancer: freelancer)
+                Data = user.Bio
             };
         }
 
-        public async Task<Result<UserProfileDto>> UpdateExperienceAsync(string userId, ExperienceUpdateDto dto)
+        public async Task<Result<ExperienceUpdateDto>> UpdateExperienceAsync(string userId, ExperienceUpdateDto dto)
         {
             var user = await _userManager.FindByIdAsync(userId);
-            if (user == null || user.IsDeleted) return new Result<UserProfileDto>
+            if (user == null || user.IsDeleted) return new Result<ExperienceUpdateDto>
             {
                 Succeeded = false,
                 Errors = { "User not found." },
@@ -320,7 +342,7 @@ namespace ServiceImplementation.Implementations.Settings
             };
 
             var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
-            if (freelancer == null) return new Result<UserProfileDto>
+            if (freelancer == null) return new Result<ExperienceUpdateDto>
             {
                 Succeeded = false,
                 Errors = { "Freelancer profile not found." },
@@ -330,7 +352,7 @@ namespace ServiceImplementation.Implementations.Settings
 
             if (!Enum.IsDefined(typeof(Entities.Enums.ExperienceLevel), dto.ExperienceLevel))
             {
-                return new Result<UserProfileDto>
+                return new Result<ExperienceUpdateDto>
                 {
                     Succeeded = false,
                     Errors = { "Invalid experience level value." },
@@ -345,22 +367,22 @@ namespace ServiceImplementation.Implementations.Settings
             _context.Freelancers.Update(freelancer);
             await _context.SaveChangesAsync();
 
-            return new Result<UserProfileDto>
+            return new Result<ExperienceUpdateDto>
             {
                 Succeeded = true,
                 Errors = { },
                 Message = "Experience updated successfully.",
-                Data = user.ToUserProfileDto(freelancer: freelancer)
+                Data = dto
             };
         }
 
 
-        public async Task<Result<UserProfileDto>> UpdateAccountAsync(string userId, AccountUpdateDto dto)
+        public async Task<Result<AccountUpdateDto>> UpdateAccountAsync(string userId, AccountUpdateDto dto)
         {
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null || user.IsDeleted)
             {
-                return new Result<UserProfileDto>
+                return new Result<AccountUpdateDto>
                 {
                     Succeeded = false,
                     ErrorCode = ErrorCodes.UserNotFound,
@@ -385,20 +407,20 @@ namespace ServiceImplementation.Implementations.Settings
 
             await _userManager.UpdateAsync(user);
 
-            return new Result<UserProfileDto>
+            return new Result<AccountUpdateDto>
             {
                 Succeeded = true,
                 Message   = "Account settings updated successfully.",
-                Data      = user.ToUserProfileDto()
+                Data      = dto
             };
         }
 
-        public async Task<Result<UserProfileDto>> UpdateLocationAsync(string userId, LocationUpdateDto dto)
+        public async Task<Result<LocationUpdateDto>> UpdateLocationAsync(string userId, LocationUpdateDto dto)
         {
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null || user.IsDeleted)
             {
-                return new Result<UserProfileDto>
+                return new Result<LocationUpdateDto>
                 {
                     Succeeded = false,
                     ErrorCode = ErrorCodes.UserNotFound,
@@ -417,20 +439,20 @@ namespace ServiceImplementation.Implementations.Settings
 
             await _userManager.UpdateAsync(user);
 
-            return new Result<UserProfileDto>
+            return new Result<LocationUpdateDto>
             {
                 Succeeded = true,
                 Message   = "Location settings updated successfully.",
-                Data      = user.ToUserProfileDto()
+                Data      = dto
             };
         }
 
-        public async Task<Result<UserProfileDto>> CreateBillingAsync(string userId, PaymentMethodCreateDTO dto)
+        public async Task<Result<PaymentMethodReadDTO>> CreateBillingAsync(string userId, PaymentMethodCreateDTO dto)
         {
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null || user.IsDeleted)
             {
-                return new Result<UserProfileDto>
+                return new Result<PaymentMethodReadDTO>
                 {
                     Succeeded = false,
                     ErrorCode = ErrorCodes.UserNotFound,
@@ -439,21 +461,92 @@ namespace ServiceImplementation.Implementations.Settings
                 };
             }
 
-            await _context.PaymentMethods.AddAsync(dto.ToPaymentMethod(userId));
+            var paymentMethod = dto.ToPaymentMethod(userId);
+            await _context.PaymentMethods.AddAsync(paymentMethod);
             await _context.SaveChangesAsync();
 
-            return new Result<UserProfileDto>
+            return new Result<PaymentMethodReadDTO>
             {
                 Succeeded = true,
                 Message   = "Payment method added successfully.",
-                Data      = user.ToUserProfileDto()
+                Data      = paymentMethod.ToPaymentMethodRead()
             };
         }
-
-        public async Task<Result<UserProfileDto>> UpdateFreelancerDetailsAsync(string userId, FreelancerUpdateDTO updateDto)
+        public async Task<Result<PaymentMethodReadDTO>> UpdateBillingAsync(string userId, string billingId, PaymentMethodUpdateDTO dto)
         {
             var user = await _userManager.FindByIdAsync(userId);
-            if (user == null || user.IsDeleted) return new Result<UserProfileDto>
+            if (user == null || user.IsDeleted)
+            {
+                return new Result<PaymentMethodReadDTO>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.UserNotFound,
+                    Message = "Failed to update payment method.",
+                    Errors = new List<string> { "User not found." }
+                };
+            }
+            var paymentMethod = await _context.PaymentMethods.FindAsync(billingId);
+            if (paymentMethod == null || paymentMethod.UserId != userId)
+            {
+                return new Result<PaymentMethodReadDTO>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.PaymentMethodNotFound,
+                    Message = "Failed to update payment method.",
+                    Errors = new List<string> { "Payment method not found." }
+                };
+            }
+            paymentMethod.AccountIdentifier = dto.AccountIdentifier;
+            paymentMethod.Method = dto.Method;
+            _context.PaymentMethods.Update(paymentMethod);
+            await _context.SaveChangesAsync();
+            return new Result<PaymentMethodReadDTO>
+            {
+                Succeeded = true,
+                Message = "Payment method updated successfully.",
+                Data = paymentMethod.ToPaymentMethodRead()
+            };
+        }
+        public async Task<Result<bool>> DeleteBillingAsync(string userId, string billingId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null || user.IsDeleted)
+            {
+                return new Result<bool>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.UserNotFound,
+                    Message = "Failed to delete payment method.",
+                    Errors = new List<string> { "User not found." }
+                };
+            }
+
+            var paymentMethod = await _context.PaymentMethods.FindAsync(billingId);
+            if (paymentMethod == null || paymentMethod.UserId != userId)
+            {
+                return new Result<bool>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.PaymentMethodNotFound,
+                    Message = "Failed to delete payment method.",
+                    Errors = new List<string> { "Payment method not found." }
+                };
+            }
+
+            _context.PaymentMethods.Remove(paymentMethod);
+            await _context.SaveChangesAsync();
+
+            return new Result<bool>
+            {
+                Succeeded = true,
+                Message = "Payment method deleted successfully.",
+                Data = true
+            };
+        }
+        public async Task<Result<FreelancerReadDTO>> UpdateFreelancerDetailsAsync(string userId, FreelancerUpdateDTO updateDto)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null || user.IsDeleted) return new Result<FreelancerReadDTO>
             {
                 Succeeded = false,
                 Errors = { "User not found." },
@@ -463,7 +556,7 @@ namespace ServiceImplementation.Implementations.Settings
 
             // Call the shared freelancer update logic
             var success = await _freelancerService.UpdateFreelancerAsync(userId, updateDto);
-            if (!success) return new Result<UserProfileDto>
+            if (!success) return new Result<FreelancerReadDTO>
             {
                 Succeeded = false,
                 Errors = { "Failed to update freelancer profile." },
@@ -472,18 +565,23 @@ namespace ServiceImplementation.Implementations.Settings
             };
 
             // Fetch the updated freelancer entity for the response
-            var freelancer = await _context.Freelancers
-                .Include(f => f.Languages)
-                .Include(f => f.Education)
-                .Include(f => f.EmploymentHistory)
-                .FirstOrDefaultAsync(f => f.UserId == userId);
+            var updatedUser = await _context.Users
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.Languages)
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.Education)
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.ExperienceDetails)
+                .Include(u => u.Freelancer)
+                    .ThenInclude(f => f.EmploymentHistory)
+                .FirstOrDefaultAsync(u => u.Id == userId);
 
-            return new Result<UserProfileDto>
+            return new Result<FreelancerReadDTO>
             {
                 Succeeded = true,
                 Message = "Freelancer details updated successfully.",
                 Errors = { },
-                Data = user.ToUserProfileDto(freelancer: freelancer)
+                Data = updatedUser.Freelancer_To_FreelancerRead()
             };
         }
 
@@ -513,5 +611,6 @@ namespace ServiceImplementation.Implementations.Settings
                 Data = user.ToUserProfileDto(freelancer: freelancer)
             };
         }
+
     }
 }

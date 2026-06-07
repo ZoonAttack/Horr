@@ -23,7 +23,8 @@ namespace ServiceContracts.DTOs.JobManagement
     {
         public string Id { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
-        public string Category { get; set; } = string.Empty;
+        public string CategoryId { get; set; } = string.Empty;
+        public string CategoryName { get; set; } = string.Empty;
         public ProjectComplexity Scope { get; set; }
         public ExperienceLevel ExperienceLevel { get; set; }
         public decimal Budget { get; set; }

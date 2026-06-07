@@ -3,6 +3,8 @@ using Entities;
 using Entities.Payment;
 using Entities.Enums;
 using ServiceContracts.DTOs.Wallet;
+using ServiceContracts.DTOs.Responses;
+using ServiceImplementation.Helpers;
 using ServiceImplementation.Exceptions;
 using ServiceImplementation.Mappings;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +12,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace ServiceImplementation.Implementations.Wallet
 {
-    public class SubmitDepositRequestCommandHandler : IRequestHandler<SubmitDepositRequestCommand, DepositRequestDto>
+    public class SubmitDepositRequestCommandHandler : IRequestHandler<SubmitDepositRequestCommand, Result<DepositRequestDto>>
     {
         private readonly AppDbContext _context;
 
@@ -19,9 +21,24 @@ namespace ServiceImplementation.Implementations.Wallet
             _context = context;
         }
 
-        public async Task<DepositRequestDto> Handle(SubmitDepositRequestCommand request, CancellationToken cancellationToken)
+        public async Task<Result<DepositRequestDto>> Handle(SubmitDepositRequestCommand request, CancellationToken cancellationToken)
         {
-            Validate(request);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.ClientId, cancellationToken);
+            if (user == null || user.IsDeleted)
+            {
+                return new Result<DepositRequestDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message = "Client account not found or is deleted."
+                };
+            }
+
+            var validationResult = Validate(request);
+            if (!validationResult.Succeeded)
+            {
+                return validationResult;
+            }
 
             // Mock file upload since no existing convention was found
             // In a real scenario, this would use a dedicated IFileService
@@ -29,7 +46,7 @@ namespace ServiceImplementation.Implementations.Wallet
 
             var depositRequest = new DepositRequest
             {
-                ClientId = request.ClientId,
+                ClientId = request.ClientId!,
                 Amount = request.Amount,
                 ReceiptNumber = request.ReceiptNumber,
                 ReceiptPhotoUrl = photoUrl,
@@ -40,32 +57,31 @@ namespace ServiceImplementation.Implementations.Wallet
             _context.DepositRequests.Add(depositRequest);
             await _context.SaveChangesAsync(cancellationToken);
 
-            return depositRequest.ToDto();
+            return new Result<DepositRequestDto>
+            {
+                Succeeded = true,
+                Data = depositRequest.ToDto()
+            };
         }
 
-        private void Validate(SubmitDepositRequestCommand request)
+        private Result<DepositRequestDto> Validate(SubmitDepositRequestCommand request)
         {
-            var errors = new List<string>();
-
             if (request.Amount <= 0)
             {
-                errors.Add("Amount must be greater than zero.");
+                return new Result<DepositRequestDto> { Succeeded = false, ErrorCode = ErrorCodes.InvalidAmount, Message = "Amount must be greater than zero." };
             }
 
             if (string.IsNullOrWhiteSpace(request.ReceiptNumber))
             {
-                errors.Add("Receipt number is required.");
+                return new Result<DepositRequestDto> { Succeeded = false, ErrorCode = ErrorCodes.MissingPaymentDetails, Message = "Receipt number is required." };
             }
 
             if (request.ReceiptPhoto == null)
             {
-                errors.Add("Receipt photo is required.");
+                return new Result<DepositRequestDto> { Succeeded = false, ErrorCode = ErrorCodes.MissingPaymentDetails, Message = "Receipt photo is required." };
             }
 
-            if (errors.Any())
-            {
-                throw new ValidationException("Validation failed", errors);
-            }
+            return new Result<DepositRequestDto> { Succeeded = true };
         }
 
         private async Task<string> MockUploadAsync(IFormFile file)

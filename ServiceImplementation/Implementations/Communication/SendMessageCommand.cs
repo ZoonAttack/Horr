@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using ServiceContracts.DTOs.Chat;
+using ServiceContracts.DTOs.Responses;
+using System.Collections.Generic;
 
 namespace ServiceImplementation.Implementations.Communication
 {
@@ -8,6 +10,8 @@ namespace ServiceImplementation.Implementations.Communication
         string ConversationId,
         string SenderId,
         string Body,
-        List<IFormFile>? Files = null
-    ) : IRequest<MessageDto>;
+        List<IFormFile>? Files = null,
+        string? JobPostId = null,
+        string? ReceiverId = null
+    ) : IRequest<Result<MessageDto>>;
 }

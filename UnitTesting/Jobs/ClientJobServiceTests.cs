@@ -29,12 +29,14 @@ namespace UnitTesting.Jobs
             var freelancer = new Entities.Users.User { Id = freelancerId, FullName = "Free", Role = UserRole.Freelancer, UserName = "f1", Bio = "Bio", Address = "Addr", City = "City", StateProvince = "S", ZipCode = "1", Country = "C" };
             context.Users.AddRange(client, freelancer);
 
-            var job = new JobPost { Id = "job1", Title = "Job 1", ClientId = clientId, Description = "Desc", Category = "Cat" };
+            context.Categories.Add(new Category { Id = "Cat", Name = "Cat", Slug = "cat" });
+
+            var job = new JobPost { Id = "job1", Title = "Job 1", ClientId = clientId, Description = "Desc", CategoryId = "Cat" };
             context.JobPosts.Add(job);
 
             // Add 2 Proposals
-            context.Proposals.Add(new Proposal { Id = 1, JobPostId = "job1", FreelancerId = freelancerId, CoverLetter = "CL1" });
-            context.Proposals.Add(new Proposal { Id = 2, JobPostId = "job1", FreelancerId = freelancerId, CoverLetter = "CL2" });
+            context.Proposals.Add(new Proposal { Id = 1, JobPostId = "job1", FreelancerId = freelancerId, CoverLetter = "CL1", BidRate = 10, HORRFee = 1 });
+            context.Proposals.Add(new Proposal { Id = 2, JobPostId = "job1", FreelancerId = freelancerId, CoverLetter = "CL2", BidRate = 10, HORRFee = 1 });
 
             // Add 1 Invitation
             context.JobInvitations.Add(new JobInvitation { Id = "inv1", JobPostId = "job1", FreelancerId = freelancerId, ClientId = clientId });

@@ -1,4 +1,5 @@
 using Mappers;
+using ServiceContracts.DTOs.Skill.FreelancerSkill;
 
 namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
 {
@@ -9,6 +10,15 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
         // =========================================================
 
         public static FreelancerReadDTO Freelancer_To_FreelancerRead(this Entities.Users.User user)
+        {
+            return Freelancer_To_FreelancerRead(user, false, 0.0, 0);
+        }
+
+        public static FreelancerReadDTO Freelancer_To_FreelancerRead(
+            this Entities.Users.User user, 
+            bool isSaved, 
+            double averageRating, 
+            int totalReviews)
         {
             if (user == null)
             {
@@ -23,8 +33,12 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
                 FullName = user.FullName,
                 Email = user.Email,
                 PhoneNumber = user.PhoneNumber,
+                ProfilePicturePath = user.ProfilePicturePath,
                 IsVerified = user.IsVerified,
                 TrustScore = user.TrustScore,
+                AverageRating = averageRating,
+                TotalReviews = totalReviews,
+                IsSaved = isSaved,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt,
 
@@ -36,6 +50,7 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
                 TimeZone = user.TimeZone,
 
                 // Freelancer Profile Mapping (must check for existence)
+                Title = user.Freelancer?.Title,
                 Bio = user.Bio,
                 HourlyRate = user.Freelancer?.HourlyRate,
                 Availability = user.Freelancer?.Availability,
@@ -61,6 +76,50 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
                 // Employment History
                 dto.EmploymentHistory = user.Freelancer.EmploymentHistory?
                     .Select(e => e.ToReadDto()).ToList() ?? new List<EmploymentReadDto>();
+
+                // Skills
+                dto.Skills = user.Freelancer.FreelancerSkills?
+                    .Select(fs => fs.FreelancerSkill_To_FreelancerSkillRead()).ToList() ?? new List<FreelancerSkillReadDTO>();
+            }
+
+            return dto;
+        }
+
+        public static FreelancerSearchResultDTO Freelancer_To_FreelancerSearchResult(this Entities.Users.User user)
+        {
+            return Freelancer_To_FreelancerSearchResult(user, false, 0.0, 0);
+        }
+
+        public static FreelancerSearchResultDTO Freelancer_To_FreelancerSearchResult(
+            this Entities.Users.User user, 
+            bool isSaved, 
+            double averageRating, 
+            int totalReviews)
+        {
+            if (user == null)
+            {
+                return null;
+            }
+
+            var dto = new FreelancerSearchResultDTO
+            {
+                Id = user.Id,
+                FullName = user.FullName,
+                Title = user.Freelancer?.Title,
+                ProfilePicturePath = user.ProfilePicturePath,
+                AverageRating = averageRating,
+                TotalReviews = totalReviews,
+                HourlyRate = user.Freelancer?.HourlyRate,
+                TrustScore = user.TrustScore,
+                Availability = user.Freelancer?.Availability ?? string.Empty,
+                Bio = user.Bio,
+                IsSaved = isSaved
+            };
+
+            if (user.Freelancer != null)
+            {
+                dto.Skills = user.Freelancer.FreelancerSkills?
+                    .Select(fs => fs.FreelancerSkill_To_FreelancerSkillRead()).ToList() ?? new List<FreelancerSkillReadDTO>();
             }
 
             return dto;
@@ -170,20 +229,32 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
         // Inside FreelancerExtensions static class
         public static FreelancerPublicReadDTO ToPublicReadDto(this Entities.Users.User user)
         {
+            return ToPublicReadDto(user, 0.0, 0);
+        }
+
+        public static FreelancerPublicReadDTO ToPublicReadDto(
+            this Entities.Users.User user,
+            double averageRating,
+            int totalReviews)
+        {
             if (user == null) return null;
 
             var dto = new FreelancerPublicReadDTO
             {
                 Id = user.Id,
                 FullName = user.FullName,
+                ProfilePicturePath = user.ProfilePicturePath,
 
                 // Mapping the Public Trust Signals
                 IsVerified = user.IsVerified,      
                 TrustScore = user.TrustScore,
+                AverageRating = averageRating,
+                TotalReviews = totalReviews,
                 City = user.City,
                 Country = user.Country,
 
                 // Freelancer Profile Mapping (null-safe access)
+                Title = user.Freelancer?.Title,
                 Bio = user.Bio,
                 HourlyRate = user.Freelancer?.HourlyRate,
                 Availability = user.Freelancer?.Availability,
@@ -198,7 +269,9 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
                 ExperienceDetails = user.Freelancer?.ExperienceDetails?
                     .Select(e => e.ToReadDto()).ToList() ?? new List<ExperienceDetailReadDto>(),
                 EmploymentHistory = user.Freelancer?.EmploymentHistory?
-                    .Select(e => e.ToReadDto()).ToList() ?? new List<EmploymentReadDto>()
+                    .Select(e => e.ToReadDto()).ToList() ?? new List<EmploymentReadDto>(),
+                Skills = user.Freelancer?.FreelancerSkills?
+                    .Select(fs => fs.FreelancerSkill_To_FreelancerSkillRead()).ToList() ?? new List<FreelancerSkillReadDTO>()
             };
             return dto;
         }

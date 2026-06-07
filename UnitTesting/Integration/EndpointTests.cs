@@ -67,6 +67,7 @@ namespace UnitTesting.Integration
         {
             await PrepareDatabaseAsync();
             _client.DefaultRequestHeaders.Add("X-Test-UserRole", "Client");
+            _client.DefaultRequestHeaders.Add("X-Test-UserId", "test-user-id");
 
             var content = new MultipartFormDataContent();
             content.Add(new StringContent("500"), "Amount");
@@ -89,6 +90,7 @@ namespace UnitTesting.Integration
         {
             await PrepareDatabaseAsync();
             _client.DefaultRequestHeaders.Add("X-Test-UserRole", "Client");
+            _client.DefaultRequestHeaders.Add("X-Test-UserId", "test-user-id");
 
             var content = new MultipartFormDataContent();
             content.Add(new StringContent("500"), "Amount");

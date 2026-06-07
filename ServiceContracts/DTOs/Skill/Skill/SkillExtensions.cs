@@ -16,7 +16,9 @@ namespace ServiceContracts.DTOs.Skill.Skill
             {
                 Id = skill.Id.ToString(),
                 Name = skill.Name,
-                Category = skill.Category,
+                CategoryId = skill.CategoryId,
+                CategoryName = skill.Category?.Name,
+                Category = skill.Category?.Name,
                 CreatedAt = skill.CreatedAt,
                 UpdatedAt = skill.UpdatedAt
             };

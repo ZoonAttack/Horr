@@ -1,5 +1,6 @@
 using MediatR;
 using ServiceContracts.DTOs.JobManagement;
+using ServiceContracts.DTOs.Responses;
 using Entities.Enums;
 
 namespace ServiceImplementation.Implementations.JobManagement
@@ -11,5 +12,5 @@ namespace ServiceImplementation.Implementations.JobManagement
         int Page = 1,
         int PageSize = 10,
         string? CurrentUserId = null
-    ) : IRequest<SearchJobsQueryResponse>;
+    ) : IRequest<Result<SearchJobsQueryResponse>>;
 }

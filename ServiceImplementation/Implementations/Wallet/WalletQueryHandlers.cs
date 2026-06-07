@@ -5,15 +5,17 @@ using ServiceContracts.DTOs.Wallet;
 using ServiceImplementation.Mappings;
 using Microsoft.EntityFrameworkCore;
 using Entities.Enums;
+using ServiceContracts.DTOs.Responses;
+using ServiceImplementation.Helpers;
 
 namespace ServiceImplementation.Implementations.Wallet
 {
     public class WalletQueryHandlers : 
-        IRequestHandler<GetMyDepositRequestsQuery, PagedResult<DepositRequestDto>>,
-        IRequestHandler<GetMyWithdrawalRequestsQuery, PagedResult<WithdrawalRequestDto>>,
-        IRequestHandler<GetPendingDepositRequestsQuery, IEnumerable<DepositRequestDto>>,
-        IRequestHandler<GetPendingWithdrawalRequestsQuery, IEnumerable<WithdrawalRequestDto>>,
-        IRequestHandler<GetWalletBalanceQuery, WalletBalanceDto>
+        IRequestHandler<GetMyDepositRequestsQuery, Result<PagedResult<DepositRequestDto>>>,
+        IRequestHandler<GetMyWithdrawalRequestsQuery, Result<PagedResult<WithdrawalRequestDto>>>,
+        IRequestHandler<GetPendingDepositRequestsQuery, Result<IEnumerable<DepositRequestDto>>>,
+        IRequestHandler<GetPendingWithdrawalRequestsQuery, Result<IEnumerable<WithdrawalRequestDto>>>,
+        IRequestHandler<GetWalletBalanceQuery, Result<WalletBalanceDto>>
     {
         private readonly AppDbContext _context;
 
@@ -22,8 +24,19 @@ namespace ServiceImplementation.Implementations.Wallet
             _context = context;
         }
 
-        public async Task<PagedResult<DepositRequestDto>> Handle(GetMyDepositRequestsQuery request, CancellationToken cancellationToken)
+        public async Task<Result<PagedResult<DepositRequestDto>>> Handle(GetMyDepositRequestsQuery request, CancellationToken cancellationToken)
         {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
+            if (user == null || user.IsDeleted)
+            {
+                return new Result<PagedResult<DepositRequestDto>>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message = "Account not found or is deleted."
+                };
+            }
+
             var query = _context.DepositRequests
                 .Where(r => r.ClientId == request.UserId)
                 .OrderByDescending(r => r.SubmittedAt);
@@ -34,17 +47,32 @@ namespace ServiceImplementation.Implementations.Wallet
                 .Take(request.PageSize)
                 .ToListAsync(cancellationToken);
 
-            return new PagedResult<DepositRequestDto>
+            return new Result<PagedResult<DepositRequestDto>>
             {
-                Items = items.Select(i => i.ToDto()),
-                TotalCount = totalCount,
-                Page = request.Page,
-                PageSize = request.PageSize
+                Succeeded = true,
+                Data = new PagedResult<DepositRequestDto>
+                {
+                    Items = items.Select(i => i.ToDto()),
+                    TotalCount = totalCount,
+                    Page = request.Page,
+                    PageSize = request.PageSize
+                }
             };
         }
 
-        public async Task<PagedResult<WithdrawalRequestDto>> Handle(GetMyWithdrawalRequestsQuery request, CancellationToken cancellationToken)
+        public async Task<Result<PagedResult<WithdrawalRequestDto>>> Handle(GetMyWithdrawalRequestsQuery request, CancellationToken cancellationToken)
         {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
+            if (user == null || user.IsDeleted)
+            {
+                return new Result<PagedResult<WithdrawalRequestDto>>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message = "Account not found or is deleted."
+                };
+            }
+
             var query = _context.WithdrawalRequests
                 .Where(r => r.FreelancerId == request.UserId)
                 .OrderByDescending(r => r.SubmittedAt);
@@ -55,44 +83,75 @@ namespace ServiceImplementation.Implementations.Wallet
                 .Take(request.PageSize)
                 .ToListAsync(cancellationToken);
 
-            return new PagedResult<WithdrawalRequestDto>
+            return new Result<PagedResult<WithdrawalRequestDto>>
             {
-                Items = items.Select(i => i.ToDto()),
-                TotalCount = totalCount,
-                Page = request.Page,
-                PageSize = request.PageSize
+                Succeeded = true,
+                Data = new PagedResult<WithdrawalRequestDto>
+                {
+                    Items = items.Select(i => i.ToDto()),
+                    TotalCount = totalCount,
+                    Page = request.Page,
+                    PageSize = request.PageSize
+                }
             };
         }
 
-        public async Task<IEnumerable<DepositRequestDto>> Handle(GetPendingDepositRequestsQuery request, CancellationToken cancellationToken)
+        public async Task<Result<IEnumerable<DepositRequestDto>>> Handle(GetPendingDepositRequestsQuery request, CancellationToken cancellationToken)
         {
             var items = await _context.DepositRequests
                 .Where(r => r.Status == DepositStatus.Pending)
                 .ToListAsync(cancellationToken);
 
-            return items.Select(i => i.ToDto());
+            return new Result<IEnumerable<DepositRequestDto>>
+            {
+                Succeeded = true,
+                Data = items.Select(i => i.ToDto())
+            };
         }
 
-        public async Task<IEnumerable<WithdrawalRequestDto>> Handle(GetPendingWithdrawalRequestsQuery request, CancellationToken cancellationToken)
+        public async Task<Result<IEnumerable<WithdrawalRequestDto>>> Handle(GetPendingWithdrawalRequestsQuery request, CancellationToken cancellationToken)
         {
             var items = await _context.WithdrawalRequests
                 .Where(r => r.Status == WithdrawalStatus.Pending)
                 .ToListAsync(cancellationToken);
 
-            return items.Select(i => i.ToDto());
+            return new Result<IEnumerable<WithdrawalRequestDto>>
+            {
+                Succeeded = true,
+                Data = items.Select(i => i.ToDto())
+            };
         }
 
-        public async Task<WalletBalanceDto> Handle(GetWalletBalanceQuery request, CancellationToken cancellationToken)
+        public async Task<Result<WalletBalanceDto>> Handle(GetWalletBalanceQuery request, CancellationToken cancellationToken)
         {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
+            if (user == null || user.IsDeleted)
+            {
+                return new Result<WalletBalanceDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message = "Account not found or is deleted."
+                };
+            }
+
             var wallet = await _context.WalletBalances
                 .FirstOrDefaultAsync(w => w.UserId == request.UserId, cancellationToken);
 
             if (wallet == null)
             {
-                return new WalletBalanceDto { UserId = request.UserId, BalanceEGP = 0 };
+                return new Result<WalletBalanceDto>
+                {
+                    Succeeded = true,
+                    Data = new WalletBalanceDto { UserId = request.UserId, BalanceEGP = 0 }
+                };
             }
 
-            return wallet.ToDto();
+            return new Result<WalletBalanceDto>
+            {
+                Succeeded = true,
+                Data = wallet.ToDto()
+            };
         }
     }
 }

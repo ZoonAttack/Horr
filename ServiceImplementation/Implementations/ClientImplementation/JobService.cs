@@ -25,15 +25,15 @@ namespace ServiceImplementation.Implementations.ClientImplementation
 
         public async Task<Result<JobDetailsDto>> CreateJobAsync(string clientId, JobDetailsDto jobDetails)
         {
-            var clientUser = await _db.Users.FirstOrDefaultAsync(u => u.Id == clientId && u.Role == UserRole.Client);
-            if (clientUser == null)
+            var clientUser = await _db.Users.FirstOrDefaultAsync(u => u.Id == clientId);
+            if (clientUser == null || clientUser.IsDeleted)
             {
                 return new Result<JobDetailsDto>
                 {
                     Succeeded = false,
                     ErrorCode = ErrorCodes.ClientNotFound,
-                    Message = "Client not found or unauthenticated.",
-                    Errors = new List<string> { "Invalid client ID." }
+                    Message = "Client not found",
+                    Errors = new List<string> { "Invalid client ID. || May be the client is deleted." }
                 };
             }
 
@@ -42,7 +42,7 @@ namespace ServiceImplementation.Implementations.ClientImplementation
                 Id              = Guid.NewGuid().ToString(),
                 Title           = jobDetails.Title,
                 Description     = jobDetails.Description,
-                Category        = jobDetails.Category,
+                CategoryId      = jobDetails.CategoryId,
                 Scope           = jobDetails.Scope,
                 ExperienceLevel = jobDetails.ExperienceLevel,
                 Budget          = jobDetails.Budget,
@@ -93,6 +93,7 @@ namespace ServiceImplementation.Implementations.ClientImplementation
         {
             var jobs = await _db.JobPosts
                 .Include(j => j.Client)
+                .Include(j => j.Category)
                 .Include(j => j.JobSkills)
                     .ThenInclude(js => js.Skill)
                 .Where(j => !j.IsDeleted)
@@ -103,7 +104,8 @@ namespace ServiceImplementation.Implementations.ClientImplementation
             {
                 Id              = j.Id,
                 Title           = j.Title,
-                Category        = j.Category,
+                CategoryId      = j.CategoryId,
+                CategoryName    = j.Category?.Name ?? string.Empty,
                 Scope           = j.Scope,
                 ExperienceLevel = j.ExperienceLevel,
                 Budget          = j.Budget,
@@ -126,6 +128,7 @@ namespace ServiceImplementation.Implementations.ClientImplementation
         {
             var job = await _db.JobPosts
                 .Include(j => j.Client)
+                .Include(j => j.Category)
                 .Include(j => j.JobSkills)
                     .ThenInclude(js => js.Skill)
                 .Include(j => j.JobMilestones)
@@ -147,7 +150,8 @@ namespace ServiceImplementation.Implementations.ClientImplementation
                 Id              = job.Id,
                 Title           = job.Title,
                 Description     = job.Description,
-                Category        = job.Category,
+                CategoryId      = job.CategoryId,
+                CategoryName    = job.Category?.Name ?? string.Empty,
                 Scope           = job.Scope,
                 ExperienceLevel = job.ExperienceLevel,
                 Budget          = job.Budget,
@@ -173,6 +177,17 @@ namespace ServiceImplementation.Implementations.ClientImplementation
         }
         public async Task<Result<List<ClientJobSummaryDto>>> GetClientJobsAsync(string clientId)
         {
+            var clientUser = await _db.Users.FirstOrDefaultAsync(u => u.Id == clientId);
+            if (clientUser == null || clientUser.IsDeleted)
+            {
+                return new Result<List<ClientJobSummaryDto>>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message = "Client account not found or is deleted."
+                };
+            }
+
             var jobs = await _db.JobPosts
                 .Where(j => j.ClientId == clientId && !j.IsDeleted)
                 .OrderByDescending(j => j.PostedAt)
@@ -226,6 +241,191 @@ namespace ServiceImplementation.Implementations.ClientImplementation
                 Succeeded = true,
                 Message = "Client jobs retrieved successfully.",
                 Data = result
+            };
+        }
+
+        public async Task<Result<JobDetailsDto>> UpdateJobAsync(string clientId, string jobId, JobDetailsDto jobDetails)
+        {
+            var jobPost = await _db.JobPosts
+                .Include(j => j.JobSkills)
+                .Include(j => j.JobMilestones)
+                .FirstOrDefaultAsync(j => j.Id == jobId && !j.IsDeleted);
+
+            if (jobPost == null)
+            {
+                return new Result<JobDetailsDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.JobNotFound,
+                    Message = "Job not found.",
+                    Errors = new List<string> { "Job with the specified ID does not exist." }
+                };
+            }
+
+            if (jobPost.ClientId != clientId)
+            {
+                return new Result<JobDetailsDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.Unauthorized,
+                    Message = "Unauthorized",
+                    Errors = new List<string> { "You are not authorized to update this job." }
+                };
+            }
+
+            // Check if there are active contracts (hired freelancers)
+            var hasActiveContracts = await _db.Contracts.AnyAsync(c => c.JobPostId == jobId &&
+                                                                       c.Status != ContractStatus.Rejected &&
+                                                                       c.Status != ContractStatus.Terminated);
+            if (hasActiveContracts)
+            {
+                return new Result<JobDetailsDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.InvalidState,
+                    Message = "Invalid State",
+                    Errors = new List<string> { "Cannot update a job with active contracts (hired freelancers)." }
+                };
+            }
+
+            if (!string.IsNullOrEmpty(jobDetails.CategoryId) && jobPost.CategoryId != jobDetails.CategoryId)
+            {
+                var categoryExists = await _db.Categories.AnyAsync(c => c.Id == jobDetails.CategoryId);
+                if (!categoryExists)
+                {
+                    return new Result<JobDetailsDto>
+                    {
+                        Succeeded = false,
+                        ErrorCode = ErrorCodes.CategoryNotFound,
+                        Message = "Category not found.",
+                        Errors = new List<string> { "The specified category does not exist." }
+                    };
+                }
+                jobPost.CategoryId = jobDetails.CategoryId;
+            }
+
+            jobPost.Title = jobDetails.Title;
+            jobPost.Description = jobDetails.Description;
+            jobPost.Scope = jobDetails.Scope;
+            jobPost.ExperienceLevel = jobDetails.ExperienceLevel;
+            jobPost.Budget = jobDetails.Budget;
+            jobPost.JobType = jobDetails.JobType;
+
+            // Update Skills
+            _db.JobSkills.RemoveRange(jobPost.JobSkills);
+            if (jobDetails.Skills != null && jobDetails.Skills.Any())
+            {
+                jobPost.JobSkills = jobDetails.Skills.Select(skillId => new JobSkill
+                {
+                    JobPostId = jobPost.Id,
+                    SkillId = skillId
+                }).ToList();
+            }
+
+            // Update Milestones
+            _db.JobMilestones.RemoveRange(jobPost.JobMilestones);
+            if (jobDetails.Milestones != null && jobDetails.Milestones.Any())
+            {
+                jobPost.JobMilestones = jobDetails.Milestones.Select(m => new JobMilestone
+                {
+                    JobPostId = jobPost.Id,
+                    Title = m.Title,
+                    Amount = m.Amount,
+                    DueDate = m.DueDate
+                }).ToList();
+            }
+
+            await _db.SaveChangesAsync();
+
+            // Retrieve updated job with client/category populated to map properly
+            var updatedJob = await _db.JobPosts
+                .Include(j => j.Client)
+                .Include(j => j.Category)
+                .Include(j => j.JobSkills)
+                    .ThenInclude(js => js.Skill)
+                .Include(j => j.JobMilestones)
+                .FirstAsync(j => j.Id == jobId);
+
+            var resultDto = new JobDetailsDto
+            {
+                Id = updatedJob.Id,
+                Title = updatedJob.Title,
+                Description = updatedJob.Description,
+                CategoryId = updatedJob.CategoryId,
+                CategoryName = updatedJob.Category?.Name ?? string.Empty,
+                Scope = updatedJob.Scope,
+                ExperienceLevel = updatedJob.ExperienceLevel,
+                Budget = updatedJob.Budget,
+                JobType = updatedJob.JobType,
+                PostedAt = updatedJob.PostedAt,
+                ClientName = updatedJob.Client?.FullName ?? "Unknown Client",
+                Skills = updatedJob.JobSkills.Select(js => js.Skill?.Name ?? js.SkillId).ToList(),
+                IsSaved = false,
+                Milestones = updatedJob.JobMilestones.Select(m => new ServiceContracts.DTOs.Contract.ContractMilestoneDto
+                {
+                    Title = m.Title,
+                    Amount = m.Amount,
+                    DueDate = m.DueDate
+                }).ToList()
+            };
+
+            return new Result<JobDetailsDto>
+            {
+                Succeeded = true,
+                Message = "Job updated successfully.",
+                Data = resultDto
+            };
+        }
+
+        public async Task<Result<bool>> DeleteJobAsync(string clientId, string jobId)
+        {
+            var jobPost = await _db.JobPosts.FirstOrDefaultAsync(j => j.Id == jobId && !j.IsDeleted);
+
+            if (jobPost == null)
+            {
+                return new Result<bool>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.JobNotFound,
+                    Message = "Job not found.",
+                    Errors = new List<string> { "Job with the specified ID does not exist." }
+                };
+            }
+
+            if (jobPost.ClientId != clientId)
+            {
+                return new Result<bool>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.Unauthorized,
+                    Message = "Unauthorized",
+                    Errors = new List<string> { "You are not authorized to delete this job." }
+                };
+            }
+
+            // Check if there are active contracts (hired freelancers)
+            var hasActiveContracts = await _db.Contracts.AnyAsync(c => c.JobPostId == jobId &&
+                                                                       c.Status != ContractStatus.Rejected &&
+                                                                       c.Status != ContractStatus.Terminated);
+            if (hasActiveContracts)
+            {
+                return new Result<bool>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.InvalidState,
+                    Message = "Invalid State",
+                    Errors = new List<string> { "Cannot delete a job with active contracts (hired freelancers)." }
+                };
+            }
+
+            jobPost.IsDeleted = true;
+            await _db.SaveChangesAsync();
+
+            return new Result<bool>
+            {
+                Succeeded = true,
+                Message = "Job deleted successfully.",
+                Data = true
             };
         }
     }

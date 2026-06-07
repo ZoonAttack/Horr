@@ -29,7 +29,8 @@ namespace Horr.Controllers
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             var result = await _mediator.Send(new GetConversationsQuery(userId));
-            return Ok(result);
+            if (!result.Succeeded) return BadRequest(result);
+            return Ok(result.Data);
         }
 
         [HttpGet("{id}/messages")]
@@ -41,7 +42,20 @@ namespace Horr.Controllers
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             var result = await _mediator.Send(new GetMessagesQuery(id, userId, page, pageSize));
-            return Ok(result);
+            if (!result.Succeeded)
+            {
+                if (result.ErrorCode == "CONVERSATION_NOT_FOUND")
+                {
+                    return NotFound(new ProblemDetails
+                    {
+                        Status = 404,
+                        Title = "Conversation Not Found",
+                        Detail = result.Message
+                    });
+                }
+                return BadRequest(result);
+            }
+            return Ok(result.Data);
         }
 
         [HttpPost("{id}/messages")]
@@ -49,7 +63,12 @@ namespace Horr.Controllers
         [ProducesResponseType(typeof(MessageDto), 201)]
         [ProducesResponseType(404)]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> SendMessage(string id, [FromForm] string body, [FromForm] List<IFormFile>? files)
+        public async Task<IActionResult> SendMessage(
+            string id, 
+            [FromForm] string body, 
+            [FromForm] List<IFormFile>? files,
+            [FromForm] string? jobPostId = null,
+            [FromForm] string? receiverId = null)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
@@ -59,8 +78,12 @@ namespace Horr.Controllers
                 return BadRequest("Message body is required.");
             }
 
-            var result = await _mediator.Send(new SendMessageCommand(id, userId, body, files));
-            return StatusCode(201, result);
+            var result = await _mediator.Send(new SendMessageCommand(id, userId, body, files, jobPostId, receiverId));
+            if (!result.Succeeded)
+            {
+                return BadRequest(result);
+            }
+            return StatusCode(201, result.Data);
         }
     }
 }

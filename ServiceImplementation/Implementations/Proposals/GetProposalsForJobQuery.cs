@@ -1,10 +1,11 @@
 using MediatR;
 using ServiceContracts.DTOs.Proposal;
 using Services;
+using ServiceContracts.DTOs.Responses;
 
 namespace ServiceImplementation.Implementations.Proposals
 {
-    public class GetProposalsForJobQuery : IRequest<PagedResult<ProposalSummaryForClientDto>>
+    public class GetProposalsForJobQuery : IRequest<Result<PagedResult<ProposalSummaryForClientDto>>>
     {
         public string JobId { get; set; }
         public string ClientId { get; set; }

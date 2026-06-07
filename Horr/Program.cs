@@ -14,8 +14,14 @@ using System.Text;
 using ServiceImplementation.Hubs;
 using Services.Client;
 using ServiceImplementation.Implementations.ClientImplementation;
+using ServiceContracts;
+using ServiceImplementation.Implementations;
 using Services.Freelancer;
 using ServiceImplementation.Implementations.FreelancerImplementation;
+using ServiceContracts.AI;
+using ServiceContracts.Recommendations;
+using ServiceImplementation.Implementations.AI;
+using ServiceImplementation.Implementations.Recommendations;
 using Services.Wallet;
 using ServiceImplementation.Implementations.Wallet;
 
@@ -57,6 +63,7 @@ namespace Horr
             // 2. REGISTER YOUR CUSTOM SERVICES (DI)
             // ==========================================
             // This tells ASP.NET: "When a controller asks for IAuthService, give them AuthService"
+            builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IProfileSettings, ProfileSettings>();
@@ -65,10 +72,15 @@ namespace Horr
             builder.Services.AddScoped<Services.Client.IJobService, ServiceImplementation.Implementations.ClientImplementation.JobService>();
             builder.Services.AddScoped<IFreelancerService, FreelancerService>();
             builder.Services.AddScoped<ServiceContracts.Client.IClientProfileService, ServiceImplementation.Implementations.ClientImplementation.ClientProfileService>();
+            builder.Services.AddScoped<ICategoryService, CategoryService>();
+            builder.Services.AddScoped<ISkillService, SkillService>();
             builder.Services.AddScoped<IWalletService, WalletService>();
             builder.Services.AddScoped<IEscrowService, EscrowService>();
             builder.Services.AddHostedService<ServiceImplementation.Implementations.Contracts.DeliveryAutoCompleteService>();
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+            builder.Services.AddHttpClient();
+            builder.Services.AddScoped<IGeminiService, GeminiService>();
+            builder.Services.AddScoped<IRecommendationService, RecommendationService>();
 
             // MediatR Registration
             builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(AuthService).Assembly));

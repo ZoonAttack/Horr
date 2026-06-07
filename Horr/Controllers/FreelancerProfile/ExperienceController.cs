@@ -38,21 +38,21 @@ namespace Horr.Controllers.FreelancerProfile
             var userId = GetCurrentUserId();
             var result = await _experienceService.GetUserExperienceAsync(userId);
             
-            if (result == null || !result.Any())
+            if (!result.Succeeded)
             {
-                return Ok(Array.Empty<ExperienceResponseDto>());
+                return BadRequest(result);
             }
 
-            return Ok(result);
+            return Ok(result.Data);
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteExperience(string id)
         {
-            var success = await _experienceService.SoftDeleteExperienceAsync(id);
-            if (!success)
+            var result = await _experienceService.SoftDeleteExperienceAsync(id);
+            if (!result.Succeeded)
             {
-                return NotFound();
+                return BadRequest(result);
             }
 
             return NoContent();

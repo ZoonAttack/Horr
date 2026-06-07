@@ -4,6 +4,7 @@ using Horr.Extentions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ServiceContracts;
 using ServiceContracts.DTOs.Skill;
 
 namespace Horr.Controllers
@@ -13,95 +14,65 @@ namespace Horr.Controllers
     [Route("api/[controller]")]
     public class SkillsController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly ISkillService _skillService;
 
-        public SkillsController(AppDbContext context)
+        public SkillsController(ISkillService skillService)
         {
-            _context = context;
+            _skillService = skillService;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<SkillDto>>> GetAllSkills()
         {
-            var skills = await _context.Skills
-                .Select(s => new SkillDto
-                {
-                    Id = s.Id,
-                    Name = s.Name,
-                    Category = s.Category
-                })
-                .ToListAsync();
+            var result = await _skillService.GetAllSkillsAsync();
+            return Ok(result.Data);
+        }
 
-            return Ok(skills);
+        [HttpGet("category/{categoryId}")]
+        public async Task<ActionResult<IEnumerable<SkillDto>>> GetSkillsByCategory(string categoryId)
+        {
+            var result = await _skillService.GetSkillsByCategoryAsync(categoryId);
+            return Ok(result.Data);
         }
 
         [HttpGet("my-skills")]
         public async Task<ActionResult<IEnumerable<FreelancerSkillDto>>> GetMySkills()
         {
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
-            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
-            if (freelancer == null) return NotFound("Freelancer profile not found.");
+            var result = await _skillService.GetMySkillsAsync(userId);
 
-            var mySkills = await _context.FreelancerSkills
-                .Where(fs => fs.FreelancerId == freelancer.UserId)
-                .Select(fs => new FreelancerSkillDto
-                {
-                    SkillId = fs.SkillId,
-                    SkillName = fs.Skill.Name,
-                    SkillCategory = fs.Skill.Category,
-                    ProficiencyLevel = (int)fs.ProficiencyLevel
-                })
-                .ToListAsync();
+            if (!result.Succeeded)
+                return result.ErrorCode == "FREELANCER_NOT_FOUND" ? NotFound(result) : BadRequest(result);
 
-            return Ok(mySkills);
+            return Ok(result.Data);
         }
 
         [HttpPost("my-skills")]
         public async Task<ActionResult<FreelancerSkillDto>> AddMySkill([FromBody] AddFreelancerSkillDto dto)
         {
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
-            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
-            if (freelancer == null) return NotFound("Freelancer profile not found.");
+            var result = await _skillService.AddMySkillAsync(userId, dto);
 
-            var skill = await _context.Skills.FindAsync(dto.SkillId);
-            if (skill == null) return NotFound("Skill not found.");
-
-            var existing = await _context.FreelancerSkills
-                .FirstOrDefaultAsync(fs => fs.FreelancerId == freelancer.UserId && fs.SkillId == dto.SkillId);
-            if (existing != null) return Conflict("Skill already added to profile.");
-
-            var freelancerSkill = new FreelancerSkill
+            if (!result.Succeeded)
             {
-                FreelancerId = freelancer.UserId,
-                SkillId = dto.SkillId,
-                ProficiencyLevel = (Entities.Enums.ProficiencyLevel)dto.ProficiencyLevel
-            };
+                if (result.ErrorCode == "FREELANCER_NOT_FOUND" || result.ErrorCode == "SKILL_NOT_FOUND")
+                    return NotFound(result);
+                if (result.ErrorCode == "SKILL_ALREADY_ADDED")
+                    return Conflict(result);
+                return BadRequest(result);
+            }
 
-            _context.FreelancerSkills.Add(freelancerSkill);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetMySkills), new FreelancerSkillDto
-            {
-                SkillId = freelancerSkill.SkillId,
-                SkillName = skill.Name,
-                SkillCategory = skill.Category,
-                ProficiencyLevel = (int)freelancerSkill.ProficiencyLevel
-            });
+            return CreatedAtAction(nameof(GetMySkills), result.Data);
         }
 
         [HttpDelete("my-skills/{skillId}")]
         public async Task<IActionResult> DeleteMySkill(string skillId)
         {
             var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
-            var freelancer = await _context.Freelancers.FirstOrDefaultAsync(f => f.UserId == userId);
-            if (freelancer == null) return NotFound("Freelancer profile not found.");
+            var result = await _skillService.DeleteMySkillAsync(userId, skillId);
 
-            var freelancerSkill = await _context.FreelancerSkills
-                .FirstOrDefaultAsync(fs => fs.FreelancerId == freelancer.UserId && fs.SkillId == skillId);
-            if (freelancerSkill == null) return NotFound("Skill not found in freelancer profile.");
-
-            _context.FreelancerSkills.Remove(freelancerSkill);
-            await _context.SaveChangesAsync();
+            if (!result.Succeeded)
+                return NotFound(result);
 
             return NoContent();
         }

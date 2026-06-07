@@ -1,6 +1,7 @@
 using MediatR;
 using ServiceContracts.DTOs.Chat;
 using Services;
+using ServiceContracts.DTOs.Responses;
 
 namespace ServiceImplementation.Implementations.Communication
 {
@@ -9,5 +10,5 @@ namespace ServiceImplementation.Implementations.Communication
         string UserId,
         int PageNumber = 1,
         int PageSize = 20
-    ) : IRequest<PagedResult<MessageDto>>;
+    ) : IRequest<Result<PagedResult<MessageDto>>>;
 }

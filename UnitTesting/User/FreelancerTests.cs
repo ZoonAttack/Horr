@@ -18,12 +18,10 @@ using Entities.Users;
 using Entities.Users.FreelancerHelpers;
 // -------------------------
 
-// NOTE: IHttpContextAccessor is not strictly needed for CreateFreelancerAsync 
-// but is included here as a placeholder for the service constructor.
-public interface IHttpContextAccessor { }
+using Microsoft.AspNetCore.Http;
 
 
-namespace UnitTesting.User
+namespace UnitTesting.UserTests
 {
     public class FreelancerTests
     {
@@ -1234,11 +1232,12 @@ namespace UnitTesting.User
     {
         using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
 
+        context.Categories.Add(new Entities.Project.Category { Id = "Programming", Name = "Programming", Slug = "programming" });
         var skill = new Entities.Skill.Skill
         {
             Id = Guid.NewGuid().ToString(),
             Name = "C#",
-            Category = "Programming"
+            CategoryId = "Programming"
         };
 
         context.Skills.Add(skill);

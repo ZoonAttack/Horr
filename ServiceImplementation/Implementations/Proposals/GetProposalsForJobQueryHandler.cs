@@ -8,10 +8,12 @@ using Entities;
 using ServiceContracts.DTOs.Proposal;
 using Services;
 using ServiceImplementation.Exceptions;
+using ServiceContracts.DTOs.Responses;
+using ServiceImplementation.Helpers;
 
 namespace ServiceImplementation.Implementations.Proposals
 {
-    public class GetProposalsForJobQueryHandler : IRequestHandler<GetProposalsForJobQuery, PagedResult<ProposalSummaryForClientDto>>
+    public class GetProposalsForJobQueryHandler : IRequestHandler<GetProposalsForJobQuery, Result<PagedResult<ProposalSummaryForClientDto>>>
     {
         private readonly AppDbContext _context;
 
@@ -20,17 +22,38 @@ namespace ServiceImplementation.Implementations.Proposals
             _context = context;
         }
 
-        public async Task<PagedResult<ProposalSummaryForClientDto>> Handle(GetProposalsForJobQuery request, CancellationToken cancellationToken)
+        public async Task<Result<PagedResult<ProposalSummaryForClientDto>>> Handle(GetProposalsForJobQuery request, CancellationToken cancellationToken)
         {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.ClientId, cancellationToken);
+            if (user == null || user.IsDeleted)
+            {
+                return new Result<PagedResult<ProposalSummaryForClientDto>>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message = "Client account not found or is deleted."
+                };
+            }
+
             var job = await _context.JobPosts.FirstOrDefaultAsync(j => j.Id == request.JobId, cancellationToken);
             if (job == null)
             {
-                throw new NotFoundException($"Job with ID {request.JobId} not found.");
+                return new Result<PagedResult<ProposalSummaryForClientDto>>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.JobNotFound,
+                    Message = $"Job with ID {request.JobId} not found."
+                };
             }
 
             if (job.ClientId != request.ClientId)
             {
-                throw new UnauthorizedAccessException("You are not authorized to view proposals for this job.");
+                return new Result<PagedResult<ProposalSummaryForClientDto>>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.Unauthorized,
+                    Message = "You are not authorized to view proposals for this job."
+                };
             }
 
             var query = _context.Proposals
@@ -56,13 +79,15 @@ namespace ServiceImplementation.Implementations.Proposals
                 })
                 .ToListAsync(cancellationToken);
 
-            return new PagedResult<ProposalSummaryForClientDto>
+            var response = new PagedResult<ProposalSummaryForClientDto>
             {
                 Items = items,
                 TotalCount = totalCount,
                 Page = request.Page,
                 PageSize = request.PageSize
             };
+
+            return new Result<PagedResult<ProposalSummaryForClientDto>> { Succeeded = true, Data = response };
         }
     }
 }

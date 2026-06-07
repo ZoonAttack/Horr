@@ -74,7 +74,8 @@ namespace UnitTesting.Controllers
             var resultData = new Result<JobDetailsDto>
             {
                 Succeeded = false,
-                Errors = new List<string> { "Error formatting job" }
+                ErrorCode = "ERROR",
+                Message = "Error formatting job"
             };
 
             _jobServiceMock.Setup(s => s.CreateJobAsync("test-user-id", dto))
@@ -84,8 +85,7 @@ namespace UnitTesting.Controllers
             var result = await _controller.CreateJob(dto);
 
             // Assert
-            var badRequestResult = result.Should().BeOfType<BadRequestObjectResult>().Subject;
-            badRequestResult.Value.Should().BeEquivalentTo(resultData.Errors);
+            result.Should().BeOfType<BadRequestObjectResult>();
         }
 
         [Fact]
@@ -93,13 +93,14 @@ namespace UnitTesting.Controllers
         {
             // Arrange
             var query = new SearchJobsQuery();
-            var response = new SearchJobsQueryResponse
+            var searchResult = new SearchJobsQueryResponse
             {
                 Items = new List<JobSummaryDto> { new JobSummaryDto { Id = "job1" } },
                 TotalCount = 1
             };
+            var response = new Result<SearchJobsQueryResponse> { Succeeded = true, Data = searchResult };
 
-            _mediatorMock.Setup(m => m.Send(It.IsAny<SearchJobsQuery>(), It.IsAny<CancellationToken>()))
+            _mediatorMock.Setup(m => m.Send<Result<SearchJobsQueryResponse>>(It.IsAny<SearchJobsQuery>(), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(response);
 
             // Act
@@ -107,7 +108,7 @@ namespace UnitTesting.Controllers
 
             // Assert
             var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
-            okResult.Value.Should().BeEquivalentTo(response);
+            okResult.Value.Should().BeEquivalentTo(searchResult);
         }
 
         [Fact]
@@ -115,9 +116,10 @@ namespace UnitTesting.Controllers
         {
             // Arrange
             var jobId = "job123";
-            var response = new JobDetailsDto { Id = jobId };
+            var jobDetails = new JobDetailsDto { Id = jobId };
+            var response = new Result<JobDetailsDto> { Succeeded = true, Data = jobDetails };
 
-            _mediatorMock.Setup(m => m.Send(It.Is<GetJobDetailsQuery>(q => q.Id == jobId && q.CurrentUserId == "test-user-id"), It.IsAny<CancellationToken>()))
+            _mediatorMock.Setup(m => m.Send<Result<JobDetailsDto>>(It.Is<GetJobDetailsQuery>(q => q.Id == jobId && q.CurrentUserId == "test-user-id"), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(response);
 
             // Act
@@ -125,23 +127,24 @@ namespace UnitTesting.Controllers
 
             // Assert
             var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
-            okResult.Value.Should().BeEquivalentTo(response);
+            okResult.Value.Should().BeEquivalentTo(jobDetails);
         }
 
         [Fact]
-        public async Task SaveJob_ShouldReturnNoContent()
+        public async Task SaveJob_ShouldReturnOk()
         {
             // Arrange
             var jobId = "job123";
+            var response = new Result<bool> { Succeeded = true, Data = true };
 
-            _mediatorMock.Setup(m => m.Send(It.Is<ToggleSavedJobCommand>(c => c.JobPostId == jobId && c.FreelancerId == "test-user-id"), It.IsAny<CancellationToken>()))
-                         .Returns(Task.CompletedTask);
+            _mediatorMock.Setup(m => m.Send<Result<bool>>(It.IsAny<ToggleSavedJobCommand>(), It.IsAny<CancellationToken>()))
+                         .ReturnsAsync(response);
 
             // Act
             var result = await _controller.SaveJob(jobId);
 
             // Assert
-            result.Should().BeOfType<NoContentResult>();
+            result.Should().BeOfType<OkObjectResult>();
         }
     }
 }

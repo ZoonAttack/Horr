@@ -21,7 +21,7 @@ namespace Horr.Controllers
         }
 
         [HttpGet("search")]
-        public async Task<ActionResult<PagedResult<FreelancerReadDTO>>> SearchFreelancers(
+        public async Task<ActionResult<PagedResult<FreelancerSearchResultDTO>>> SearchFreelancers(
             [FromQuery] string? searchQuery,
             [FromQuery] List<string>? skillIds,
             [FromQuery] decimal? minHourlyRate,
@@ -36,13 +36,16 @@ namespace Horr.Controllers
         {
             searchQuery ??= string.Empty;
 
+            string clientId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+
             var query = new SearchFreelancersQuery(
                 searchQuery, skillIds, minHourlyRate, maxHourlyRate, 
                 minYearsExperience, minTrustScore, isVerified, 
-                sortBy, sortDescending, page, pageSize);
+                sortBy, sortDescending, page, pageSize, clientId);
 
             var result = await _mediator.Send(query);
-            return Ok(result);
+            if (!result.Succeeded) return BadRequest(result);
+            return Ok(result.Data);
         }
 
         [HttpPost("{freelancerId}/save")]
@@ -51,13 +54,9 @@ namespace Horr.Controllers
             string clientId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
             if (string.IsNullOrEmpty(clientId)) return Unauthorized();
 
-            var success = await _mediator.Send(new SaveFreelancerCommand(clientId, freelancerId));
-            if (success)
-            {
-                return Ok(new { message = "Freelancer saved successfully." });
-            }
-
-            return BadRequest(new { message = "Failed to save freelancer." });
+            var result = await _mediator.Send(new SaveFreelancerCommand(clientId, freelancerId));
+            if (!result.Succeeded) return BadRequest(result);
+            return Ok(new { message = "Freelancer saved successfully." });
         }
 
         [HttpDelete("{freelancerId}/unsave")]
@@ -66,17 +65,13 @@ namespace Horr.Controllers
             string clientId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
             if (string.IsNullOrEmpty(clientId)) return Unauthorized();
 
-            var success = await _mediator.Send(new UnsaveFreelancerCommand(clientId, freelancerId));
-            if (success)
-            {
-                return Ok(new { message = "Freelancer removed from saved list." });
-            }
-
-            return NotFound(new { message = "Saved freelancer not found." });
+            var result = await _mediator.Send(new UnsaveFreelancerCommand(clientId, freelancerId));
+            if (!result.Succeeded) return BadRequest(result);
+            return Ok(new { message = "Freelancer removed from saved list." });
         }
 
         [HttpGet("saved")]
-        public async Task<ActionResult<PagedResult<FreelancerReadDTO>>> GetSavedFreelancers(
+        public async Task<ActionResult<PagedResult<FreelancerSearchResultDTO>>> GetSavedFreelancers(
             [FromQuery] int page = 1, 
             [FromQuery] int pageSize = 10)
         {
@@ -84,7 +79,8 @@ namespace Horr.Controllers
             if (string.IsNullOrEmpty(clientId)) return Unauthorized();
 
             var result = await _mediator.Send(new GetSavedFreelancersQuery(clientId, page, pageSize));
-            return Ok(result);
+            if (!result.Succeeded) return BadRequest(result);
+            return Ok(result.Data);
         }
     }
 }
