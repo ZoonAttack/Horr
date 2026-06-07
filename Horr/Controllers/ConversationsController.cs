@@ -67,7 +67,7 @@ namespace Horr.Controllers
             string id, 
             [FromForm] string body, 
             [FromForm] List<IFormFile>? files,
-            [FromForm] string? jobPostId = null,
+            [FromForm] int? contractId = null,
             [FromForm] string? receiverId = null)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -78,7 +78,7 @@ namespace Horr.Controllers
                 return BadRequest("Message body is required.");
             }
 
-            var result = await _mediator.Send(new SendMessageCommand(id, userId, body, files, jobPostId, receiverId));
+            var result = await _mediator.Send(new SendMessageCommand(id, userId, body, files, contractId, receiverId));
             if (!result.Succeeded)
             {
                 return BadRequest(result);

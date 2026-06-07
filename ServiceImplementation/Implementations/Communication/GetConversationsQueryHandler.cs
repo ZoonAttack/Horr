@@ -31,9 +31,8 @@ namespace ServiceImplementation.Implementations.Communication
                 };
             }
 
-            var conversations = await _context.ConversationParticipants
-                .Where(p => p.UserId == request.UserId)
-                .Select(p => p.Conversation)
+            var chats = await _context.Chats
+                .Where(c => c.ClientId == request.UserId || c.FreelancerId == request.UserId)
                 .Select(c => new
                 {
                     c.Id,
@@ -46,7 +45,7 @@ namespace ServiceImplementation.Implementations.Communication
                 })
                 .ToListAsync(cancellationToken);
 
-            var result = conversations.Select(c => new ConversationDto
+            var result = chats.Select(c => new ConversationDto
             {
                 Id = c.Id,
                 CreatedAt = c.CreatedAt,

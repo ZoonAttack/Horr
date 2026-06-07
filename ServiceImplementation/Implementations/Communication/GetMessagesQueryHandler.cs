@@ -33,16 +33,16 @@ namespace ServiceImplementation.Implementations.Communication
             }
 
             // Verify conversation and participation
-            var isParticipant = await _context.ConversationParticipants
-                .AnyAsync(p => p.ConversationId == request.ConversationId && p.UserId == request.UserId, cancellationToken);
+            var chat = await _context.Chats
+                .FirstOrDefaultAsync(c => c.Id == request.ChatId && (c.ClientId == request.UserId || c.FreelancerId == request.UserId), cancellationToken);
 
-            if (!isParticipant)
+            if (chat == null)
             {
                 return new Result<PagedResult<MessageDto>>
                 {
                     Succeeded = false,
                     ErrorCode = "CONVERSATION_NOT_FOUND",
-                    Message = $"Conversation with ID {request.ConversationId} not found or you are not a participant."
+                    Message = $"Conversation with ID {request.ChatId} not found or you are not a participant."
                 };
             }
 
@@ -52,7 +52,7 @@ namespace ServiceImplementation.Implementations.Communication
             {
                 // Mark unread messages from other users as read
                 var unreadMessages = await _context.Messages
-                    .Where(m => m.ConversationId == request.ConversationId && 
+                    .Where(m => m.ChatId == request.ChatId && 
                                 m.SenderId != request.UserId && 
                                 m.Status == MessageStatus.Unread)
                     .ToListAsync(cancellationToken);
@@ -68,7 +68,7 @@ namespace ServiceImplementation.Implementations.Communication
 
                 // Fetch paginated messages
                 var query = _context.Messages
-                    .Where(m => m.ConversationId == request.ConversationId)
+                    .Where(m => m.ChatId == request.ChatId)
                     .OrderByDescending(m => m.SentAt);
 
                 var totalCount = await query.CountAsync(cancellationToken);
@@ -78,11 +78,16 @@ namespace ServiceImplementation.Implementations.Communication
                     .Select(m => new MessageDto
                     {
                         Id = m.Id,
-                        ConversationId = m.ConversationId,
+                        ChatId = m.ChatId,
                         SenderId = m.SenderId,
                         Body = m.Body,
                         Status = m.Status,
-                        SentAt = m.SentAt
+                        SentAt = m.SentAt,
+                        Type = m.Type,
+                        TextContent = m.TextContent,
+                        FileUrl = m.FileUrl,
+                        FileName = m.FileName,
+                        FileSizeBytes = m.FileSizeBytes
                     })
                     .ToListAsync(cancellationToken);
 

@@ -89,7 +89,7 @@ namespace UnitTesting.Controllers
             var conversationId = "conv-1";
             var pagedResult = new PagedResult<MessageDto>
             {
-                Items = new List<MessageDto> { new MessageDto { Id = "msg-1", Body = "Hello" } },
+                Items = new List<MessageDto> { new MessageDto { Id = "msg-1", Body = "Hello", ChatId = conversationId } },
                 TotalCount = 1,
                 Page = 1,
                 PageSize = 20
@@ -100,7 +100,7 @@ namespace UnitTesting.Controllers
                 Data = pagedResult
             };
 
-            _mediatorMock.Setup(m => m.Send(It.Is<GetMessagesQuery>(q => q.ConversationId == conversationId && q.UserId == CurrentUserId), It.IsAny<CancellationToken>()))
+            _mediatorMock.Setup(m => m.Send(It.Is<GetMessagesQuery>(q => q.ChatId == conversationId && q.UserId == CurrentUserId), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(resultData);
 
             // Act
@@ -123,7 +123,7 @@ namespace UnitTesting.Controllers
                 Message = "Conversation not found."
             };
 
-            _mediatorMock.Setup(m => m.Send(It.Is<GetMessagesQuery>(q => q.ConversationId == conversationId), It.IsAny<CancellationToken>()))
+            _mediatorMock.Setup(m => m.Send(It.Is<GetMessagesQuery>(q => q.ChatId == conversationId), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(resultData);
 
             // Act
@@ -142,14 +142,14 @@ namespace UnitTesting.Controllers
             // Arrange
             var conversationId = "conv-1";
             var body = "Hello";
-            var responseDto = new MessageDto { Id = "msg-1", ConversationId = conversationId, Body = body };
+            var responseDto = new MessageDto { Id = "msg-1", ChatId = conversationId, Body = body };
             var resultData = new Result<MessageDto> { Succeeded = true, Data = responseDto };
 
             _mediatorMock.Setup(m => m.Send(It.Is<SendMessageCommand>(c => 
-                c.ConversationId == conversationId && 
+                c.ChatId == conversationId && 
                 c.SenderId == CurrentUserId && 
                 c.Body == body && 
-                c.JobPostId == null && 
+                c.ContractId == null && 
                 c.ReceiverId == null), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(resultData);
 
@@ -168,21 +168,21 @@ namespace UnitTesting.Controllers
             // Arrange
             var newConversationId = "new-conv-uuid";
             var body = "Hello regarding this job";
-            var jobPostId = "job-123";
+            var contractId = 123;
             var receiverId = "freelancer-456";
-            var responseDto = new MessageDto { Id = "msg-1", ConversationId = newConversationId, Body = body };
+            var responseDto = new MessageDto { Id = "msg-1", ChatId = newConversationId, Body = body };
             var resultData = new Result<MessageDto> { Succeeded = true, Data = responseDto };
 
             _mediatorMock.Setup(m => m.Send(It.Is<SendMessageCommand>(c => 
-                c.ConversationId == newConversationId && 
+                c.ChatId == newConversationId && 
                 c.SenderId == CurrentUserId && 
                 c.Body == body && 
-                c.JobPostId == jobPostId && 
+                c.ContractId == contractId && 
                 c.ReceiverId == receiverId), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(resultData);
 
             // Act
-            var result = await _controller.SendMessage(newConversationId, body, null, jobPostId, receiverId);
+            var result = await _controller.SendMessage(newConversationId, body, null, contractId, receiverId);
 
             // Assert
             var createdResult = result.Should().BeOfType<ObjectResult>().Subject;

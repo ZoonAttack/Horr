@@ -41,31 +41,31 @@ namespace ServiceImplementation.Implementations.Communication
 
             try
             {
-                var conversation = await _context.Conversations
-                    .FirstOrDefaultAsync(c => c.Id == request.ConversationId, cancellationToken);
+                var chat = await _context.Chats
+                    .FirstOrDefaultAsync(c => c.Id == request.ChatId, cancellationToken);
 
-                if (conversation == null)
+                if (chat == null)
                 {
-                    // If the conversation doesn't exist, we must have JobPostId and ReceiverId to initiate it
-                    if (string.IsNullOrEmpty(request.JobPostId) || string.IsNullOrEmpty(request.ReceiverId))
+                    // If the chat doesn't exist, we must have ContractId and ReceiverId to initiate it
+                    if (request.ContractId == null || string.IsNullOrEmpty(request.ReceiverId))
                     {
                         return new Result<MessageDto>
                         {
                             Succeeded = false,
                             ErrorCode = "CONVERSATION_NOT_FOUND",
-                            Message = $"Conversation with ID {request.ConversationId} not found, and no JobPostId or ReceiverId was provided to initiate a new one."
+                            Message = $"Chat with ID {request.ChatId} not found, and no ContractId or ReceiverId was provided to initiate a new one."
                         };
                     }
 
-                    // Verify that the JobPost exists
-                    var jobExists = await _context.JobPosts.AnyAsync(j => j.Id == request.JobPostId && !j.IsDeleted, cancellationToken);
-                    if (!jobExists)
+                    // Verify that the Contract exists
+                    var contract = await _context.Contracts.FirstOrDefaultAsync(c => c.Id == request.ContractId, cancellationToken);
+                    if (contract == null)
                     {
                         return new Result<MessageDto>
                         {
                             Succeeded = false,
-                            ErrorCode = ErrorCodes.JobNotFound,
-                            Message = "Job post not found or is deleted."
+                            ErrorCode = ErrorCodes.ContractNotFound,
+                            Message = "Contract not found or is deleted."
                         };
                     }
 
@@ -81,48 +81,90 @@ namespace ServiceImplementation.Implementations.Communication
                         };
                     }
 
-                    // Create new conversation linked to the job post
-                    conversation = new Conversation
+                    // Create new chat linked to the contract
+                    chat = new Chat
                     {
-                        Id = request.ConversationId,
-                        JobPostId = request.JobPostId,
-                        CreatedAt = DateTime.UtcNow
+                        Id = request.ChatId,
+                        ContractId = contract.Id,
+                        ClientId = contract.ClientId,
+                        FreelancerId = contract.FreelancerId,
+                        CreatedAt = DateTime.UtcNow,
+                        IsDeleted = false
                     };
-                    _context.Conversations.Add(conversation);
+                    _context.Chats.Add(chat);
 
-                    // Add participants
-                    var participant1 = new ConversationParticipant
-                    {
-                        ConversationId = request.ConversationId,
-                        UserId = request.SenderId,
-                        JoinedAt = DateTime.UtcNow
-                    };
-                    var participant2 = new ConversationParticipant
-                    {
-                        ConversationId = request.ConversationId,
-                        UserId = request.ReceiverId,
-                        JoinedAt = DateTime.UtcNow
-                    };
-                    _context.ConversationParticipants.AddRange(participant1, participant2);
-
-                    // Save the conversation details so we can add the message in the transaction
+                    // Save the chat details so we can add the message in the transaction
                     await _context.SaveChangesAsync(cancellationToken);
+                }
+
+                // Determine MessageType and primary file info
+                MessageType msgType = MessageType.Text;
+                string? textContent = request.Body;
+
+                // Handle file uploads validation
+                if (request.Files != null && request.Files.Count > 0)
+                {
+                    var firstFile = request.Files[0];
+                    var ext = Path.GetExtension(firstFile.FileName).ToLower();
+                    if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif")
+                    {
+                        msgType = MessageType.Image;
+                    }
+                    else if (ext == ".mp4" || ext == ".mov" || ext == ".avi" || ext == ".mkv")
+                    {
+                        msgType = MessageType.Video;
+                    }
+                    else if (ext == ".pdf")
+                    {
+                        msgType = MessageType.Pdf;
+                    }
+
+                    // Check file size limits for all files
+                    foreach (var file in request.Files)
+                    {
+                        var fileExt = Path.GetExtension(file.FileName).ToLower();
+                        long limit = 10 * 1024 * 1024; // default 10MB
+                        if (fileExt == ".png" || fileExt == ".jpg" || fileExt == ".jpeg" || fileExt == ".gif")
+                        {
+                            limit = 10 * 1024 * 1024;
+                        }
+                        else if (fileExt == ".mp4" || fileExt == ".mov" || fileExt == ".avi" || fileExt == ".mkv")
+                        {
+                            limit = 100 * 1024 * 1024;
+                        }
+                        else if (fileExt == ".pdf")
+                        {
+                            limit = 15 * 1024 * 1024;
+                        }
+
+                        if (file.Length > limit)
+                        {
+                            return new Result<MessageDto>
+                            {
+                                Succeeded = false,
+                                ErrorCode = "FILE_TOO_LARGE",
+                                Message = $"File {file.FileName} exceeds the allowed limit."
+                            };
+                        }
+                    }
                 }
 
                 // Create Message
                 var message = new Message
                 {
                     Id = Guid.NewGuid().ToString(),
-                    ConversationId = request.ConversationId,
+                    ChatId = request.ChatId,
                     SenderId = request.SenderId,
-                    Body = request.Body,
+                    Body = request.Body ?? string.Empty,
                     Status = MessageStatus.Unread,
-                    SentAt = DateTime.UtcNow
+                    SentAt = DateTime.UtcNow,
+                    Type = msgType,
+                    TextContent = textContent
                 };
 
                 _context.Messages.Add(message);
 
-                // Handle file uploads
+                // Handle file uploads saving
                 if (request.Files != null && request.Files.Count > 0)
                 {
                     var uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "chat");
@@ -131,23 +173,33 @@ namespace ServiceImplementation.Implementations.Communication
                         Directory.CreateDirectory(uploadPath);
                     }
 
-                    foreach (var file in request.Files)
+                    for (int i = 0; i < request.Files.Count; i++)
                     {
+                        var file = request.Files[i];
                         if (file.Length > 0)
                         {
-                            var fileName = $"{Guid.NewGuid()}_{file.FileName}";
-                            var filePath = Path.Combine(uploadPath, fileName);
+                            var uniqueFileName = $"{Guid.NewGuid()}_{file.FileName}";
+                            var filePath = Path.Combine(uploadPath, uniqueFileName);
 
                             using (var stream = new FileStream(filePath, FileMode.Create))
                             {
                                 await file.CopyToAsync(stream, cancellationToken);
                             }
 
+                            var fileUrlPath = $"/uploads/chat/{uniqueFileName}";
+
+                            if (i == 0)
+                            {
+                                message.FileUrl = fileUrlPath;
+                                message.FileName = file.FileName;
+                                message.FileSizeBytes = file.Length;
+                            }
+
                             var attachment = new Attachment
                             {
                                 Id = Guid.NewGuid().ToString(),
                                 Message = message,
-                                FileUrl = $"/uploads/chat/{fileName}",
+                                FileUrl = fileUrlPath,
                                 FileType = Path.GetExtension(file.FileName),
                                 UploadedAt = DateTime.UtcNow
                             };
@@ -161,15 +213,20 @@ namespace ServiceImplementation.Implementations.Communication
                 var messageDto = new MessageDto
                 {
                     Id = message.Id,
-                    ConversationId = message.ConversationId,
+                    ChatId = message.ChatId,
                     SenderId = message.SenderId,
                     Body = message.Body,
                     Status = message.Status,
-                    SentAt = message.SentAt
+                    SentAt = message.SentAt,
+                    Type = message.Type,
+                    TextContent = message.TextContent,
+                    FileUrl = message.FileUrl,
+                    FileName = message.FileName,
+                    FileSizeBytes = message.FileSizeBytes
                 };
 
                 // Broadcast
-                await _hubContext.Clients.Group(request.ConversationId)
+                await _hubContext.Clients.Group(request.ChatId)
                     .SendAsync("ReceiveMessage", messageDto, cancellationToken);
 
                 await transaction.CommitAsync(cancellationToken);

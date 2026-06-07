@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Entities;
 using Entities.Project;
 using Entities.Enums;
+using Entities.Communication;
 using ServiceContracts.DTOs.Responses;
 using ServiceImplementation.Helpers;
 using ServiceImplementation.Exceptions;
@@ -78,6 +79,22 @@ namespace ServiceImplementation.Implementations.Contracts
 
             // Mark the proposal as Offer (accepted)
             contract.Proposal.Status = ProposalStatus.Offer;
+
+            // Automatically create Chat room for the active contract if not exists
+            var chatExists = await _context.Chats.AnyAsync(c => c.ContractId == contract.Id, cancellationToken);
+            if (!chatExists)
+            {
+                var chat = new Chat
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    ContractId = contract.Id,
+                    ClientId = contract.ClientId,
+                    FreelancerId = contract.FreelancerId,
+                    CreatedAt = DateTime.UtcNow,
+                    IsDeleted = false
+                };
+                _context.Chats.Add(chat);
+            }
 
             await _context.SaveChangesAsync(cancellationToken);
             return new Result<bool> { Succeeded = true, Data = true };

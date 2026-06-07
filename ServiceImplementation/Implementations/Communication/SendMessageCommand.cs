@@ -7,11 +7,11 @@ using System.Collections.Generic;
 namespace ServiceImplementation.Implementations.Communication
 {
     public record SendMessageCommand(
-        string ConversationId,
+        string ChatId,
         string SenderId,
         string Body,
         List<IFormFile>? Files = null,
-        string? JobPostId = null,
+        int? ContractId = null,
         string? ReceiverId = null
     ) : IRequest<Result<MessageDto>>;
 }

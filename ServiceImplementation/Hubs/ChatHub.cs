@@ -21,9 +21,9 @@ namespace ServiceImplementation.Hubs
             var userId = Context.UserIdentifier;
             if (!string.IsNullOrEmpty(userId))
             {
-                var conversationIds = await _context.ConversationParticipants
-                    .Where(p => p.UserId == userId)
-                    .Select(p => p.ConversationId)
+                var conversationIds = await _context.Chats
+                    .Where(c => c.ClientId == userId || c.FreelancerId == userId)
+                    .Select(c => c.Id)
                     .ToListAsync();
 
                 foreach (var conversationId in conversationIds)
@@ -40,9 +40,9 @@ namespace ServiceImplementation.Hubs
             var userId = Context.UserIdentifier;
             if (!string.IsNullOrEmpty(userId))
             {
-                var conversationIds = await _context.ConversationParticipants
-                    .Where(p => p.UserId == userId)
-                    .Select(p => p.ConversationId)
+                var conversationIds = await _context.Chats
+                    .Where(c => c.ClientId == userId || c.FreelancerId == userId)
+                    .Select(c => c.Id)
                     .ToListAsync();
 
                 foreach (var conversationId in conversationIds)

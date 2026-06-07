@@ -7,7 +7,7 @@ namespace ServiceContracts.DTOs.Chat
     {
         public string Id { get; set; }
 
-        public string ProjectId { get; set; }
+        public int ContractId { get; set; }
 
         public string ClientId { get; set; }
 

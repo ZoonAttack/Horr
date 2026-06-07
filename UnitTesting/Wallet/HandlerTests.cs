@@ -222,8 +222,8 @@ namespace UnitTesting.Wallet
             var result = await queryHandler.Handle(query, CancellationToken.None);
 
             // Assert
-            Assert.Equal(2, result.Count());
-            Assert.All(result, r => Assert.Equal(DepositStatus.Pending, r.Status));
+            Assert.Equal(2, result.Data.Count());
+            Assert.All(result.Data, r => Assert.Equal(DepositStatus.Pending, r.Status));
         }
 
         [Fact]

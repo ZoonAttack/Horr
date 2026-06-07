@@ -7,7 +7,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Entities.Communication
 {
     /// <summary>
-    /// Represents an individual message within a Conversation.
+    /// Represents an individual message within a Chat.
     /// Supports soft-delete via ISoftDeletable.
     /// </summary>
     [Table("messages")]
@@ -18,10 +18,10 @@ namespace Entities.Communication
         public string Id { get; set; } = string.Empty;
 
         [Required]
-        public string ConversationId { get; set; } = string.Empty;
+        public string ChatId { get; set; } = string.Empty;
 
-        [ForeignKey(nameof(ConversationId))]
-        public virtual Conversation Conversation { get; set; } = null!;
+        [ForeignKey(nameof(ChatId))]
+        public virtual Chat Chat { get; set; } = null!;
 
         [Required]
         public string SenderId { get; set; } = string.Empty;
@@ -39,6 +39,17 @@ namespace Entities.Communication
 
         // ── Soft Delete (ISoftDeletable) ──────────────────────────────────
         public bool IsDeleted { get; set; } = false;
+
+        public MessageType Type { get; set; } = MessageType.Text;
+
+        [Column(TypeName = "text")]
+        public string? TextContent { get; set; }
+
+        public string? FileUrl { get; set; }
+
+        public string? FileName { get; set; }
+
+        public long? FileSizeBytes { get; set; }
 
         // ── Navigation Properties ─────────────────────────────────────────
         public virtual ICollection<Attachment> Attachments { get; set; } = new List<Attachment>();

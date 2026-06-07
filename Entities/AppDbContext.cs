@@ -53,6 +53,7 @@ namespace Entities
 
         // Order, Chat, and Delivery DbSets
         public DbSet<Order> Orders { get; set; }
+        public DbSet<Chat> Chats { get; set; }
         public DbSet<Conversation> Conversations { get; set; }
         public DbSet<ConversationParticipant> ConversationParticipants { get; set; }
         public DbSet<Message> Messages { get; set; }
@@ -102,8 +103,9 @@ namespace Entities
             modelBuilder.Entity<JobPost>().HasQueryFilter(j => !j.IsDeleted);
             modelBuilder.Entity<Proposal>().HasQueryFilter(p => !p.IsDeleted);
             modelBuilder.Entity<Contract>().HasQueryFilter(c => !c.IsDeleted);
+            modelBuilder.Entity<Chat>().HasQueryFilter(c => !c.IsDeleted);
             modelBuilder.Entity<Conversation>().HasQueryFilter(c => !c.IsDeleted);
-            modelBuilder.Entity<Message>().HasQueryFilter(m => !m.IsDeleted && !m.Conversation.IsDeleted);
+            modelBuilder.Entity<Message>().HasQueryFilter(m => !m.IsDeleted && !m.Chat.IsDeleted);
             modelBuilder.Entity<ServiceCatalogItem>().HasQueryFilter(s => !s.IsDeleted);
             modelBuilder.Entity<DepositRequest>().HasQueryFilter(d => !d.IsDeleted);
             modelBuilder.Entity<WithdrawalRequest>().HasQueryFilter(w => !w.IsDeleted);

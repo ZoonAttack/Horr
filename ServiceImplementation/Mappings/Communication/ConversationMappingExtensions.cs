@@ -12,25 +12,25 @@ namespace ServiceImplementation.Mappings.Communication
     public static class ConversationMappingExtensions
     {
         /// <summary>
-        /// Maps a <see cref="Conversation"/> to a <see cref="ConversationDto"/>.
+        /// Maps a <see cref="Chat"/> to a <see cref="ConversationDto"/>.
         /// Requires the <c>Messages</c> navigation property to be loaded.
         /// </summary>
-        public static ConversationDto ToDto(this Conversation conversation)
+        public static ConversationDto ToDto(this Chat chat)
         {
-            if (conversation == null) return null!;
+            if (chat == null) return null!;
 
-            var lastMessage = conversation.Messages
+            var lastMessage = chat.Messages
                 .Where(m => !m.IsDeleted)
                 .OrderByDescending(m => m.SentAt)
                 .FirstOrDefault();
 
-            var unreadCount = conversation.Messages
+            var unreadCount = chat.Messages
                 .Count(m => !m.IsDeleted && m.Status == MessageStatus.Unread);
 
             return new ConversationDto
             {
-                Id = conversation.Id,
-                CreatedAt = conversation.CreatedAt,
+                Id = chat.Id,
+                CreatedAt = chat.CreatedAt,
                 LastMessagePreview = MessagePreviewHelper.GetPreview(lastMessage?.Body),
                 UnreadCount = unreadCount
             };
@@ -46,11 +46,16 @@ namespace ServiceImplementation.Mappings.Communication
             return new MessageDto
             {
                 Id = message.Id,
-                ConversationId = message.ConversationId,
+                ChatId = message.ChatId,
                 SenderId = message.SenderId,
                 Body = message.Body,
                 Status = message.Status,
-                SentAt = message.SentAt
+                SentAt = message.SentAt,
+                Type = message.Type,
+                TextContent = message.TextContent,
+                FileUrl = message.FileUrl,
+                FileName = message.FileName,
+                FileSizeBytes = message.FileSizeBytes
             };
         }
 

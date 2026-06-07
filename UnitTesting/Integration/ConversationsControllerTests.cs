@@ -5,10 +5,16 @@ using System.Net;
 using FluentAssertions;
 using Entities.Users;
 using Entities.Communication;
+using Entities.Project;
 using Entities.Enums;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using Entities;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System;
+using System.Linq;
+using Xunit;
 
 namespace UnitTesting.Integration;
 
@@ -31,14 +37,28 @@ public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFa
         if (!await context.Users.AnyAsync(u => u.Id == user2Id))
             context.Users.Add(new Entities.Users.User { Id = user2Id, UserName = user2Id, Email = $"{user2Id}@example.com", FullName = user2Id });
 
-        if (!await context.Conversations.AnyAsync(c => c.Id == conversationId))
-            context.Conversations.Add(new Conversation { Id = conversationId });
+        var contractId = Math.Abs(conversationId.GetHashCode()) % 1000000;
+        if (!await context.Contracts.AnyAsync(c => c.Id == contractId))
+        {
+            context.Contracts.Add(new Contract 
+            { 
+                Id = contractId, 
+                ClientId = user1Id, 
+                FreelancerId = user2Id,
+                Status = ContractStatus.Active 
+            });
+        }
 
-        if (!await context.ConversationParticipants.AnyAsync(p => p.ConversationId == conversationId && p.UserId == user1Id))
-            context.ConversationParticipants.Add(new ConversationParticipant { ConversationId = conversationId, UserId = user1Id });
-
-        if (!await context.ConversationParticipants.AnyAsync(p => p.ConversationId == conversationId && p.UserId == user2Id))
-            context.ConversationParticipants.Add(new ConversationParticipant { ConversationId = conversationId, UserId = user2Id });
+        if (!await context.Chats.AnyAsync(c => c.Id == conversationId))
+        {
+            context.Chats.Add(new Chat 
+            { 
+                Id = conversationId, 
+                ContractId = contractId, 
+                ClientId = user1Id, 
+                FreelancerId = user2Id 
+            });
+        }
 
         await context.SaveChangesAsync();
     }
@@ -56,11 +76,11 @@ public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFa
 
         // 3 Unread from other user
         for (int i = 0; i < 3; i++)
-            context.Messages.Add(new Message { Id = Guid.NewGuid().ToString(), ConversationId = conversationId, SenderId = otherUser, Body = $"Msg {i}", Status = MessageStatus.Unread });
+            context.Messages.Add(new Message { Id = Guid.NewGuid().ToString(), ChatId = conversationId, SenderId = otherUser, Body = $"Msg {i}", Status = MessageStatus.Unread });
 
         // 2 Unread from current user
         for (int i = 0; i < 2; i++)
-            context.Messages.Add(new Message { Id = Guid.NewGuid().ToString(), ConversationId = conversationId, SenderId = currentUser, Body = $"My Msg {i}", Status = MessageStatus.Unread });
+            context.Messages.Add(new Message { Id = Guid.NewGuid().ToString(), ChatId = conversationId, SenderId = currentUser, Body = $"My Msg {i}", Status = MessageStatus.Unread });
 
         await context.SaveChangesAsync();
 
@@ -89,8 +109,8 @@ public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFa
         await SeedDataAsync(context, conversationId, currentUser, otherUser);
         
         var now = DateTime.UtcNow;
-        context.Messages.Add(new Message { Id = Guid.NewGuid().ToString(), ConversationId = conversationId, SenderId = otherUser, Body = "Old", SentAt = now.AddHours(-1) });
-        context.Messages.Add(new Message { Id = Guid.NewGuid().ToString(), ConversationId = conversationId, SenderId = otherUser, Body = "New", SentAt = now });
+        context.Messages.Add(new Message { Id = Guid.NewGuid().ToString(), ChatId = conversationId, SenderId = otherUser, Body = "Old", SentAt = now.AddHours(-1) });
+        context.Messages.Add(new Message { Id = Guid.NewGuid().ToString(), ChatId = conversationId, SenderId = otherUser, Body = "New", SentAt = now });
         await context.SaveChangesAsync();
 
         var request = new HttpRequestMessage(HttpMethod.Get, $"/api/conversations/{conversationId}/messages");
@@ -119,10 +139,10 @@ public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFa
 
         // 3 Unread from other user
         for (int i = 0; i < 3; i++)
-            context.Messages.Add(new Message { Id = Guid.NewGuid().ToString(), ConversationId = conversationId, SenderId = otherUser, Body = $"Other {i}", Status = MessageStatus.Unread });
+            context.Messages.Add(new Message { Id = Guid.NewGuid().ToString(), ChatId = conversationId, SenderId = otherUser, Body = $"Other {i}", Status = MessageStatus.Unread });
 
         // 1 Unread from current user
-        context.Messages.Add(new Message { Id = Guid.NewGuid().ToString(), ConversationId = conversationId, SenderId = currentUser, Body = "Mine", Status = MessageStatus.Unread });
+        context.Messages.Add(new Message { Id = Guid.NewGuid().ToString(), ChatId = conversationId, SenderId = currentUser, Body = "Mine", Status = MessageStatus.Unread });
 
         await context.SaveChangesAsync();
 
@@ -135,10 +155,10 @@ public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFa
         response.StatusCode.Should().Be(HttpStatusCode.OK, body);
 
         // Verify DB state
-        var otherMsgs = await context.Messages.AsNoTracking().Where(m => m.ConversationId == conversationId && m.SenderId == otherUser).ToListAsync();
+        var otherMsgs = await context.Messages.AsNoTracking().Where(m => m.ChatId == conversationId && m.SenderId == otherUser).ToListAsync();
         otherMsgs.All(m => m.Status == MessageStatus.Read).Should().BeTrue();
 
-        var myMsg = await context.Messages.AsNoTracking().FirstAsync(m => m.ConversationId == conversationId && m.SenderId == currentUser);
+        var myMsg = await context.Messages.AsNoTracking().FirstAsync(m => m.ChatId == conversationId && m.SenderId == currentUser);
         myMsg.Status.Should().Be(MessageStatus.Unread);
     }
 
@@ -200,7 +220,7 @@ public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFa
         var currentUser = "client-int-sender";
         var otherUser = "freelancer-int-receiver";
         var newConversationId = "conv-new-int-1";
-        var jobId = "job-int-123";
+        var contractId = 12345;
 
         // Seed users
         if (!await context.Users.AnyAsync(u => u.Id == currentUser))
@@ -209,18 +229,15 @@ public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFa
         if (!await context.Users.AnyAsync(u => u.Id == otherUser))
             context.Users.Add(new Entities.Users.User { Id = otherUser, UserName = otherUser, Email = $"{otherUser}@example.com", FullName = otherUser });
 
-        // Seed category and job
-        if (!await context.Categories.AnyAsync(c => c.Id == "cat-int-1"))
-            context.Categories.Add(new Entities.Project.Category { Id = "cat-int-1", Name = "Int Category", Slug = "int-category" });
-
-        if (!await context.JobPosts.AnyAsync(j => j.Id == jobId))
-            context.JobPosts.Add(new Entities.Project.JobPost { Id = jobId, Title = "Int Job", Description = "Desc", CategoryId = "cat-int-1", ClientId = currentUser });
+        // Seed contract
+        if (!await context.Contracts.AnyAsync(c => c.Id == contractId))
+            context.Contracts.Add(new Contract { Id = contractId, ClientId = currentUser, FreelancerId = otherUser, Status = ContractStatus.Active });
 
         await context.SaveChangesAsync();
 
         var form = new MultipartFormDataContent();
         form.Add(new StringContent("Dynamic Conversation Initiation Test Message"), "body");
-        form.Add(new StringContent(jobId), "jobPostId");
+        form.Add(new StringContent(contractId.ToString()), "contractId");
         form.Add(new StringContent(otherUser), "receiverId");
 
         var request = new HttpRequestMessage(HttpMethod.Post, $"/api/conversations/{newConversationId}/messages");
@@ -235,12 +252,9 @@ public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFa
         // Verify conversation is created in database
         using var checkScope = _factory.Services.CreateScope();
         var checkContext = checkScope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var conversation = await checkContext.Conversations.FirstOrDefaultAsync(c => c.Id == newConversationId);
+        var conversation = await checkContext.Chats.FirstOrDefaultAsync(c => c.Id == newConversationId);
         conversation.Should().NotBeNull();
-        conversation.JobPostId.Should().Be(jobId);
-
-        var participants = await checkContext.ConversationParticipants.Where(p => p.ConversationId == newConversationId).ToListAsync();
-        participants.Should().HaveCount(2);
+        conversation.ContractId.Should().Be(contractId);
     }
 
     [Fact]
@@ -262,7 +276,7 @@ public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFa
 
         var form = new MultipartFormDataContent();
         form.Add(new StringContent("Failing Initiation Test Message"), "body");
-        form.Add(new StringContent("non-existent-job-id"), "jobPostId");
+        form.Add(new StringContent("99999"), "contractId");
         form.Add(new StringContent(otherUser), "receiverId");
 
         var request = new HttpRequestMessage(HttpMethod.Post, $"/api/conversations/{newConversationId}/messages");

@@ -1,5 +1,6 @@
 using Entities;
 using Entities.Communication;
+using Entities.Project;
 using Entities.Enums;
 using Entities.Users;
 using FluentAssertions;
@@ -14,6 +15,13 @@ using ServiceImplementation.Exceptions;
 using ServiceImplementation.Implementations.Communication;
 using ServiceContracts.DTOs.Responses;
 using System.Text;
+using System.IO;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using System;
+using System.Linq;
+using Xunit;
 
 namespace UnitTesting.Communication
 {
@@ -47,13 +55,13 @@ namespace UnitTesting.Communication
         {
             var user1 = new Entities.Users.User { Id = "user-1", FullName = "User 1", Email = "u1@test.com", UserName = "u1" };
             var user2 = new Entities.Users.User { Id = "user-2", FullName = "User 2", Email = "u2@test.com", UserName = "u2" };
-            var conv = new Conversation { Id = "conv-1" };
-            var p1 = new ConversationParticipant { ConversationId = "conv-1", UserId = "user-1" };
-            var p2 = new ConversationParticipant { ConversationId = "conv-1", UserId = "user-2" };
+            
+            var contract = new Contract { Id = 1, ClientId = "user-1", FreelancerId = "user-2", Status = ContractStatus.Active };
+            var chat = new Chat { Id = "conv-1", ContractId = 1, ClientId = "user-1", FreelancerId = "user-2" };
 
             _context.Users.AddRange(user1, user2);
-            _context.Conversations.Add(conv);
-            _context.ConversationParticipants.AddRange(p1, p2);
+            _context.Contracts.Add(contract);
+            _context.Chats.Add(chat);
             await _context.SaveChangesAsync();
         }
 
@@ -133,11 +141,11 @@ namespace UnitTesting.Communication
 
             // 3 Unread from other user
             for (int i = 0; i < 3; i++)
-                _context.Messages.Add(new Message { Id = $"msg-other-{i}", ConversationId = "conv-1", SenderId = otherUser, Body = $"Msg {i}", Status = MessageStatus.Unread });
+                _context.Messages.Add(new Message { Id = $"msg-other-{i}", ChatId = "conv-1", SenderId = otherUser, Body = $"Msg {i}", Status = MessageStatus.Unread });
             
             // 2 Unread from current user
             for (int i = 0; i < 2; i++)
-                _context.Messages.Add(new Message { Id = $"msg-my-{i}", ConversationId = "conv-1", SenderId = currentUser, Body = $"My Msg {i}", Status = MessageStatus.Unread });
+                _context.Messages.Add(new Message { Id = $"msg-my-{i}", ChatId = "conv-1", SenderId = currentUser, Body = $"My Msg {i}", Status = MessageStatus.Unread });
 
             await _context.SaveChangesAsync();
 
@@ -160,7 +168,7 @@ namespace UnitTesting.Communication
             // Arrange
             await SeedBaseData();
             var longBody = "This is a very long message body that exceeds fifty characters for testing.";
-            _context.Messages.Add(new Message { Id = "msg-long", ConversationId = "conv-1", SenderId = "user-2", Body = longBody, SentAt = DateTime.UtcNow });
+            _context.Messages.Add(new Message { Id = "msg-long", ChatId = "conv-1", SenderId = "user-2", Body = longBody, SentAt = DateTime.UtcNow });
             await _context.SaveChangesAsync();
 
             var handler = new GetConversationsQueryHandler(_context);
@@ -186,9 +194,9 @@ namespace UnitTesting.Communication
             var currentUser = "user-1";
 
             for (int i = 0; i < 4; i++)
-                _context.Messages.Add(new Message { Id = $"msg-o-{i}", ConversationId = "conv-1", SenderId = otherUser, Body = $"Other Msg {i}", Status = MessageStatus.Unread, SentAt = DateTime.UtcNow.AddMinutes(i) });
+                _context.Messages.Add(new Message { Id = $"msg-o-{i}", ChatId = "conv-1", SenderId = otherUser, Body = $"Other Msg {i}", Status = MessageStatus.Unread, SentAt = DateTime.UtcNow.AddMinutes(i) });
             
-            _context.Messages.Add(new Message { Id = "msg-m-1", ConversationId = "conv-1", SenderId = currentUser, Body = "My Msg", Status = MessageStatus.Unread, SentAt = DateTime.UtcNow.AddMinutes(5) });
+            _context.Messages.Add(new Message { Id = "msg-m-1", ChatId = "conv-1", SenderId = currentUser, Body = "My Msg", Status = MessageStatus.Unread, SentAt = DateTime.UtcNow.AddMinutes(5) });
             
             await _context.SaveChangesAsync();
 
@@ -213,8 +221,8 @@ namespace UnitTesting.Communication
             // Arrange
             await SeedBaseData();
             var now = DateTime.UtcNow;
-            _context.Messages.Add(new Message { Id = "msg-old", ConversationId = "conv-1", SenderId = "user-2", Body = "Old", SentAt = now.AddHours(-1) });
-            _context.Messages.Add(new Message { Id = "msg-new", ConversationId = "conv-1", SenderId = "user-2", Body = "New", SentAt = now });
+            _context.Messages.Add(new Message { Id = "msg-old", ChatId = "conv-1", SenderId = "user-2", Body = "Old", SentAt = now.AddHours(-1) });
+            _context.Messages.Add(new Message { Id = "msg-new", ChatId = "conv-1", SenderId = "user-2", Body = "New", SentAt = now });
             await _context.SaveChangesAsync();
 
             var handler = new GetMessagesQueryHandler(_context);
@@ -235,8 +243,8 @@ namespace UnitTesting.Communication
         {
             // Arrange
             await SeedBaseData();
-            _context.Messages.Add(new Message { Id = "msg-del", ConversationId = "conv-1", SenderId = "user-2", Body = "Deleted", IsDeleted = true });
-            _context.Messages.Add(new Message { Id = "msg-vis", ConversationId = "conv-1", SenderId = "user-2", Body = "Visible", IsDeleted = false });
+            _context.Messages.Add(new Message { Id = "msg-del", ChatId = "conv-1", SenderId = "user-2", Body = "Deleted", IsDeleted = true });
+            _context.Messages.Add(new Message { Id = "msg-vis", ChatId = "conv-1", SenderId = "user-2", Body = "Visible", IsDeleted = false });
             await _context.SaveChangesAsync();
 
             var handler = new GetMessagesQueryHandler(_context);
@@ -270,17 +278,14 @@ namespace UnitTesting.Communication
 
         private async Task SeedJobData()
         {
-            var category = new Entities.Project.Category { Id = "cat-1", Name = "Test Category", Slug = "test-category" };
-            var job = new Entities.Project.JobPost 
+            var contract = new Contract 
             { 
-                Id = "job-123", 
-                Title = "Test Job", 
-                Description = "Description", 
-                CategoryId = "cat-1", 
-                ClientId = "user-1" 
+                Id = 123, 
+                ClientId = "user-1", 
+                FreelancerId = "user-2",
+                Status = ContractStatus.Active
             };
-            _context.Categories.Add(category);
-            _context.JobPosts.Add(job);
+            _context.Contracts.Add(contract);
             await _context.SaveChangesAsync();
         }
 
@@ -297,7 +302,7 @@ namespace UnitTesting.Communication
                 "user-1", 
                 "Initial message regarding job", 
                 null, 
-                "job-123", 
+                123, 
                 "user-2"
             );
 
@@ -308,14 +313,9 @@ namespace UnitTesting.Communication
             result.Succeeded.Should().BeTrue();
             result.Data.Body.Should().Be("Initial message regarding job");
 
-            var conversation = await _context.Conversations.FirstOrDefaultAsync(c => c.Id == "new-conv-id");
-            conversation.Should().NotBeNull();
-            conversation.JobPostId.Should().Be("job-123");
-
-            var participants = await _context.ConversationParticipants.Where(p => p.ConversationId == "new-conv-id").ToListAsync();
-            participants.Should().HaveCount(2);
-            participants.Should().ContainSingle(p => p.UserId == "user-1");
-            participants.Should().ContainSingle(p => p.UserId == "user-2");
+            var chat = await _context.Chats.FirstOrDefaultAsync(c => c.Id == "new-conv-id");
+            chat.Should().NotBeNull();
+            chat.ContractId.Should().Be(123);
         }
 
         [Fact]
@@ -343,7 +343,7 @@ namespace UnitTesting.Communication
         }
 
         [Fact]
-        public async Task SendMessage_Should_FailToInitiate_WhenJobPostDoesNotExist()
+        public async Task SendMessage_Should_FailToInitiate_WhenContractDoesNotExist()
         {
             // Arrange
             await SeedBaseData();
@@ -354,7 +354,7 @@ namespace UnitTesting.Communication
                 "user-1", 
                 "Initial message", 
                 null, 
-                "non-existent-job", 
+                999, 
                 "user-2"
             );
 
@@ -363,7 +363,7 @@ namespace UnitTesting.Communication
 
             // Assert
             result.Succeeded.Should().BeFalse();
-            result.ErrorCode.Should().Be("JOB_NOT_FOUND");
+            result.ErrorCode.Should().Be("CONTRACT_NOT_FOUND");
         }
     }
 }

@@ -5,6 +5,7 @@ using Entities;
 using Entities.Project;
 using Entities.Enums;
 using ServiceContracts.DTOs.Contract;
+using Entities.Communication;
 using ServiceImplementation.Exceptions;
 using ServiceImplementation.Helpers;
 
@@ -55,6 +56,19 @@ namespace ServiceImplementation.Implementations.Proposals
             };
 
             _context.Contracts.Add(contract);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            // 2b. Automatically create Chat room for the active contract
+            var chat = new Chat
+            {
+                Id = Guid.NewGuid().ToString(),
+                ContractId = contract.Id,
+                ClientId = contract.ClientId,
+                FreelancerId = contract.FreelancerId,
+                CreatedAt = DateTime.UtcNow,
+                IsDeleted = false
+            };
+            _context.Chats.Add(chat);
             await _context.SaveChangesAsync(cancellationToken);
 
             // 3. Return Read DTO

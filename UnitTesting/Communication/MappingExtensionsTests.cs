@@ -75,7 +75,7 @@ namespace UnitTesting.Communication
             var message = new Message
             {
                 Id = "msg-abc",
-                ConversationId = "conv-xyz",
+                ChatId = "conv-xyz",
                 SenderId = "user-111",
                 Body = "Hello, world!",
                 Status = MessageStatus.Read,
@@ -85,7 +85,7 @@ namespace UnitTesting.Communication
             var dto = message.ToDto();
 
             dto.Id.Should().Be("msg-abc");
-            dto.ConversationId.Should().Be("conv-xyz");
+            dto.ChatId.Should().Be("conv-xyz");
             dto.SenderId.Should().Be("user-111");
             dto.Body.Should().Be("Hello, world!");
             dto.Status.Should().Be(MessageStatus.Read);

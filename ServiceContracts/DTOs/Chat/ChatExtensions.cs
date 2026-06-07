@@ -1,4 +1,5 @@
 using Entities.Communication;
+using Entities.Enums;
 
 namespace ServiceContracts.DTOs.Chat
 {
@@ -17,7 +18,7 @@ namespace ServiceContracts.DTOs.Chat
             return new ChatReadDTO
             {
                 Id = chat.Id.ToString(),
-                ProjectId = chat.ProjectId.ToString(),
+                ContractId = chat.ContractId,
                 ClientId = chat.ClientId.ToString(),
                 FreelancerId = chat.FreelancerId.ToString(),
                 CreatedAt = chat.CreatedAt
@@ -36,7 +37,7 @@ namespace ServiceContracts.DTOs.Chat
 
             return new Entities.Communication.Chat
             {
-                ProjectId = createDto.ProjectId,
+                ContractId = createDto.ContractId,
                 ClientId = createDto.ClientId,
                 FreelancerId = createDto.FreelancerId
             };
@@ -55,11 +56,16 @@ namespace ServiceContracts.DTOs.Chat
             return new MessageReadDTO
             {
                 Id = message.Id.ToString(),
-                ConversationId = message.ConversationId.ToString(),
+                ChatId = message.ChatId.ToString(),
                 SenderId = message.SenderId,
                 Body = message.Body,
                 Status = message.Status,
-                SentAt = message.SentAt
+                SentAt = message.SentAt,
+                Type = message.Type,
+                TextContent = message.TextContent,
+                FileUrl = message.FileUrl,
+                FileName = message.FileName,
+                FileSizeBytes = message.FileSizeBytes
             };
         }
 
@@ -75,9 +81,14 @@ namespace ServiceContracts.DTOs.Chat
 
             return new Message
             {
-                ConversationId = createDto.ConversationId,
+                ChatId = createDto.ChatId,
                 SenderId = createDto.SenderId,
-                Body = createDto.Body
+                Body = createDto.Body,
+                Type = createDto.Type,
+                TextContent = createDto.TextContent,
+                FileUrl = createDto.FileUrl,
+                FileName = createDto.FileName,
+                FileSizeBytes = createDto.FileSizeBytes
             };
         }
 
