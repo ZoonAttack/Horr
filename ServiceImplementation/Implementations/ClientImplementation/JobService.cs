@@ -25,7 +25,9 @@ namespace ServiceImplementation.Implementations.ClientImplementation
 
         public async Task<Result<JobDetailsDto>> CreateJobAsync(string clientId, JobDetailsDto jobDetails)
         {
-            var clientUser = await _db.Users.FirstOrDefaultAsync(u => u.Id == clientId);
+            var clientUser = await _db.Users
+                .Include(u => u.Wallet)
+                .FirstOrDefaultAsync(u => u.Id == clientId);
             if (clientUser == null || clientUser.IsDeleted)
             {
                 return new Result<JobDetailsDto>
@@ -34,6 +36,20 @@ namespace ServiceImplementation.Implementations.ClientImplementation
                     ErrorCode = ErrorCodes.ClientNotFound,
                     Message = "Client not found",
                     Errors = new List<string> { "Invalid client ID. || May be the client is deleted." }
+                };
+            }
+
+            var budget = jobDetails.Budget;
+            var requiredBalance = budget + (budget * 0.055m);
+            var currentBalance = clientUser.Wallet?.BalanceEGP ?? 0m;
+
+            if (currentBalance < requiredBalance)
+            {
+                return new Result<JobDetailsDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = "INSUFFICIENT_FUNDS",
+                    Message = $"Insufficient wallet balance. You need at least {requiredBalance:C} (budget + 5.5% platform fee) to post this job."
                 };
             }
 
