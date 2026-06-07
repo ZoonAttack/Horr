@@ -18,12 +18,12 @@ using Xunit;
 
 namespace UnitTesting.Integration;
 
-public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
+public class ChatControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
 {
     private readonly CustomWebApplicationFactory<Program> _factory;
     private readonly HttpClient _client;
 
-    public ConversationsControllerTests(CustomWebApplicationFactory<Program> factory)
+    public ChatControllerTests(CustomWebApplicationFactory<Program> factory)
     {
         _factory = factory;
         _client = _factory.CreateClient();
@@ -90,7 +90,7 @@ public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFa
 
         await context.SaveChangesAsync();
 
-        var request = new HttpRequestMessage(HttpMethod.Get, "/api/conversations");
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/chat");
         request.Headers.Add("X-Test-UserId", currentUser);
         request.Headers.Add("X-Test-UserRole", "Freelancer");
 
@@ -119,7 +119,7 @@ public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFa
         context.Messages.Add(new Message { Id = Guid.NewGuid().ToString(), ChatId = conversationId, SenderId = otherUser, Body = "New", SentAt = now });
         await context.SaveChangesAsync();
 
-        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/conversations/{conversationId}/messages");
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/chat/{conversationId}/messages");
         request.Headers.Add("X-Test-UserId", currentUser);
         request.Headers.Add("X-Test-UserRole", "Freelancer");
 
@@ -152,7 +152,7 @@ public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFa
 
         await context.SaveChangesAsync();
 
-        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/conversations/{conversationId}/messages");
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/chat/{conversationId}/messages");
         request.Headers.Add("X-Test-UserId", currentUser);
         request.Headers.Add("X-Test-UserRole", "Freelancer");
 
@@ -179,13 +179,10 @@ public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFa
 
         await SeedDataAsync(context, conversationId, currentUser, otherUser);
 
-        var form = new MultipartFormDataContent();
-        form.Add(new StringContent("Test Message Body"), "body");
-
-        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/conversations/{conversationId}/messages");
+        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/chat/{conversationId}/messages/text");
         request.Headers.Add("X-Test-UserId", currentUser);
         request.Headers.Add("X-Test-UserRole", "Freelancer");
-        request.Content = form;
+        request.Content = JsonContent.Create(new { Text = "Test Message Body" });
 
         var response = await _client.SendAsync(request);
         var body = await response.Content.ReadAsStringAsync();
@@ -198,7 +195,7 @@ public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFa
     }
 
     [Fact]
-    public async Task GetMessages_UnknownConversationId_Should_Return_404_ProblemDetails()
+    public async Task GetMessages_UnknownConversationId_Should_Return_403_ProblemDetails()
     {
         var currentUser = "msg-unk-user1";
         
@@ -207,12 +204,12 @@ public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFa
         context.Users.Add(new Entities.Users.User { Id = currentUser, UserName = currentUser, Email = "unk@e.com", FullName = "Unk" });
         await context.SaveChangesAsync();
         
-        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/conversations/unknown-conv/messages");
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/chat/unknown-conv/messages");
         request.Headers.Add("X-Test-UserId", currentUser);
         request.Headers.Add("X-Test-UserRole", "Freelancer");
 
         var response = await _client.SendAsync(request);
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
         var body = await response.Content.ReadAsStringAsync();
         body.ToLower().Should().Contain("title"); // Verify ProblemDetails shape
@@ -229,13 +226,10 @@ public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFa
 
         await SeedDataAsync(context, conversationId, currentUser, otherUser);
 
-        var form = new MultipartFormDataContent();
-        form.Add(new StringContent("Hello regarding this job"), "body");
-
-        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/conversations/{conversationId}/messages");
+        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/chat/{conversationId}/messages/text");
         request.Headers.Add("X-Test-UserId", currentUser);
         request.Headers.Add("X-Test-UserRole", "Client");
-        request.Content = form;
+        request.Content = JsonContent.Create(new { Text = "Hello regarding this job" });
 
         var response = await _client.SendAsync(request);
         var body = await response.Content.ReadAsStringAsync();
@@ -259,15 +253,12 @@ public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFa
 
         await context.SaveChangesAsync();
 
-        var form = new MultipartFormDataContent();
-        form.Add(new StringContent("Failing Message"), "body");
-
-        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/conversations/{conversationId}/messages");
+        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/chat/{conversationId}/messages/text");
         request.Headers.Add("X-Test-UserId", currentUser);
         request.Headers.Add("X-Test-UserRole", "Client");
-        request.Content = form;
+        request.Content = JsonContent.Create(new { Text = "Failing Message" });
 
         var response = await _client.SendAsync(request);
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 }

@@ -19,16 +19,16 @@ using Entities.Enums;
 
 namespace UnitTesting.Controllers
 {
-    public class ConversationsControllerTests
+    public class ChatControllerTests
     {
         private readonly Mock<IMediator> _mediatorMock;
-        private readonly ConversationsController _controller;
+        private readonly ChatController _controller;
         private const string CurrentUserId = "test-user-id";
 
-        public ConversationsControllerTests()
+        public ChatControllerTests()
         {
             _mediatorMock = new Mock<IMediator>();
-            _controller = new ConversationsController(_mediatorMock.Object);
+            _controller = new ChatController(_mediatorMock.Object);
 
             // Mock User Identity
             var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]
@@ -43,7 +43,7 @@ namespace UnitTesting.Controllers
         }
 
         [Fact]
-        public async Task GetConversations_ShouldReturnOk_WithConversations()
+        public async Task GetChats_ShouldReturnOk_WithConversations()
         {
             // Arrange
             var list = new List<ChatSummaryDto>
@@ -60,7 +60,7 @@ namespace UnitTesting.Controllers
                          .ReturnsAsync(resultData);
 
             // Act
-            var result = await _controller.GetConversations(UserRole.Client);
+            var result = await _controller.GetChats(UserRole.Client);
 
             // Assert
             var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
@@ -68,7 +68,7 @@ namespace UnitTesting.Controllers
         }
 
         [Fact]
-        public async Task GetConversations_ShouldReturnUnauthorized_WhenUserNotAuthenticated()
+        public async Task GetChats_ShouldReturnUnauthorized_WhenUserNotAuthenticated()
         {
             // Arrange
             _controller.ControllerContext = new ControllerContext
@@ -77,7 +77,7 @@ namespace UnitTesting.Controllers
             };
 
             // Act
-            var result = await _controller.GetConversations(UserRole.Client);
+            var result = await _controller.GetChats(UserRole.Client);
 
             // Assert
             result.Should().BeOfType<UnauthorizedResult>();
@@ -131,14 +131,15 @@ namespace UnitTesting.Controllers
             var result = await _controller.GetMessages(conversationId);
 
             // Assert
-            var notFoundResult = result.Should().BeOfType<NotFoundObjectResult>().Subject;
+            var notFoundResult = result.Should().BeOfType<ObjectResult>().Subject;
+            notFoundResult.StatusCode.Should().Be(404);
             var problem = notFoundResult.Value.Should().BeOfType<ProblemDetails>().Subject;
             problem.Status.Should().Be(404);
-            problem.Title.Should().Be("Conversation Not Found");
+            problem.Title.Should().Be("Not Found");
         }
 
         [Fact]
-        public async Task SendMessage_ShouldReturnCreated_WithMessageDto_WhenConversationExists()
+        public async Task SendTextMessage_ShouldReturnCreated_WithMessageDto_WhenConversationExists()
         {
             // Arrange
             var conversationId = "conv-1";
@@ -153,7 +154,7 @@ namespace UnitTesting.Controllers
                          .ReturnsAsync(resultData);
 
             // Act
-            var result = await _controller.SendMessage(conversationId, body, null);
+            var result = await _controller.SendTextMessage(conversationId, new SendTextMessageRequest { Text = body });
 
             // Assert
             var createdResult = result.Should().BeOfType<ObjectResult>().Subject;
@@ -162,13 +163,17 @@ namespace UnitTesting.Controllers
         }
 
         [Fact]
-        public async Task SendMessage_ShouldReturnBadRequest_WhenBodyIsEmpty()
+        public async Task SendTextMessage_ShouldReturnBadRequest_WhenBodyIsEmpty()
         {
             // Act
-            var result = await _controller.SendMessage("conv-1", " ", null);
+            var result = await _controller.SendTextMessage("conv-1", new SendTextMessageRequest { Text = " " });
 
             // Assert
-            result.Should().BeOfType<BadRequestObjectResult>();
+            var badRequestResult = result.Should().BeOfType<BadRequestObjectResult>().Subject;
+            badRequestResult.StatusCode.Should().Be(400);
+            var problem = badRequestResult.Value.Should().BeOfType<ProblemDetails>().Subject;
+            problem.Status.Should().Be(400);
+            problem.Title.Should().Be("Invalid Request");
         }
     }
 }
