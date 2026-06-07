@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ServiceImplementation.Mappings.Communication;
 
 namespace ServiceImplementation.Implementations.Communication
 {
@@ -53,7 +54,7 @@ namespace ServiceImplementation.Implementations.Communication
                     .ToListAsync(cancellationToken);
             }
 
-            var result = chats.Select(c => c.ToChatSummaryDto(request.UserId)).ToList();
+            var result = chats.Select(c => c.ToSummaryDto(request.UserId)).ToList();
 
             return new Result<List<ChatSummaryDto>> { Succeeded = true, Data = result };
         }

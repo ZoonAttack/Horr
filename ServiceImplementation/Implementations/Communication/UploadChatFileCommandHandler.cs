@@ -14,6 +14,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ServiceImplementation.Mappings.Communication;
 
 namespace ServiceImplementation.Implementations.Communication
 {
@@ -166,7 +167,7 @@ namespace ServiceImplementation.Implementations.Communication
                 await _context.SaveChangesAsync(cancellationToken);
 
                 message.Sender = user;
-                var messageDto = message.ToMessageDto();
+                var messageDto = message.ToDto();
 
                 // Broadcast
                 await _hubContext.Clients.Group($"chat-{request.ChatId}")

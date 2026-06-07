@@ -11,6 +11,7 @@ using ServiceImplementation.Hubs;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using ServiceImplementation.Mappings.Communication;
 
 namespace ServiceImplementation.Implementations.Communication
 {
@@ -76,7 +77,7 @@ namespace ServiceImplementation.Implementations.Communication
 
             // Set the sender navigation property from the loaded user to map it correctly
             message.Sender = user;
-            var messageDto = message.ToMessageDto();
+            var messageDto = message.ToDto();
 
             // Broadcast to group
             await _hubContext.Clients.Group($"chat-{request.ChatId}")

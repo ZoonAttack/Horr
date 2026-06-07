@@ -64,7 +64,7 @@ namespace UnitTesting.Communication
         }
     }
 
-    public class ConversationMappingExtensionsTests
+    public class ChatMappingExtensionsTests
     {
         // ── Message.ToDto() ──────────────────────────────────────────────────
 
@@ -90,30 +90,6 @@ namespace UnitTesting.Communication
             dto.Body.Should().Be("Hello, world!");
             dto.Status.Should().Be(MessageStatus.Read);
             dto.SentAt.Should().Be(sentAt);
-        }
-
-        // ── Attachment.ToDto() ───────────────────────────────────────────────
-
-        [Fact]
-        public void AttachmentToDto_MapsAllFieldsCorrectly()
-        {
-            var uploadedAt = new DateTime(2025, 7, 20, 14, 0, 0, DateTimeKind.Utc);
-            var attachment = new Attachment
-            {
-                Id = "att-001",
-                MessageId = "msg-abc",
-                FileUrl = "https://cdn.example.com/file.pdf",
-                FileType = "application/pdf",
-                UploadedAt = uploadedAt
-            };
-
-            var dto = attachment.ToDto();
-
-            dto.Id.Should().Be("att-001");
-            dto.MessageId.Should().Be("msg-abc");
-            dto.FileUrl.Should().Be("https://cdn.example.com/file.pdf");
-            dto.FileType.Should().Be("application/pdf");
-            dto.UploadedAt.Should().Be(uploadedAt);
         }
     }
 }

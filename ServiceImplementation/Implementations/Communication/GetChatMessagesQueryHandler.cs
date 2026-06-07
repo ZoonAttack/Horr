@@ -10,6 +10,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ServiceImplementation.Mappings.Communication;
 
 namespace ServiceImplementation.Implementations.Communication
 {
@@ -84,7 +85,7 @@ namespace ServiceImplementation.Implementations.Communication
                     .Take(request.PageSize)
                     .ToListAsync(cancellationToken);
 
-                var items = rawItems.Select(m => m.ToMessageDto()).ToList();
+                var items = rawItems.Select(m => m.ToDto()).ToList();
 
                 await transaction.CommitAsync(cancellationToken);
 
