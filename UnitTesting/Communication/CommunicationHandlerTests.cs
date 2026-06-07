@@ -129,7 +129,7 @@ namespace UnitTesting.Communication
             await handler.Handle(command, CancellationToken.None);
 
             // Assert
-            _mockClients.Verify(c => c.Group("conv-1"), Times.Once);
+            _mockClients.Verify(c => c.Group("chat-conv-1"), Times.Once);
             _mockClientProxy.Verify(
                 x => x.SendCoreAsync(
                     "ReceiveMessage",

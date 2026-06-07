@@ -169,7 +169,7 @@ namespace ServiceImplementation.Implementations.Communication
                 var messageDto = message.ToMessageDto();
 
                 // Broadcast
-                await _hubContext.Clients.Group(request.ChatId)
+                await _hubContext.Clients.Group($"chat-{request.ChatId}")
                     .SendAsync("ReceiveMessage", messageDto, cancellationToken);
 
                 await transaction.CommitAsync(cancellationToken);
