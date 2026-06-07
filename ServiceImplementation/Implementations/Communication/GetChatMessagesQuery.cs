@@ -1,14 +1,14 @@
 using MediatR;
 using ServiceContracts.DTOs.Chat;
-using Services;
 using ServiceContracts.DTOs.Responses;
+using Services;
 
 namespace ServiceImplementation.Implementations.Communication
 {
-    public record GetMessagesQuery(
+    public record GetChatMessagesQuery(
         string ChatId,
         string UserId,
-        int PageNumber = 1,
-        int PageSize = 20
+        int Page = 1,
+        int PageSize = 30
     ) : IRequest<Result<PagedResult<MessageDto>>>;
 }

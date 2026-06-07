@@ -15,6 +15,7 @@ using ServiceContracts.DTOs.Chat;
 using ServiceImplementation.Exceptions;
 using ServiceImplementation.Implementations.Communication;
 using ServiceContracts.DTOs.Responses;
+using ServiceImplementation.Helpers;
 using System.Text;
 using System.IO;
 using System.Collections.Generic;
@@ -61,23 +62,28 @@ namespace UnitTesting.Communication
             var user1 = new Entities.Users.User { Id = "user-1", FullName = "User 1", Email = "u1@test.com", UserName = "u1" };
             var user2 = new Entities.Users.User { Id = "user-2", FullName = "User 2", Email = "u2@test.com", UserName = "u2" };
             
+            var client = new Client { UserId = "user-1" };
+            var freelancer = new Freelancer { UserId = "user-2", Availability = "FullTime" };
+
             var contract = new Contract { Id = 1, ClientId = "user-1", FreelancerId = "user-2", Status = ContractStatus.Active };
             var chat = new Chat { Id = "conv-1", ContractId = 1, ClientId = "user-1", FreelancerId = "user-2" };
 
             _context.Users.AddRange(user1, user2);
+            _context.Clients.Add(client);
+            _context.Freelancers.Add(freelancer);
             _context.Contracts.Add(contract);
             _context.Chats.Add(chat);
             await _context.SaveChangesAsync();
         }
 
-        // 1. Assert SendMessage: persisted Message has Status = Unread
+        // 1. Assert SendTextMessage: persisted Message has Status = Unread
         [Fact]
-        public async Task SendMessage_Should_Persist_With_Status_Unread()
+        public async Task SendTextMessage_Should_Persist_With_Status_Unread()
         {
             // Arrange
             await SeedBaseData();
-            var handler = new SendMessageCommandHandler(_context, _mockHubContext.Object, _mockWebHostEnvironment.Object);
-            var command = new SendMessageCommand("conv-1", "user-1", "Hello World");
+            var handler = new SendTextMessageCommandHandler(_context, _mockHubContext.Object);
+            var command = new SendTextMessageCommand("conv-1", "user-1", "Hello World");
 
             // Act
             var result = await handler.Handle(command, CancellationToken.None);
@@ -88,18 +94,16 @@ namespace UnitTesting.Communication
             message.Status.Should().Be(MessageStatus.Unread);
         }
 
-        // 2. Assert SendMessage with 2 uploaded files: exactly 2 Attachment rows created with correct FileUrl and FileType values
+        // 2. Assert UploadChatFile: Attachment row created with correct FileUrl and FileType values
         [Fact]
-        public async Task SendMessage_With_Files_Should_Create_Attachments()
+        public async Task UploadChatFile_Should_Create_Attachment()
         {
             // Arrange
             await SeedBaseData();
-            var handler = new SendMessageCommandHandler(_context, _mockHubContext.Object, _mockWebHostEnvironment.Object);
+            var handler = new UploadChatFileCommandHandler(_context, _mockHubContext.Object, _mockWebHostEnvironment.Object);
             
-            var file1 = new FormFile(new MemoryStream(Encoding.UTF8.GetBytes("test")), 0, 4, "files", "test1.jpg");
-            var file2 = new FormFile(new MemoryStream(Encoding.UTF8.GetBytes("test2")), 0, 5, "files", "test2.pdf");
-            
-            var command = new SendMessageCommand("conv-1", "user-1", "Hello with files", new List<IFormFile> { file1, file2 });
+            var file1 = new FormFile(new MemoryStream(Encoding.UTF8.GetBytes("test")), 0, 4, "file", "test1.jpg");
+            var command = new UploadChatFileCommand("conv-1", "user-1", file1);
 
             // Act
             var result = await handler.Handle(command, CancellationToken.None);
@@ -107,20 +111,19 @@ namespace UnitTesting.Communication
             // Assert
             result.Succeeded.Should().BeTrue();
             var attachments = await _context.Attachments.Where(a => a.MessageId == result.Data.Id).ToListAsync();
-            attachments.Should().HaveCount(2);
-            attachments.Should().ContainSingle(a => a.FileType == ".jpg");
-            attachments.Should().ContainSingle(a => a.FileType == ".pdf");
-            attachments.All(a => a.FileUrl.StartsWith("/uploads/chat/")).Should().BeTrue();
+            attachments.Should().HaveCount(1);
+            attachments[0].FileType.Should().Be(".jpg");
+            attachments[0].FileUrl.Should().StartWith("/uploads/chat/");
         }
 
-        // 3. Assert SendMessage: IHubContext.Clients.Group("conv-123").SendAsync("ReceiveMessage", ...) called exactly once (verify via Moq)
+        // 3. Assert SendTextMessage: IHubContext.Clients.Group("conv-1").SendAsync("ReceiveMessage", ...) called exactly once
         [Fact]
-        public async Task SendMessage_Should_Broadcast_Via_SignalR()
+        public async Task SendTextMessage_Should_Broadcast_Via_SignalR()
         {
             // Arrange
             await SeedBaseData();
-            var handler = new SendMessageCommandHandler(_context, _mockHubContext.Object, _mockWebHostEnvironment.Object);
-            var command = new SendMessageCommand("conv-1", "user-1", "Hello SignalR");
+            var handler = new SendTextMessageCommandHandler(_context, _mockHubContext.Object);
+            var command = new SendTextMessageCommand("conv-1", "user-1", "Hello SignalR");
 
             // Act
             await handler.Handle(command, CancellationToken.None);
@@ -135,9 +138,9 @@ namespace UnitTesting.Communication
                 Times.Once);
         }
 
-        // 4. Assert GetConversations: seed 5 messages (3 Unread from other user, 2 Unread from current user) → UnreadCount = 3
+        // 4. Assert GetChatsByUser: seed 5 messages (3 Unread from other user, 2 Unread from current user) → UnreadCount = 3
         [Fact]
-        public async Task GetConversations_Should_Return_Correct_UnreadCount()
+        public async Task GetChatsByUser_Should_Return_Correct_UnreadCount()
         {
             // Arrange
             await SeedBaseData();
@@ -154,44 +157,44 @@ namespace UnitTesting.Communication
 
             await _context.SaveChangesAsync();
 
-            var handler = new GetConversationsQueryHandler(_context);
-            var query = new GetConversationsQuery(currentUser);
+            var handler = new GetChatsByUserQueryHandler(_context);
+            var query = new GetChatsByUserQuery(currentUser, UserRole.Client);
 
             // Act
             var result = await handler.Handle(query, CancellationToken.None);
 
             // Assert
             result.Succeeded.Should().BeTrue();
-            result.Data.Should().ContainSingle(c => c.Id == "conv-1");
-            result.Data.First(c => c.Id == "conv-1").UnreadCount.Should().Be(3);
+            result.Data.Should().ContainSingle(c => c.ChatId == "conv-1");
+            result.Data.First(c => c.ChatId == "conv-1").UnreadCount.Should().Be(3);
         }
 
-        // 5. Assert GetConversations: seed message with 60-char body → LastMessagePreview ends with "..." and total length = 53
+        // 5. Assert GetChatsByUser: seed message with 70-char body → LastMessagePreview is truncated to 60 chars
         [Fact]
-        public async Task GetConversations_Should_Truncate_LastMessagePreview()
+        public async Task GetChatsByUser_Should_Truncate_LastMessagePreview()
         {
             // Arrange
             await SeedBaseData();
-            var longBody = "This is a very long message body that exceeds fifty characters for testing.";
+            var longBody = "This is a very long message body that exceeds sixty characters for testing purposes.";
             _context.Messages.Add(new Message { Id = "msg-long", ChatId = "conv-1", SenderId = "user-2", Body = longBody, SentAt = DateTime.UtcNow });
             await _context.SaveChangesAsync();
 
-            var handler = new GetConversationsQueryHandler(_context);
-            var query = new GetConversationsQuery("user-1");
+            var handler = new GetChatsByUserQueryHandler(_context);
+            var query = new GetChatsByUserQuery("user-1", UserRole.Client);
 
             // Act
             var result = await handler.Handle(query, CancellationToken.None);
 
             // Assert
             result.Succeeded.Should().BeTrue();
-            var preview = result.Data.First(c => c.Id == "conv-1").LastMessagePreview;
-            preview.Should().EndWith("...");
-            preview.Length.Should().Be(53);
+            var preview = result.Data.First(c => c.ChatId == "conv-1").LastMessagePreview;
+            preview.Length.Should().Be(60);
+            preview.Should().Be(longBody.Substring(0, 60));
         }
 
-        // 6. Assert GetMessages: seed 4 Unread from other user + 1 Unread from current user → after fetch, 4 marked Read, current user's 1 still Unread
+        // 6. Assert GetChatMessages: seed 4 Unread from other user + 1 Unread from current user → after fetch, 4 marked Read, current user's 1 still Unread
         [Fact]
-        public async Task GetMessages_Should_Mark_Other_Users_Messages_As_Read()
+        public async Task GetChatMessages_Should_Mark_Other_Users_Messages_As_Read()
         {
             // Arrange
             await SeedBaseData();
@@ -205,8 +208,8 @@ namespace UnitTesting.Communication
             
             await _context.SaveChangesAsync();
 
-            var handler = new GetMessagesQueryHandler(_context);
-            var query = new GetMessagesQuery("conv-1", currentUser);
+            var handler = new GetChatMessagesQueryHandler(_context);
+            var query = new GetChatMessagesQuery("conv-1", currentUser);
 
             // Act
             await handler.Handle(query, CancellationToken.None);
@@ -219,9 +222,9 @@ namespace UnitTesting.Communication
             myMsg.Status.Should().Be(MessageStatus.Unread);
         }
 
-        // 7. Assert GetMessages: results ordered newest-first — assert first item has the latest SentAt value
+        // 7. Assert GetChatMessages: results ordered newest-first — assert first item has the latest SentAt value
         [Fact]
-        public async Task GetMessages_Should_Be_Ordered_Newest_First()
+        public async Task GetChatMessages_Should_Be_Ordered_Newest_First()
         {
             // Arrange
             await SeedBaseData();
@@ -230,8 +233,8 @@ namespace UnitTesting.Communication
             _context.Messages.Add(new Message { Id = "msg-new", ChatId = "conv-1", SenderId = "user-2", Body = "New", SentAt = now });
             await _context.SaveChangesAsync();
 
-            var handler = new GetMessagesQueryHandler(_context);
-            var query = new GetMessagesQuery("conv-1", "user-1");
+            var handler = new GetChatMessagesQueryHandler(_context);
+            var query = new GetChatMessagesQuery("conv-1", "user-1");
 
             // Act
             var result = await handler.Handle(query, CancellationToken.None);
@@ -242,9 +245,9 @@ namespace UnitTesting.Communication
             result.Data.Items.First().SentAt.Should().BeOnOrAfter(result.Data.Items.Last().SentAt);
         }
 
-        // 8. Assert GetMessages: soft-deleted message does not appear in results
+        // 8. Assert GetChatMessages: soft-deleted message does not appear in results
         [Fact]
-        public async Task GetMessages_Should_Exclude_SoftDeleted_Messages()
+        public async Task GetChatMessages_Should_Exclude_SoftDeleted_Messages()
         {
             // Arrange
             await SeedBaseData();
@@ -252,8 +255,8 @@ namespace UnitTesting.Communication
             _context.Messages.Add(new Message { Id = "msg-vis", ChatId = "conv-1", SenderId = "user-2", Body = "Visible", IsDeleted = false });
             await _context.SaveChangesAsync();
 
-            var handler = new GetMessagesQueryHandler(_context);
-            var query = new GetMessagesQuery("conv-1", "user-1");
+            var handler = new GetChatMessagesQueryHandler(_context);
+            var query = new GetChatMessagesQuery("conv-1", "user-1");
 
             // Act
             var result = await handler.Handle(query, CancellationToken.None);
@@ -264,111 +267,21 @@ namespace UnitTesting.Communication
             result.Data.Items.Should().ContainSingle(m => m.Body == "Visible");
         }
 
-        // 9. Assert GetMessages: unknown conversationId throws NotFoundException
+        // 9. Assert GetChatMessages: unknown conversationId returns false Succeeded status
         [Fact]
-        public async Task GetMessages_Should_Throw_NotFound_For_Unknown_Conversation()
+        public async Task GetChatMessages_Should_Return_Failure_For_Unknown_Conversation()
         {
             // Arrange
             await SeedBaseData();
-            var handler = new GetMessagesQueryHandler(_context);
-            var query = new GetMessagesQuery("unknown-conv", "user-1");
+            var handler = new GetChatMessagesQueryHandler(_context);
+            var query = new GetChatMessagesQuery("unknown-conv", "user-1");
 
             // Act
             var result = await handler.Handle(query, CancellationToken.None);
  
             // Assert
             result.Succeeded.Should().BeFalse();
-            result.ErrorCode.Should().Be("CONVERSATION_NOT_FOUND");
-        }
-
-        private async Task SeedJobData()
-        {
-            var contract = new Contract 
-            { 
-                Id = 123, 
-                ClientId = "user-1", 
-                FreelancerId = "user-2",
-                Status = ContractStatus.Active
-            };
-            _context.Contracts.Add(contract);
-            await _context.SaveChangesAsync();
-        }
-
-        [Fact]
-        public async Task SendMessage_Should_InitiateNewConversation_WhenItDoesNotExist_AndFormDataProvided()
-        {
-            // Arrange
-            await SeedBaseData();
-            await SeedJobData();
-            var handler = new SendMessageCommandHandler(_context, _mockHubContext.Object, _mockWebHostEnvironment.Object);
-            
-            var command = new SendMessageCommand(
-                "new-conv-id", 
-                "user-1", 
-                "Initial message regarding job", 
-                null, 
-                123, 
-                "user-2"
-            );
-
-            // Act
-            var result = await handler.Handle(command, CancellationToken.None);
-
-            // Assert
-            result.Succeeded.Should().BeTrue();
-            result.Data.Body.Should().Be("Initial message regarding job");
-
-            var chat = await _context.Chats.FirstOrDefaultAsync(c => c.Id == "new-conv-id");
-            chat.Should().NotBeNull();
-            chat.ContractId.Should().Be(123);
-        }
-
-        [Fact]
-        public async Task SendMessage_Should_FailToInitiate_WhenItDoesNotExist_AndFormDataMissing()
-        {
-            // Arrange
-            await SeedBaseData();
-            var handler = new SendMessageCommandHandler(_context, _mockHubContext.Object, _mockWebHostEnvironment.Object);
-            
-            var command = new SendMessageCommand(
-                "new-conv-id", 
-                "user-1", 
-                "Initial message", 
-                null, 
-                null, 
-                null
-            );
-
-            // Act
-            var result = await handler.Handle(command, CancellationToken.None);
-
-            // Assert
-            result.Succeeded.Should().BeFalse();
-            result.ErrorCode.Should().Be("CONVERSATION_NOT_FOUND");
-        }
-
-        [Fact]
-        public async Task SendMessage_Should_FailToInitiate_WhenContractDoesNotExist()
-        {
-            // Arrange
-            await SeedBaseData();
-            var handler = new SendMessageCommandHandler(_context, _mockHubContext.Object, _mockWebHostEnvironment.Object);
-            
-            var command = new SendMessageCommand(
-                "new-conv-id", 
-                "user-1", 
-                "Initial message", 
-                null, 
-                999, 
-                "user-2"
-            );
-
-            // Act
-            var result = await handler.Handle(command, CancellationToken.None);
-
-            // Assert
-            result.Succeeded.Should().BeFalse();
-            result.ErrorCode.Should().Be("CONTRACT_NOT_FOUND");
+            result.ErrorCode.Should().Be(ErrorCodes.Unauthorized);
         }
     }
 }

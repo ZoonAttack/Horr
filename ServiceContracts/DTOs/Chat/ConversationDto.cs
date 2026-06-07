@@ -20,15 +20,36 @@ namespace ServiceContracts.DTOs.Chat
     }
 
     /// <summary>
+    /// DTO for a Chat Summary in lists.
+    /// </summary>
+    public class ChatSummaryDto
+    {
+        public string Id { get; set; } = string.Empty;
+        public string ChatId { get; set; } = string.Empty;
+        public int ContractId { get; set; }
+        public string OtherPartyName { get; set; } = string.Empty;
+        public string? OtherPartyAvatarUrl { get; set; }
+        public string LastMessagePreview { get; set; } = string.Empty;
+        public DateTime? LastMessageAt { get; set; }
+        public int UnreadCount { get; set; }
+    }
+
+    /// <summary>
     /// Read DTO for a Message.
     /// </summary>
     public class MessageDto
     {
         public string Id { get; set; } = string.Empty;
 
+        public string MessageId { get; set; } = string.Empty;
+
         public string ChatId { get; set; } = string.Empty;
 
         public string SenderId { get; set; } = string.Empty;
+
+        public string SenderName { get; set; } = string.Empty;
+
+        public string? SenderAvatarUrl { get; set; }
 
         public string Body { get; set; } = string.Empty;
 

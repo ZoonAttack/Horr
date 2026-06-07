@@ -43,10 +43,8 @@ namespace UnitTesting.User
             await _context.SaveChangesAsync();
 
             var mockHubContext = new Mock<IHubContext<ChatHub>>();
-            var mockWebHost = new Mock<IWebHostEnvironment>();
-            mockWebHost.Setup(w => w.WebRootPath).Returns(System.IO.Directory.GetCurrentDirectory());
-            var handler = new SendMessageCommandHandler(_context, mockHubContext.Object, mockWebHost.Object);
-            var command = new SendMessageCommand("conv-1", "deleted-user", "Hello");
+            var handler = new SendTextMessageCommandHandler(_context, mockHubContext.Object);
+            var command = new SendTextMessageCommand("conv-1", "deleted-user", "Hello");
 
             // Act
             var result = await handler.Handle(command, CancellationToken.None);

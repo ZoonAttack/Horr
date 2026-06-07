@@ -37,6 +37,12 @@ public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFa
         if (!await context.Users.AnyAsync(u => u.Id == user2Id))
             context.Users.Add(new Entities.Users.User { Id = user2Id, UserName = user2Id, Email = $"{user2Id}@example.com", FullName = user2Id });
 
+        if (!await context.Clients.AnyAsync(c => c.UserId == user1Id))
+            context.Clients.Add(new Client { UserId = user1Id });
+
+        if (!await context.Freelancers.AnyAsync(f => f.UserId == user2Id))
+            context.Freelancers.Add(new Freelancer { UserId = user2Id, Availability = "FullTime" });
+
         var contractId = Math.Abs(conversationId.GetHashCode()) % 1000000;
         if (!await context.Contracts.AnyAsync(c => c.Id == contractId))
         {
@@ -213,34 +219,20 @@ public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFa
     }
 
     [Fact]
-    public async Task SendMessage_Should_InitiateNewConversation_WhenItDoesNotExist_AndFormDataProvided_Integration()
+    public async Task SendMessage_Should_Succeed_WhenConversationExists_Integration()
     {
         using var scope = _factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var currentUser = "client-int-sender";
         var otherUser = "freelancer-int-receiver";
-        var newConversationId = "conv-new-int-1";
-        var contractId = 12345;
+        var conversationId = "conv-exists-int-1";
 
-        // Seed users
-        if (!await context.Users.AnyAsync(u => u.Id == currentUser))
-            context.Users.Add(new Entities.Users.User { Id = currentUser, UserName = currentUser, Email = $"{currentUser}@example.com", FullName = currentUser });
-
-        if (!await context.Users.AnyAsync(u => u.Id == otherUser))
-            context.Users.Add(new Entities.Users.User { Id = otherUser, UserName = otherUser, Email = $"{otherUser}@example.com", FullName = otherUser });
-
-        // Seed contract
-        if (!await context.Contracts.AnyAsync(c => c.Id == contractId))
-            context.Contracts.Add(new Contract { Id = contractId, ClientId = currentUser, FreelancerId = otherUser, Status = ContractStatus.Active });
-
-        await context.SaveChangesAsync();
+        await SeedDataAsync(context, conversationId, currentUser, otherUser);
 
         var form = new MultipartFormDataContent();
-        form.Add(new StringContent("Dynamic Conversation Initiation Test Message"), "body");
-        form.Add(new StringContent(contractId.ToString()), "contractId");
-        form.Add(new StringContent(otherUser), "receiverId");
+        form.Add(new StringContent("Hello regarding this job"), "body");
 
-        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/conversations/{newConversationId}/messages");
+        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/conversations/{conversationId}/messages");
         request.Headers.Add("X-Test-UserId", currentUser);
         request.Headers.Add("X-Test-UserRole", "Client");
         request.Content = form;
@@ -248,21 +240,14 @@ public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFa
         var response = await _client.SendAsync(request);
         var body = await response.Content.ReadAsStringAsync();
         response.StatusCode.Should().Be(HttpStatusCode.Created, body);
-
-        // Verify conversation is created in database
-        using var checkScope = _factory.Services.CreateScope();
-        var checkContext = checkScope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var conversation = await checkContext.Chats.FirstOrDefaultAsync(c => c.Id == newConversationId);
-        conversation.Should().NotBeNull();
-        conversation.ContractId.Should().Be(contractId);
     }
 
     [Fact]
-    public async Task SendMessage_Should_Return_BadRequest_WhenConversationDoesNotExist_AndJobPostNotFound_Integration()
+    public async Task SendMessage_Should_Return_BadRequest_WhenConversationDoesNotExist_Integration()
     {
         var currentUser = "client-int-sender-fail";
         var otherUser = "freelancer-int-receiver-fail";
-        var newConversationId = "conv-new-int-fail";
+        var conversationId = "conv-not-exists-int-fail";
 
         using var scope = _factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -275,11 +260,9 @@ public class ConversationsControllerTests : IClassFixture<CustomWebApplicationFa
         await context.SaveChangesAsync();
 
         var form = new MultipartFormDataContent();
-        form.Add(new StringContent("Failing Initiation Test Message"), "body");
-        form.Add(new StringContent("99999"), "contractId");
-        form.Add(new StringContent(otherUser), "receiverId");
+        form.Add(new StringContent("Failing Message"), "body");
 
-        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/conversations/{newConversationId}/messages");
+        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/conversations/{conversationId}/messages");
         request.Headers.Add("X-Test-UserId", currentUser);
         request.Headers.Add("X-Test-UserRole", "Client");
         request.Content = form;

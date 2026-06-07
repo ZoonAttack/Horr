@@ -6,6 +6,11 @@ using ServiceContracts.DTOs.Chat;
 using ServiceImplementation.Implementations.Communication;
 using System.Security.Claims;
 using Services;
+using Entities.Enums;
+using System.IO;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using ServiceImplementation.Helpers;
 
 namespace Horr.Controllers
 {
@@ -22,13 +27,13 @@ namespace Horr.Controllers
         }
 
         [HttpGet]
-        [ProducesResponseType(typeof(IEnumerable<ConversationDto>), 200)]
-        public async Task<IActionResult> GetConversations()
+        [ProducesResponseType(typeof(IEnumerable<ChatSummaryDto>), 200)]
+        public async Task<IActionResult> GetConversations([FromQuery] UserRole role = UserRole.Client)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            var result = await _mediator.Send(new GetConversationsQuery(userId));
+            var result = await _mediator.Send(new GetChatsByUserQuery(userId, role));
             if (!result.Succeeded) return BadRequest(result);
             return Ok(result.Data);
         }
@@ -36,15 +41,15 @@ namespace Horr.Controllers
         [HttpGet("{id}/messages")]
         [ProducesResponseType(typeof(PagedResult<MessageDto>), 200)]
         [ProducesResponseType(404)]
-        public async Task<IActionResult> GetMessages(string id, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        public async Task<IActionResult> GetMessages(string id, [FromQuery] int page = 1, [FromQuery] int pageSize = 30)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            var result = await _mediator.Send(new GetMessagesQuery(id, userId, page, pageSize));
+            var result = await _mediator.Send(new GetChatMessagesQuery(id, userId, page, pageSize));
             if (!result.Succeeded)
             {
-                if (result.ErrorCode == "CONVERSATION_NOT_FOUND")
+                if (result.ErrorCode == ErrorCodes.Unauthorized || result.ErrorCode == "CONVERSATION_NOT_FOUND")
                 {
                     return NotFound(new ProblemDetails
                     {
@@ -65,17 +70,16 @@ namespace Horr.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> SendMessage(
             string id, 
-            [FromForm] string body, 
-            [FromForm] List<IFormFile>? files,
-            [FromForm] int? contractId = null,
-            [FromForm] string? receiverId = null)
+            [FromForm] string? body, 
+            [FromForm] List<IFormFile>? files)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            if (string.IsNullOrWhiteSpace(body))
+            // Validate that we have either a body or a file
+            if (string.IsNullOrWhiteSpace(body) && (files == null || files.Count == 0))
             {
-                return BadRequest("Message body is required.");
+                return BadRequest("Message body or file is required.");
             }
 
             if (files != null && files.Count > 0)
@@ -116,14 +120,25 @@ namespace Horr.Controllers
                         });
                     }
                 }
-            }
 
-            var result = await _mediator.Send(new SendMessageCommand(id, userId, body, files, contractId, receiverId));
-            if (!result.Succeeded)
-            {
-                return BadRequest(result);
+                // Call the upload command for the first file
+                var result = await _mediator.Send(new UploadChatFileCommand(id, userId, files[0]));
+                if (!result.Succeeded)
+                {
+                    return BadRequest(result);
+                }
+                return StatusCode(201, result.Data);
             }
-            return StatusCode(201, result.Data);
+            else
+            {
+                // Call text message command
+                var result = await _mediator.Send(new SendTextMessageCommand(id, userId, body!));
+                if (!result.Succeeded)
+                {
+                    return BadRequest(result);
+                }
+                return StatusCode(201, result.Data);
+            }
         }
     }
 }
