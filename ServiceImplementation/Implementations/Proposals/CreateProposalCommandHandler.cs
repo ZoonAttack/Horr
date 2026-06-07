@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Entities;
+using Entities.Enums;
 using Entities.Project;
 using ServiceContracts.DTOs.Responses;
 using ServiceContracts.DTOs.Proposal;
@@ -61,6 +62,19 @@ namespace ServiceImplementation.Implementations.Proposals
             if (job == null)
             {
                 throw new NotFoundException($"Job post with ID {dto.JobPostId} not found.");
+            }
+
+            // Validate job-type specific requirements
+            if (job.JobType == JobType.FixedPrice)
+            {
+                if (dto.Terms != null && dto.Terms.Any())
+                {
+                    var totalMilestoneAmount = dto.Terms.Sum(t => t.Amount);
+                    if (totalMilestoneAmount != dto.BidRate)
+                    {
+                        throw new ValidationException("Validation failed", new List<string> { $"The sum of milestone amounts ({totalMilestoneAmount}) must equal the total bid rate ({dto.BidRate})." });
+                    }
+                }
             }
 
             // 6. Calculate HORR Fee

@@ -29,7 +29,7 @@ namespace UnitTesting.Proposals
             context.Users.Add(new Entities.Users.User { Id = "f1", UserName = "f1", Email = "f1@t.com", FullName = "F 1" });
             context.Freelancers.Add(new Entities.Users.Freelancer { UserId = "f1", Availability = "Full-time", PortfolioUrl = "https://example.com" });
             context.Categories.Add(new Category { Id = "1", Name = "1", Slug = "1" });
-            var job = new JobPost { Id = "1", Title = "Job", Description = "Desc", ClientId = "c1", CategoryId = "1" };
+            var job = new JobPost { Id = "1", Title = "Job", Description = "Desc", ClientId = "c1", CategoryId = "1", JobType = JobType.Hourly };
             context.JobPosts.Add(job);
             await context.SaveChangesAsync();
 
@@ -104,6 +104,109 @@ namespace UnitTesting.Proposals
             // ASSERT
             result.Succeeded.Should().BeFalse();
             result.ErrorCode.Should().Be(ServiceImplementation.Helpers.ErrorCodes.AccountDeleted);
+        }
+
+        [Fact]
+        public async Task CreateProposal_ShouldSucceed_WhenFixedPriceAndMilestonesSumEqualsBidRate()
+        {
+            // ARRANGE
+            using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+            
+            context.Users.Add(new Entities.Users.User { Id = "f1", UserName = "f1", Email = "f1@t.com", FullName = "F 1" });
+            context.Freelancers.Add(new Entities.Users.Freelancer { UserId = "f1", Availability = "Full-time", PortfolioUrl = "https://example.com" });
+            context.Categories.Add(new Category { Id = "1", Name = "1", Slug = "1" });
+            var job = new JobPost { Id = "1", Title = "Job", Description = "Desc", ClientId = "c1", CategoryId = "1", JobType = JobType.FixedPrice };
+            context.JobPosts.Add(job);
+            await context.SaveChangesAsync();
+
+            var handler = new CreateProposalCommandHandler(context);
+            var dto = new ProposalCreateDTO
+            {
+                JobPostId = "1",
+                BidRate = 100,
+                CoverLetter = new string('a', 60),
+                SubmitAsType = SubmitAsType.Freelancer,
+                Terms = new List<ProposalTermDTO>
+                {
+                    new ProposalTermDTO { MilestoneTitle = "M1", Amount = 40, DueDate = DateTime.UtcNow.AddDays(7) },
+                    new ProposalTermDTO { MilestoneTitle = "M2", Amount = 60, DueDate = DateTime.UtcNow.AddDays(14) }
+                }
+            };
+
+            // ACT
+            var result = await handler.Handle(new CreateProposalCommand(dto, "f1"), CancellationToken.None);
+
+            // ASSERT
+            result.Succeeded.Should().BeTrue();
+            result.Data.BidRate.Should().Be(100);
+            result.Data.Terms.Should().HaveCount(2);
+        }
+
+        [Fact]
+        public async Task CreateProposal_ShouldFail_WhenFixedPriceAndMilestonesSumDoesNotEqualBidRate()
+        {
+            // ARRANGE
+            using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+            
+            context.Users.Add(new Entities.Users.User { Id = "f1", UserName = "f1", Email = "f1@t.com", FullName = "F 1" });
+            context.Freelancers.Add(new Entities.Users.Freelancer { UserId = "f1", Availability = "Full-time", PortfolioUrl = "https://example.com" });
+            context.Categories.Add(new Category { Id = "1", Name = "1", Slug = "1" });
+            var job = new JobPost { Id = "1", Title = "Job", Description = "Desc", ClientId = "c1", CategoryId = "1", JobType = JobType.FixedPrice };
+            context.JobPosts.Add(job);
+            await context.SaveChangesAsync();
+
+            var handler = new CreateProposalCommandHandler(context);
+            var dto = new ProposalCreateDTO
+            {
+                JobPostId = "1",
+                BidRate = 100,
+                CoverLetter = new string('a', 60),
+                SubmitAsType = SubmitAsType.Freelancer,
+                Terms = new List<ProposalTermDTO>
+                {
+                    new ProposalTermDTO { MilestoneTitle = "M1", Amount = 40, DueDate = DateTime.UtcNow.AddDays(7) },
+                    new ProposalTermDTO { MilestoneTitle = "M2", Amount = 50, DueDate = DateTime.UtcNow.AddDays(14) } // Sum is 90, not 100
+                }
+            };
+
+            // ACT
+            Func<Task> act = async () => await handler.Handle(new CreateProposalCommand(dto, "f1"), CancellationToken.None);
+
+            // ASSERT
+            var ex = await act.Should().ThrowAsync<ValidationException>();
+            ex.Which.Errors.Should().Contain(e => e.Contains("The sum of milestone amounts (90) must equal the total bid rate (100)"));
+        }
+
+        [Fact]
+        public async Task CreateProposal_ShouldSucceed_WhenFixedPriceAndNoMilestonesProvided()
+        {
+            // ARRANGE
+            using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+            
+            context.Users.Add(new Entities.Users.User { Id = "f1", UserName = "f1", Email = "f1@t.com", FullName = "F 1" });
+            context.Freelancers.Add(new Entities.Users.Freelancer { UserId = "f1", Availability = "Full-time", PortfolioUrl = "https://example.com" });
+            context.Categories.Add(new Category { Id = "1", Name = "1", Slug = "1" });
+            var job = new JobPost { Id = "1", Title = "Job", Description = "Desc", ClientId = "c1", CategoryId = "1", JobType = JobType.FixedPrice };
+            context.JobPosts.Add(job);
+            await context.SaveChangesAsync();
+
+            var handler = new CreateProposalCommandHandler(context);
+            var dto = new ProposalCreateDTO
+            {
+                JobPostId = "1",
+                BidRate = 100,
+                CoverLetter = new string('a', 60),
+                SubmitAsType = SubmitAsType.Freelancer,
+                Terms = new List<ProposalTermDTO>() // empty milestones
+            };
+
+            // ACT
+            var result = await handler.Handle(new CreateProposalCommand(dto, "f1"), CancellationToken.None);
+
+            // ASSERT
+            result.Succeeded.Should().BeTrue();
+            result.Data.BidRate.Should().Be(100);
+            result.Data.Terms.Should().BeEmpty();
         }
     }
 }
