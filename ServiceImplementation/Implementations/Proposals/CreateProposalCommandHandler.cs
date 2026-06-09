@@ -64,17 +64,10 @@ namespace ServiceImplementation.Implementations.Proposals
                 throw new NotFoundException($"Job post with ID {dto.JobPostId} not found.");
             }
 
-            // Validate job-type specific requirements
-            if (job.JobType == JobType.FixedPrice)
+            // Validate job-type specific requirements - Enforce single-payment only
+            if (dto.Terms != null && dto.Terms.Any())
             {
-                if (dto.Terms != null && dto.Terms.Any())
-                {
-                    var totalMilestoneAmount = dto.Terms.Sum(t => t.Amount);
-                    if (totalMilestoneAmount != dto.BidRate)
-                    {
-                        throw new ValidationException("Validation failed", new List<string> { $"The sum of milestone amounts ({totalMilestoneAmount}) must equal the total bid rate ({dto.BidRate})." });
-                    }
-                }
+                throw new ValidationException("Validation failed", new List<string> { "Milestone-based proposals are not supported right now. Proposals must be single-payment (do not provide milestone terms)." });
             }
 
             // 6. Calculate HORR Fee
@@ -90,12 +83,15 @@ namespace ServiceImplementation.Implementations.Proposals
                 HORRFee = horrFee,
                 CoverLetter = dto.CoverLetter,
                 CreatedAt = DateTime.UtcNow,
-                Terms = dto.Terms.Select(t => new ProposalTerm
+                Terms = new List<ProposalTerm>
                 {
-                    MilestoneTitle = t.MilestoneTitle,
-                    Amount = t.Amount,
-                    DueDate = t.DueDate
-                }).ToList()
+                    new ProposalTerm
+                    {
+                        MilestoneTitle = "Single Payment",
+                        Amount = dto.BidRate,
+                        DueDate = DateTime.UtcNow.AddDays(14)
+                    }
+                }
             };
 
             _context.Proposals.Add(proposal);

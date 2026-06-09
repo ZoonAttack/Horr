@@ -77,5 +77,28 @@ namespace Horr.Controllers
             }
             return NoContent();
         }
+
+        /// <summary>
+        /// Rejects a submitted proposal.
+        /// </summary>
+        /// <param name="id">The proposal ID to reject.</param>
+        /// <returns>No content on success.</returns>
+        [HttpPost("{id}/reject")]
+        [Authorize(Policy = "ClientOnly")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> Reject(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var result = await _mediator.Send(new RejectProposalCommand(id, userId));
+            if (!result.Succeeded)
+            {
+                return BadRequest(result);
+            }
+            return NoContent();
+        }
     }
 }

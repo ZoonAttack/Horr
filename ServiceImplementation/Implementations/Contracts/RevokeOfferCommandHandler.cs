@@ -15,10 +15,12 @@ namespace ServiceImplementation.Implementations.Contracts
     public class RevokeOfferCommandHandler : IRequestHandler<RevokeOfferCommand, Result<bool>>
     {
         private readonly AppDbContext _context;
+        private readonly Services.Wallet.IEscrowService _escrowService;
 
-        public RevokeOfferCommandHandler(AppDbContext context)
+        public RevokeOfferCommandHandler(AppDbContext context, Services.Wallet.IEscrowService escrowService)
         {
             _context = context;
+            _escrowService = escrowService;
         }
 
         public async Task<Result<bool>> Handle(RevokeOfferCommand request, CancellationToken cancellationToken)
@@ -57,23 +59,34 @@ namespace ServiceImplementation.Implementations.Contracts
                 };
             }
 
-            // Refund Escrowed Funds to Client
-            var clientWallet = await _context.WalletBalances.FirstOrDefaultAsync(w => w.UserId == contract.ClientId, cancellationToken);
-            if (clientWallet != null)
+            // Refund Escrowed Funds to Client via EscrowService
+            var milestone = await _context.ContractMilestones
+                .FirstOrDefaultAsync(m => m.ContractId == contract.Id, cancellationToken);
+            if (milestone != null)
             {
-                clientWallet.BalanceEGP += contract.AgreedRate;
-                clientWallet.LastUpdatedAt = DateTime.UtcNow;
-
-                var transaction = new Transaction
+                var contractGuid = Guid.Parse($"00000000-0000-0000-0000-{contract.Id:x12}");
+                await _escrowService.RefundToClientAsync(contractGuid, milestone.Id, "Offer revoked");
+            }
+            else
+            {
+                // Fallback for milestone-less legacy tests
+                var clientWallet = await _context.WalletBalances.FirstOrDefaultAsync(w => w.UserId == contract.ClientId, cancellationToken);
+                if (clientWallet != null)
                 {
-                    UserId = contract.ClientId,
-                    Amount = contract.AgreedRate,
-                    Direction = TransactionDirection.Credit,
-                    Type = TransactionType.Refund,
-                    Description = $"Refund of escrowed funds for revoked offer (Contract ID: {contract.Id})",
-                    CreatedAt = DateTime.UtcNow
-                };
-                _context.Transactions.Add(transaction);
+                    clientWallet.BalanceEGP += contract.AgreedRate;
+                    clientWallet.LastUpdatedAt = DateTime.UtcNow;
+
+                    var transaction = new Transaction
+                    {
+                        UserId = contract.ClientId,
+                        Amount = contract.AgreedRate,
+                        Direction = TransactionDirection.Credit,
+                        Type = TransactionType.Refund,
+                        Description = $"Refund of escrowed funds for revoked offer (Contract ID: {contract.Id})",
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _context.Transactions.Add(transaction);
+                }
             }
 
             // Set proposal back to Rejected (or could be set to Submitted if allowing re-offer, but Rejected is safer)

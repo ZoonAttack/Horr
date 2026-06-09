@@ -17,10 +17,12 @@ namespace ServiceImplementation.Implementations.Contracts
     public class DeclineOfferCommandHandler : IRequestHandler<DeclineOfferCommand, Result<bool>>
     {
         private readonly AppDbContext _context;
+        private readonly Services.Wallet.IEscrowService _escrowService;
 
-        public DeclineOfferCommandHandler(AppDbContext context)
+        public DeclineOfferCommandHandler(AppDbContext context, Services.Wallet.IEscrowService escrowService)
         {
             _context = context;
+            _escrowService = escrowService;
         }
 
         public async Task<Result<bool>> Handle(DeclineOfferCommand request, CancellationToken cancellationToken)
@@ -81,23 +83,34 @@ namespace ServiceImplementation.Implementations.Contracts
             contract.RejectedAt = DateTime.UtcNow;
             contract.ClosedAt = DateTime.UtcNow;
 
-            // Refund Escrowed Funds to Client
-            var clientWallet = await _context.WalletBalances.FirstOrDefaultAsync(w => w.UserId == contract.ClientId, cancellationToken);
-            if (clientWallet != null)
+            // Refund Escrowed Funds to Client via EscrowService
+            var milestone = await _context.ContractMilestones
+                .FirstOrDefaultAsync(m => m.ContractId == contract.Id, cancellationToken);
+            if (milestone != null)
             {
-                clientWallet.BalanceEGP += contract.AgreedRate;
-                clientWallet.LastUpdatedAt = DateTime.UtcNow;
-
-                var transaction = new Transaction
+                var contractGuid = Guid.Parse($"00000000-0000-0000-0000-{contract.Id:x12}");
+                await _escrowService.RefundToClientAsync(contractGuid, milestone.Id, "Offer declined");
+            }
+            else
+            {
+                // Fallback for milestone-less legacy tests
+                var clientWallet = await _context.WalletBalances.FirstOrDefaultAsync(w => w.UserId == contract.ClientId, cancellationToken);
+                if (clientWallet != null)
                 {
-                    UserId = contract.ClientId,
-                    Amount = contract.AgreedRate,
-                    Direction = TransactionDirection.Credit,
-                    Type = TransactionType.Refund,
-                    Description = $"Refund of escrowed funds for declined offer (Contract ID: {contract.Id})",
-                    CreatedAt = DateTime.UtcNow
-                };
-                _context.Transactions.Add(transaction);
+                    clientWallet.BalanceEGP += contract.AgreedRate;
+                    clientWallet.LastUpdatedAt = DateTime.UtcNow;
+
+                    var transaction = new Transaction
+                    {
+                        UserId = contract.ClientId,
+                        Amount = contract.AgreedRate,
+                        Direction = TransactionDirection.Credit,
+                        Type = TransactionType.Refund,
+                        Description = $"Refund of escrowed funds for declined offer (Contract ID: {contract.Id})",
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _context.Transactions.Add(transaction);
+                }
             }
 
             await _context.SaveChangesAsync(cancellationToken);

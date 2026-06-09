@@ -11,7 +11,8 @@ namespace ServiceImplementation.Implementations.Contracts
         public string ClientId { get; set; } = string.Empty;
         public string FreelancerId { get; set; } = string.Empty;
         public string JobPostId { get; set; } = string.Empty;
-        public string CustomJobDescription { get; set; } = string.Empty;
-        public List<ContractMilestoneDto> Milestones { get; set; } = new List<ContractMilestoneDto>();
+        public int? ProposalId { get; set; }
+        public decimal? AgreedRate { get; set; }
+        public string? CustomJobDescription { get; set; }
     }
 }

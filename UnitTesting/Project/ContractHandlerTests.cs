@@ -95,7 +95,8 @@ namespace UnitTesting.Project
             context.Contracts.Add(contract);
             await context.SaveChangesAsync();
 
-            var handler = new DeclineOfferCommandHandler(context);
+            var escrowMock = new Mock<Services.Wallet.IEscrowService>();
+            var handler = new DeclineOfferCommandHandler(context, escrowMock.Object);
             var command = new DeclineOfferCommand(contract.Id, proposal.FreelancerId);
 
             // Act
