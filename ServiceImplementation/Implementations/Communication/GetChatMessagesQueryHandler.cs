@@ -3,23 +3,27 @@ using Entities.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ServiceContracts.DTOs.Chat;
-using ServiceImplementation.Exceptions;
-using Services;
 using ServiceContracts.DTOs.Responses;
 using ServiceImplementation.Helpers;
+using Services;
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using ServiceImplementation.Mappings.Communication;
 
 namespace ServiceImplementation.Implementations.Communication
 {
-    public class GetMessagesQueryHandler : IRequestHandler<GetMessagesQuery, Result<PagedResult<MessageDto>>>
+    public class GetChatMessagesQueryHandler : IRequestHandler<GetChatMessagesQuery, Result<PagedResult<MessageDto>>>
     {
         private readonly AppDbContext _context;
 
-        public GetMessagesQueryHandler(AppDbContext context)
+        public GetChatMessagesQueryHandler(AppDbContext context)
         {
             _context = context;
         }
 
-        public async Task<Result<PagedResult<MessageDto>>> Handle(GetMessagesQuery request, CancellationToken cancellationToken)
+        public async Task<Result<PagedResult<MessageDto>>> Handle(GetChatMessagesQuery request, CancellationToken cancellationToken)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
             if (user == null || user.IsDeleted)
@@ -33,16 +37,18 @@ namespace ServiceImplementation.Implementations.Communication
             }
 
             // Verify conversation and participation
-            var isParticipant = await _context.ConversationParticipants
-                .AnyAsync(p => p.ConversationId == request.ConversationId && p.UserId == request.UserId, cancellationToken);
+            var chat = await _context.Chats
+                .FirstOrDefaultAsync(c => c.Id == request.ChatId && 
+                                          (c.ClientId == request.UserId || c.FreelancerId == request.UserId), 
+                                     cancellationToken);
 
-            if (!isParticipant)
+            if (chat == null)
             {
                 return new Result<PagedResult<MessageDto>>
                 {
                     Succeeded = false,
-                    ErrorCode = "CONVERSATION_NOT_FOUND",
-                    Message = $"Conversation with ID {request.ConversationId} not found or you are not a participant."
+                    ErrorCode = ErrorCodes.Unauthorized,
+                    Message = $"Conversation with ID {request.ChatId} not found or you are not a participant."
                 };
             }
 
@@ -52,7 +58,7 @@ namespace ServiceImplementation.Implementations.Communication
             {
                 // Mark unread messages from other users as read
                 var unreadMessages = await _context.Messages
-                    .Where(m => m.ConversationId == request.ConversationId && 
+                    .Where(m => m.ChatId == request.ChatId && 
                                 m.SenderId != request.UserId && 
                                 m.Status == MessageStatus.Unread)
                     .ToListAsync(cancellationToken);
@@ -68,23 +74,18 @@ namespace ServiceImplementation.Implementations.Communication
 
                 // Fetch paginated messages
                 var query = _context.Messages
-                    .Where(m => m.ConversationId == request.ConversationId)
+                    .Include(m => m.Sender)
+                    .Where(m => m.ChatId == request.ChatId)
                     .OrderByDescending(m => m.SentAt);
 
                 var totalCount = await query.CountAsync(cancellationToken);
-                var items = await query
-                    .Skip((request.PageNumber - 1) * request.PageSize)
+                
+                var rawItems = await query
+                    .Skip((request.Page - 1) * request.PageSize)
                     .Take(request.PageSize)
-                    .Select(m => new MessageDto
-                    {
-                        Id = m.Id,
-                        ConversationId = m.ConversationId,
-                        SenderId = m.SenderId,
-                        Body = m.Body,
-                        Status = m.Status,
-                        SentAt = m.SentAt
-                    })
                     .ToListAsync(cancellationToken);
+
+                var items = rawItems.Select(m => m.ToDto()).ToList();
 
                 await transaction.CommitAsync(cancellationToken);
 
@@ -92,7 +93,7 @@ namespace ServiceImplementation.Implementations.Communication
                 {
                     Items = items,
                     TotalCount = totalCount,
-                    Page = request.PageNumber,
+                    Page = request.Page,
                     PageSize = request.PageSize
                 };
 

@@ -35,7 +35,7 @@ namespace ServiceImplementation.Implementations.ClientImplementation
 
             var hasUnreadMessages = await _db.Messages
                 .AnyAsync(m => m.Status == MessageStatus.Unread && 
-                              m.Conversation.Participants.Any(p => p.UserId == userId) && 
+                              (m.Chat.ClientId == userId || m.Chat.FreelancerId == userId) && 
                               m.SenderId != userId);
 
             var hasPendingProposals = await _db.Proposals

@@ -79,9 +79,11 @@ namespace ServiceImplementation.Implementations.Contracts
                 StartedAt            = DateTime.UtcNow,
                 ContractMilestones   = request.Milestones.Select(m => new ContractMilestone
                 {
+                    Title       = m.Title,
                     Description = m.Title,
                     Amount      = m.Amount,
-                    DueDate     = m.DueDate
+                    DueDate     = m.DueDate,
+                    Status      = MilestoneStatus.Unfunded
                 }).ToList()
             };
 

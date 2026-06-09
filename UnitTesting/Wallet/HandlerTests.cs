@@ -164,6 +164,69 @@ namespace UnitTesting.Wallet
         }
 
         [Fact]
+        public async Task ReviewWithdrawal_Rejected_RestoresBalance()
+        {
+            // Arrange
+            var userId = "u1";
+            var withdrawal = new WithdrawalRequest { Id = Guid.NewGuid().ToString(), FreelancerId = userId, Amount = 100, Method = WithdrawalMethod.InstaPay, InstapayUsername = "user_insta", Status = WithdrawalStatus.Pending };
+            _context.WithdrawalRequests.Add(withdrawal);
+            _context.WalletBalances.Add(new WalletBalance { UserId = userId, BalanceEGP = 500 });
+            await _context.SaveChangesAsync();
+
+            var handler = new ReviewWithdrawalRequestCommandHandler(_context);
+            var command = new ReviewWithdrawalRequestCommand(withdrawal.Id, WithdrawalStatus.Rejected, "Invalid");
+
+            // Act
+            await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            var updated = await _context.WithdrawalRequests.FindAsync(withdrawal.Id);
+            var wallet = await _context.WalletBalances.FirstAsync(w => w.UserId == userId);
+
+            Assert.Equal(WithdrawalStatus.Rejected, updated!.Status);
+            Assert.Equal(600, wallet.BalanceEGP); // Should increase from 500 to 600 (refunded)
+        }
+
+        [Fact]
+        public async Task ReviewWithdrawal_AlreadyReviewed_ThrowsInvalidStateException()
+        {
+            // Arrange
+            var withdrawal = new WithdrawalRequest { Id = Guid.NewGuid().ToString(), FreelancerId = "u1", Amount = 100, Status = WithdrawalStatus.Rejected };
+            _context.WithdrawalRequests.Add(withdrawal);
+            await _context.SaveChangesAsync();
+
+            var handler = new ReviewWithdrawalRequestCommandHandler(_context);
+            var command = new ReviewWithdrawalRequestCommand(withdrawal.Id, WithdrawalStatus.Approved, "Oops");
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<InvalidStateException>(() => handler.Handle(command, CancellationToken.None));
+            Assert.Equal("Only pending withdrawal requests can be reviewed.", ex.Message);
+        }
+
+        [Fact]
+        public async Task GetPendingDepositRequests_ReturnsOnlyPending()
+        {
+            // Arrange
+            _context.DepositRequests.AddRange(new List<DepositRequest>
+            {
+                new() { Id = Guid.NewGuid().ToString(), ClientId = "u1", Amount = 100, ReceiptNumber = "R1", ReceiptPhotoUrl = "P1", Status = DepositStatus.Pending },
+                new() { Id = Guid.NewGuid().ToString(), ClientId = "u2", Amount = 200, ReceiptNumber = "R2", ReceiptPhotoUrl = "P2", Status = DepositStatus.Approved },
+                new() { Id = Guid.NewGuid().ToString(), ClientId = "u3", Amount = 300, ReceiptNumber = "R3", ReceiptPhotoUrl = "P3", Status = DepositStatus.Pending }
+            });
+            await _context.SaveChangesAsync();
+
+            var queryHandler = new WalletQueryHandlers(_context);
+            var query = new GetPendingDepositRequestsQuery();
+
+            // Act
+            var result = await queryHandler.Handle(query, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(2, result.Data.Count());
+            Assert.All(result.Data, r => Assert.Equal(DepositStatus.Pending, r.Status));
+        }
+
+        [Fact]
         public async Task GetWalletBalance_ReturnsCorrectBalance()
         {
             // Arrange
