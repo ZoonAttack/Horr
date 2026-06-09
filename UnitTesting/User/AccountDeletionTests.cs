@@ -2,6 +2,7 @@ using Entities;
 using Entities.Users;
 using FluentAssertions;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using ServiceContracts.DTOs.Responses;
@@ -42,8 +43,8 @@ namespace UnitTesting.User
             await _context.SaveChangesAsync();
 
             var mockHubContext = new Mock<IHubContext<ChatHub>>();
-            var handler = new SendMessageCommandHandler(_context, mockHubContext.Object);
-            var command = new SendMessageCommand("conv-1", "deleted-user", "Hello");
+            var handler = new SendTextMessageCommandHandler(_context, mockHubContext.Object);
+            var command = new SendTextMessageCommand("conv-1", "deleted-user", "Hello");
 
             // Act
             var result = await handler.Handle(command, CancellationToken.None);

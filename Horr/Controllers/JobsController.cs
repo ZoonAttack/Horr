@@ -54,6 +54,15 @@ namespace Horr.Controllers
             {
                 return CreatedAtAction(nameof(GetJob), new { id = result.Data.Id }, result.Data);
             }
+            if (result.ErrorCode == "INSUFFICIENT_FUNDS")
+            {
+                return BadRequest(new ProblemDetails
+                {
+                    Status = 400,
+                    Title = "Insufficient Funds",
+                    Detail = result.Message
+                });
+            }
             return BadRequest(result.Errors);
         }
 

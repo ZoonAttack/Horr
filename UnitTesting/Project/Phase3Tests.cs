@@ -1,0 +1,638 @@
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Xunit;
+using FluentAssertions;
+using Entities;
+using Entities.Enums;
+using Entities.Project;
+using Entities.Payment;
+using User = Entities.Users.User;
+using ServiceContracts.DTOs.Contract;
+using ServiceImplementation.Exceptions;
+using ServiceImplementation.Implementations.Wallet;
+using ServiceImplementation.Implementations.Contracts;
+using Microsoft.Extensions.DependencyInjection;
+using Services.Wallet;
+using UnitTesting;
+
+namespace UnitTesting.Project
+{
+    public class Phase3Tests
+    {
+        private AppDbContext GetContext() => DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+
+        private static Entities.Users.User CreateUser(string id, string email) => new Entities.Users.User
+        {
+            Id = id,
+            Email = email,
+            UserName = email,
+            FullName = id
+        };
+
+        private static Contract CreateActiveContract(int id, string clientId, string freelancerId, decimal agreedRate) => new Contract
+        {
+            Id = id,
+            ClientId = clientId,
+            FreelancerId = freelancerId,
+            AgreedRate = agreedRate,
+            Status = ContractStatus.Active
+        };
+
+        private static EscrowTransaction CreateEscrow(int contractId, decimal amount, Guid? milestoneId = null)
+        {
+            decimal clientFee = amount * 0.055m;
+            decimal freelancerFee = amount * 0.15m;
+            return new EscrowTransaction
+            {
+                ContractId = contractId,
+                ContractMilestoneId = milestoneId,
+                Type = EscrowTransactionType.ClientFunded,
+                Amount = amount,
+                PlatformFeeFromClient = clientFee,
+                PlatformFeeFromFreelancer = freelancerFee,
+                NetToFreelancer = amount - freelancerFee,
+                Status = EscrowStatus.Held,
+                CreatedAt = DateTime.UtcNow
+            };
+        }
+
+        [Fact]
+        public async Task SubmitDelivery_ShouldSucceed_AndStoreAttachments()
+        {
+            // Arrange
+            using var context = GetContext();
+            var client = CreateUser("client1", "client@test.com");
+            var freelancer = CreateUser("free1", "free@test.com");
+            var contract = CreateActiveContract(1, "client1", "free1", 500m);
+            var escrow = CreateEscrow(1, 500m);
+
+            context.Users.Add(client);
+            context.Users.Add(freelancer);
+            context.Contracts.Add(contract);
+            context.EscrowTransactions.Add(escrow);
+            await context.SaveChangesAsync();
+
+            var handler = new SubmitDeliveryCommandHandler(context);
+            var command = new SubmitDeliveryCommand(
+                ContractId: 1,
+                ContractMilestoneId: null,
+                DeliveryNote: "Here is the completed work",
+                FreelancerId: "free1",
+                Attachments: new List<AttachmentDto>
+                {
+                    new AttachmentDto { Type = AttachmentType.File, FileName = "design.png", StoragePath = "/uploads/design.png" },
+                    new AttachmentDto { Type = AttachmentType.Link, Url = "https://github.com/myrepo" }
+                }
+            );
+
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Status.Should().Be(DeliveryStatus.Pending);
+            result.DeliveryNote.Should().Be("Here is the completed work");
+            result.ReviewDeadline.Should().BeCloseTo(DateTime.UtcNow.AddDays(3), TimeSpan.FromSeconds(5));
+            result.Attachments.Should().HaveCount(2);
+
+            var fileAtt = result.Attachments.First(a => a.Type == AttachmentType.File);
+            fileAtt.FileName.Should().Be("design.png");
+            fileAtt.StoragePath.Should().Be("/uploads/design.png");
+
+            var linkAtt = result.Attachments.First(a => a.Type == AttachmentType.Link);
+            linkAtt.Url.Should().Be("https://github.com/myrepo");
+        }
+
+        [Fact]
+        public async Task SubmitDelivery_ShouldThrowValidationException_IfEscrowNotHeld()
+        {
+            // Arrange
+            using var context = GetContext();
+            var client = CreateUser("client1", "client@test.com");
+            var freelancer = CreateUser("free1", "free@test.com");
+            var contract = CreateActiveContract(2, "client1", "free1", 500m);
+
+            context.Users.Add(client);
+            context.Users.Add(freelancer);
+            context.Contracts.Add(contract);
+            await context.SaveChangesAsync();
+
+            var handler = new SubmitDeliveryCommandHandler(context);
+            var command = new SubmitDeliveryCommand(
+                ContractId: 2,
+                ContractMilestoneId: null,
+                DeliveryNote: "Work done",
+                FreelancerId: "free1",
+                Attachments: new List<AttachmentDto>()
+            );
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ValidationException>(() => handler.Handle(command, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task SubmitDelivery_ShouldThrowForbiddenException_IfContractNotActive()
+        {
+            // Arrange
+            using var context = GetContext();
+            var client = CreateUser("client1", "client@test.com");
+            var freelancer = CreateUser("free1", "free@test.com");
+            var contract = CreateActiveContract(3, "client1", "free1", 500m);
+            contract.Status = ContractStatus.Draft; // Not Active
+            var escrow = CreateEscrow(3, 500m);
+
+            context.Users.Add(client);
+            context.Users.Add(freelancer);
+            context.Contracts.Add(contract);
+            context.EscrowTransactions.Add(escrow);
+            await context.SaveChangesAsync();
+
+            var handler = new SubmitDeliveryCommandHandler(context);
+            var command = new SubmitDeliveryCommand(
+                ContractId: 3,
+                ContractMilestoneId: null,
+                DeliveryNote: "Work done",
+                FreelancerId: "free1",
+                Attachments: new List<AttachmentDto>()
+            );
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ForbiddenException>(() => handler.Handle(command, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task ApproveDelivery_ShouldSucceed_AndReleaseEscrow()
+        {
+            // Arrange
+            using var context = GetContext();
+            var client = CreateUser("client1", "client@test.com");
+            var freelancer = CreateUser("free1", "free@test.com");
+            var contract = CreateActiveContract(4, "client1", "free1", 100m);
+            var escrow = CreateEscrow(4, 100m);
+
+            // Setup freelancer wallet
+            context.WalletBalances.Add(new WalletBalance { UserId = "free1", BalanceEGP = 0, LastUpdatedAt = DateTime.UtcNow });
+
+            var delivery = new ContractDelivery
+            {
+                ContractId = 4,
+                Status = DeliveryStatus.Pending,
+                ReviewDeadline = DateTime.UtcNow.AddDays(3)
+            };
+
+            context.Users.Add(client);
+            context.Users.Add(freelancer);
+            context.Contracts.Add(contract);
+            context.EscrowTransactions.Add(escrow);
+            context.ContractDeliveries.Add(delivery);
+            await context.SaveChangesAsync();
+
+            var walletService = new WalletService(context);
+            var escrowService = new EscrowService(context, walletService);
+            var handler = new ApproveDeliveryCommandHandler(context, escrowService);
+            var command = new ApproveDeliveryCommand(delivery.Id, "client1");
+
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Status.Should().Be(DeliveryStatus.Approved);
+            result.CompletedAt.Should().NotBeNull();
+
+            // Verify escrow was released (amount is 100, NetToFreelancer is 85 per 15% commission)
+            var freelancerWallet = await context.WalletBalances.FirstAsync(w => w.UserId == "free1");
+            freelancerWallet.BalanceEGP.Should().Be(85.00m);
+
+            var releaseTx = await context.EscrowTransactions
+                .FirstOrDefaultAsync(t => t.ContractId == 4 && t.Type == EscrowTransactionType.ReleasedToFreelancer);
+            releaseTx.Should().NotBeNull();
+            releaseTx!.Status.Should().Be(EscrowStatus.Released);
+        }
+
+        [Fact]
+        public async Task RequestRevision_ShouldTransitionStatus_AndKeepEscrowHeld()
+        {
+            // Arrange
+            using var context = GetContext();
+            var client = CreateUser("client1", "client@test.com");
+            var freelancer = CreateUser("free1", "free@test.com");
+            var contract = CreateActiveContract(5, "client1", "free1", 500m);
+            var escrow = CreateEscrow(5, 500m);
+            var delivery = new ContractDelivery
+            {
+                ContractId = 5,
+                Status = DeliveryStatus.Pending,
+                ReviewDeadline = DateTime.UtcNow.AddDays(3)
+            };
+
+            context.Users.Add(client);
+            context.Users.Add(freelancer);
+            context.Contracts.Add(contract);
+            context.EscrowTransactions.Add(escrow);
+            context.ContractDeliveries.Add(delivery);
+            await context.SaveChangesAsync();
+
+            var handler = new RequestRevisionCommandHandler(context);
+            var command = new RequestRevisionCommand(delivery.Id, "client1", "Please fix typography");
+
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Status.Should().Be(RevisionStatus.Pending);
+            result.Reason.Should().Be("Please fix typography");
+
+            var updatedDelivery = await context.ContractDeliveries.FindAsync(delivery.Id);
+            updatedDelivery!.Status.Should().Be(DeliveryStatus.RevisionRequested);
+
+            var escrowDb = await context.EscrowTransactions.FindAsync(escrow.Id);
+            escrowDb!.Status.Should().Be(EscrowStatus.Held); // Escrow untouched
+        }
+
+        [Fact]
+        public async Task OpenDispute_ShouldTransitionStatus_AndPreventDuplicate()
+        {
+            // Arrange
+            using var context = GetContext();
+            var client = CreateUser("client1", "client@test.com");
+            var freelancer = CreateUser("free1", "free@test.com");
+            var contract = CreateActiveContract(6, "client1", "free1", 500m);
+            var escrow = CreateEscrow(6, 500m);
+            var delivery = new ContractDelivery
+            {
+                ContractId = 6,
+                Status = DeliveryStatus.Pending,
+                ReviewDeadline = DateTime.UtcNow.AddDays(3)
+            };
+
+            context.Users.Add(client);
+            context.Users.Add(freelancer);
+            context.Contracts.Add(contract);
+            context.EscrowTransactions.Add(escrow);
+            context.ContractDeliveries.Add(delivery);
+            await context.SaveChangesAsync();
+
+            var handler = new OpenDisputeCommandHandler(context);
+            var command = new OpenDisputeCommand(6, delivery.Id, "client1", "Quality is poor");
+
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Status.Should().Be(DisputeStatus.Open);
+            result.Reason.Should().Be("Quality is poor");
+
+            var updatedDelivery = await context.ContractDeliveries.FindAsync(delivery.Id);
+            updatedDelivery!.Status.Should().Be(DeliveryStatus.Disputed);
+
+            // Duplicate dispute guard
+            await Assert.ThrowsAsync<ConflictException>(() => handler.Handle(command, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task ResolveDispute_ForFreelancer_ShouldReleaseEscrow()
+        {
+            // Arrange
+            using var context = GetContext();
+            var client = CreateUser("client1", "client@test.com");
+            var freelancer = CreateUser("free1", "free@test.com");
+            var admin = CreateUser("admin1", "admin@test.com");
+            var contract = CreateActiveContract(7, "client1", "free1", 200m);
+            var escrow = CreateEscrow(7, 200m);
+
+            context.WalletBalances.Add(new WalletBalance { UserId = "free1", BalanceEGP = 0, LastUpdatedAt = DateTime.UtcNow });
+
+            var delivery = new ContractDelivery
+            {
+                ContractId = 7,
+                Status = DeliveryStatus.Disputed,
+                ReviewDeadline = DateTime.UtcNow.AddDays(3)
+            };
+
+            var dispute = new Dispute
+            {
+                ContractId = 7,
+                ContractDeliveryId = delivery.Id,
+                OpenedByUserId = "client1",
+                Reason = "Wrong delivery",
+                Status = DisputeStatus.Open
+            };
+
+            context.Users.Add(client);
+            context.Users.Add(freelancer);
+            context.Users.Add(admin);
+            context.Contracts.Add(contract);
+            context.EscrowTransactions.Add(escrow);
+            context.ContractDeliveries.Add(delivery);
+            context.Disputes.Add(dispute);
+            await context.SaveChangesAsync();
+
+            var walletService = new WalletService(context);
+            var escrowService = new EscrowService(context, walletService);
+            var handler = new ResolveDisputeCommandHandler(context, escrowService);
+            var command = new ResolveDisputeCommand(dispute.Id, DisputeDecision.ForFreelancer, "Freelancer fulfilled specifications", "admin1");
+
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Status.Should().Be(DisputeStatus.ResolvedForFreelancer);
+            result.AdminDecision.Should().Be("Freelancer fulfilled specifications");
+
+            // Verify freelancer received funds
+            var freelancerWallet = await context.WalletBalances.FirstAsync(w => w.UserId == "free1");
+            freelancerWallet.BalanceEGP.Should().Be(170.00m); // 200 * 0.85
+        }
+
+        [Fact]
+        public async Task ResolveDispute_ForClient_ShouldRefundClient()
+        {
+            // Arrange
+            using var context = GetContext();
+            var client = CreateUser("client1", "client@test.com");
+            var freelancer = CreateUser("free1", "free@test.com");
+            var admin = CreateUser("admin1", "admin@test.com");
+            var contract = CreateActiveContract(8, "client1", "free1", 200m);
+            var escrow = CreateEscrow(8, 200m);
+
+            context.WalletBalances.Add(new WalletBalance { UserId = "client1", BalanceEGP = 0, LastUpdatedAt = DateTime.UtcNow });
+
+            var delivery = new ContractDelivery
+            {
+                ContractId = 8,
+                Status = DeliveryStatus.Disputed,
+                ReviewDeadline = DateTime.UtcNow.AddDays(3)
+            };
+
+            var dispute = new Dispute
+            {
+                ContractId = 8,
+                ContractDeliveryId = delivery.Id,
+                OpenedByUserId = "free1",
+                Reason = "Did not pay",
+                Status = DisputeStatus.Open
+            };
+
+            context.Users.Add(client);
+            context.Users.Add(freelancer);
+            context.Users.Add(admin);
+            context.Contracts.Add(contract);
+            context.EscrowTransactions.Add(escrow);
+            context.ContractDeliveries.Add(delivery);
+            context.Disputes.Add(dispute);
+            await context.SaveChangesAsync();
+
+            var walletService = new WalletService(context);
+            var escrowService = new EscrowService(context, walletService);
+            var handler = new ResolveDisputeCommandHandler(context, escrowService);
+            var command = new ResolveDisputeCommand(dispute.Id, DisputeDecision.ForClient, "Freelancer failed milestones", "admin1");
+
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Status.Should().Be(DisputeStatus.ResolvedForClient);
+
+            // Verify client was refunded
+            var clientWallet = await context.WalletBalances.FirstAsync(w => w.UserId == "client1");
+            clientWallet.BalanceEGP.Should().Be(200.00m); // Base refund amount
+        }
+
+        [Fact]
+        public async Task FundMilestone_ShouldDebitClientWallet_AndCreateEscrowHeld()
+        {
+            // Arrange
+            using var context = GetContext();
+            var clientGuid = Guid.NewGuid();
+            var client = CreateUser(clientGuid.ToString(), "client@test.com");
+            var freelancer = CreateUser("free1", "free@test.com");
+            var contract = CreateActiveContract(9, client.Id, "free1", 500m);
+
+            var milestone = new ContractMilestone
+            {
+                Id = Guid.NewGuid(),
+                ContractId = 9,
+                Title = "Milestone 1",
+                Amount = 200m,
+                Status = MilestoneStatus.Unfunded
+            };
+
+            // Set client wallet to 500
+            context.WalletBalances.Add(new WalletBalance { UserId = client.Id, BalanceEGP = 500m, LastUpdatedAt = DateTime.UtcNow });
+
+            context.Users.Add(client);
+            context.Users.Add(freelancer);
+            context.Contracts.Add(contract);
+            context.ContractMilestones.Add(milestone);
+            await context.SaveChangesAsync();
+
+            var walletService = new WalletService(context);
+            var escrowService = new EscrowService(context, walletService);
+            var handler = new FundMilestoneCommandHandler(context, escrowService);
+            var command = new FundMilestoneCommand(milestone.Id, clientGuid);
+
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Should().BeTrue();
+
+            // Client wallet balance decreased by 200 + 5.5% client fee = 211.00 EGP
+            var clientWallet = await context.WalletBalances.FirstAsync(w => w.UserId == client.Id);
+            clientWallet.BalanceEGP.Should().Be(289.00m); // 500 - 211
+
+            var milestoneDb = await context.ContractMilestones.FindAsync(milestone.Id);
+            milestoneDb!.Status.Should().Be(MilestoneStatus.Funded);
+
+            var escrowDb = await context.EscrowTransactions
+                .FirstOrDefaultAsync(t => t.ContractMilestoneId == milestone.Id);
+            escrowDb.Should().NotBeNull();
+            escrowDb!.Status.Should().Be(EscrowStatus.Held);
+            escrowDb.Amount.Should().Be(200m);
+        }
+
+        [Fact]
+        public async Task FundMilestone_ShouldThrowValidationException_IfInsufficientBalance()
+        {
+            // Arrange
+            using var context = GetContext();
+            var clientGuid = Guid.NewGuid();
+            var client = CreateUser(clientGuid.ToString(), "client@test.com");
+            var freelancer = CreateUser("free1", "free@test.com");
+            var contract = CreateActiveContract(10, client.Id, "free1", 500m);
+
+            var milestone = new ContractMilestone
+            {
+                Id = Guid.NewGuid(),
+                ContractId = 10,
+                Title = "Milestone 1",
+                Amount = 200m,
+                Status = MilestoneStatus.Unfunded
+            };
+
+            // Set client wallet to 50 EGP (insufficient for 211.00 EGP)
+            context.WalletBalances.Add(new WalletBalance { UserId = client.Id, BalanceEGP = 50m, LastUpdatedAt = DateTime.UtcNow });
+
+            context.Users.Add(client);
+            context.Users.Add(freelancer);
+            context.Contracts.Add(contract);
+            context.ContractMilestones.Add(milestone);
+            await context.SaveChangesAsync();
+
+            var walletService = new WalletService(context);
+            var escrowService = new EscrowService(context, walletService);
+            var handler = new FundMilestoneCommandHandler(context, escrowService);
+            var command = new FundMilestoneCommand(milestone.Id, clientGuid);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ValidationException>(() => handler.Handle(command, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task DeliveryAutoCompleteService_ShouldAutoApprovePastDeadlineDeliveries()
+        {
+            // Arrange
+            using var context = GetContext();
+            var client = CreateUser("client1", "client@test.com");
+            var freelancer = CreateUser("free1", "free@test.com");
+            var contract = CreateActiveContract(11, "client1", "free1", 200m);
+            var escrow = CreateEscrow(11, 200m);
+
+            context.WalletBalances.Add(new WalletBalance { UserId = "free1", BalanceEGP = 0, LastUpdatedAt = DateTime.UtcNow });
+
+            var delivery = new ContractDelivery
+            {
+                ContractId = 11,
+                Status = DeliveryStatus.Pending,
+                ReviewDeadline = DateTime.UtcNow.AddHours(-1) // Overdue by 1 hour
+            };
+
+            context.Users.Add(client);
+            context.Users.Add(freelancer);
+            context.Contracts.Add(contract);
+            context.EscrowTransactions.Add(escrow);
+            context.ContractDeliveries.Add(delivery);
+            await context.SaveChangesAsync();
+
+            // Mock IServiceProvider
+            var serviceProviderMock = new Mock<IServiceProvider>();
+            var serviceScopeMock = new Mock<IServiceScope>();
+            var serviceScopeFactoryMock = new Mock<IServiceScopeFactory>();
+
+            serviceProviderMock.Setup(x => x.GetService(typeof(IServiceScopeFactory)))
+                .Returns(serviceScopeFactoryMock.Object);
+            serviceScopeFactoryMock.Setup(x => x.CreateScope())
+                .Returns(serviceScopeMock.Object);
+            
+            // Scope services resolver setup
+            serviceScopeMock.Setup(x => x.ServiceProvider.GetService(typeof(AppDbContext)))
+                .Returns(context);
+
+            var walletService = new WalletService(context);
+            var escrowService = new EscrowService(context, walletService);
+            serviceScopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IEscrowService)))
+                .Returns(escrowService);
+
+            var logger = new Mock<ILogger<DeliveryAutoCompleteService>>().Object;
+            var bgService = new DeliveryAutoCompleteService(serviceProviderMock.Object, logger);
+
+            // Act
+            await bgService.ProcessPendingDeliveriesAsync(CancellationToken.None);
+
+            // Assert
+            var deliveryDb = await context.ContractDeliveries.FindAsync(delivery.Id);
+            deliveryDb!.Status.Should().Be(DeliveryStatus.Approved);
+
+            var freelancerWallet = await context.WalletBalances.FirstAsync(w => w.UserId == "free1");
+            freelancerWallet.BalanceEGP.Should().Be(170.00m); // 200 * 0.85 released
+        }
+
+        [Fact]
+        public async Task GetContractDeliveries_ShouldReturnMappedDtos()
+        {
+            // Arrange
+            using var context = GetContext();
+            var delivery = new ContractDelivery
+            {
+                ContractId = 12,
+                Status = DeliveryStatus.Pending,
+                ReviewDeadline = DateTime.UtcNow.AddDays(3),
+                DeliveryNote = "Notes here"
+            };
+            var att = new DeliveryAttachment
+            {
+                DeliveryId = delivery.Id,
+                Type = AttachmentType.File,
+                FileName = "spec.pdf"
+            };
+
+            context.ContractDeliveries.Add(delivery);
+            context.DeliveryAttachments.Add(att);
+            await context.SaveChangesAsync();
+
+            var handler = new GetContractDeliveriesQueryHandler(context);
+            var query = new GetContractDeliveriesQuery(12);
+
+            // Act
+            var result = await handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            result.Should().HaveCount(1);
+            result[0].DeliveryNote.Should().Be("Notes here");
+            result[0].Attachments.Should().HaveCount(1);
+            result[0].Attachments[0].FileName.Should().Be("spec.pdf");
+        }
+
+        [Fact]
+        public async Task GetEscrowSummary_ShouldComputePrecisionMetrics()
+        {
+            // Arrange
+            using var context = GetContext();
+            // Funded: 2 transactions (amount 100 each)
+            var escrow1 = CreateEscrow(13, 100m);
+            var escrow2 = CreateEscrow(13, 100m);
+            escrow1.Status = EscrowStatus.Released;
+
+            // Release Transaction logged in audit trail
+            var releaseTx = new EscrowTransaction
+            {
+                ContractId = 13,
+                Type = EscrowTransactionType.ReleasedToFreelancer,
+                Amount = 100m,
+                PlatformFeeFromClient = 5.5m,
+                PlatformFeeFromFreelancer = 15m,
+                NetToFreelancer = 85m,
+                Status = EscrowStatus.Released
+            };
+
+            context.EscrowTransactions.Add(escrow1);
+            context.EscrowTransactions.Add(escrow2);
+            context.EscrowTransactions.Add(releaseTx);
+            await context.SaveChangesAsync();
+
+            var handler = new GetEscrowSummaryQueryHandler(context);
+            var query = new GetEscrowSummaryQuery(13);
+
+            // Act
+            var result = await handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            result.TotalFunded.Should().Be(200m);
+            result.TotalReleased.Should().Be(85m);
+            result.TotalRefunded.Should().Be(0m);
+            result.PlatformEarned.Should().Be(20.5m); // 5.5 + 15 from escrow1 (which is Released)
+            result.CurrentlyHeld.Should().Be(100m); // escrow2 (which is Held)
+        }
+    }
+}

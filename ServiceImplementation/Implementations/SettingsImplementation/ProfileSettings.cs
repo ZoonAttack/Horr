@@ -95,7 +95,7 @@ namespace ServiceImplementation.Implementations.Settings
             // Retrieve notifications flag
             var hasNotifications = await _context.Messages
                 .AnyAsync(m => m.Status == MessageStatus.Unread && m.SenderId != userId &&
-                               _context.ConversationParticipants.Any(cp => cp.ConversationId == m.ConversationId && cp.UserId == userId));
+                               (m.Chat.ClientId == userId || m.Chat.FreelancerId == userId));
 
             var isVerified = await ResolveAndSyncVerificationAsync(user);
             var profileDto = user.ToUserProfileDto(

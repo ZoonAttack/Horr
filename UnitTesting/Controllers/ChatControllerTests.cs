@@ -15,19 +15,20 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using Entities.Enums;
 
 namespace UnitTesting.Controllers
 {
-    public class ConversationsControllerTests
+    public class ChatControllerTests
     {
         private readonly Mock<IMediator> _mediatorMock;
-        private readonly ConversationsController _controller;
+        private readonly ChatController _controller;
         private const string CurrentUserId = "test-user-id";
 
-        public ConversationsControllerTests()
+        public ChatControllerTests()
         {
             _mediatorMock = new Mock<IMediator>();
-            _controller = new ConversationsController(_mediatorMock.Object);
+            _controller = new ChatController(_mediatorMock.Object);
 
             // Mock User Identity
             var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]
@@ -42,24 +43,24 @@ namespace UnitTesting.Controllers
         }
 
         [Fact]
-        public async Task GetConversations_ShouldReturnOk_WithConversations()
+        public async Task GetChats_ShouldReturnOk_WithConversations()
         {
             // Arrange
-            var list = new List<ConversationDto>
+            var list = new List<ChatSummaryDto>
             {
-                new ConversationDto { Id = "conv-1" }
+                new ChatSummaryDto { ChatId = "conv-1" }
             };
-            var resultData = new Result<List<ConversationDto>>
+            var resultData = new Result<List<ChatSummaryDto>>
             {
                 Succeeded = true,
                 Data = list
             };
 
-            _mediatorMock.Setup(m => m.Send(It.Is<GetConversationsQuery>(q => q.UserId == CurrentUserId), It.IsAny<CancellationToken>()))
+            _mediatorMock.Setup(m => m.Send(It.Is<GetChatsByUserQuery>(q => q.UserId == CurrentUserId && q.Role == UserRole.Client), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(resultData);
 
             // Act
-            var result = await _controller.GetConversations();
+            var result = await _controller.GetChats(UserRole.Client);
 
             // Assert
             var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
@@ -67,7 +68,7 @@ namespace UnitTesting.Controllers
         }
 
         [Fact]
-        public async Task GetConversations_ShouldReturnUnauthorized_WhenUserNotAuthenticated()
+        public async Task GetChats_ShouldReturnUnauthorized_WhenUserNotAuthenticated()
         {
             // Arrange
             _controller.ControllerContext = new ControllerContext
@@ -76,7 +77,7 @@ namespace UnitTesting.Controllers
             };
 
             // Act
-            var result = await _controller.GetConversations();
+            var result = await _controller.GetChats(UserRole.Client);
 
             // Assert
             result.Should().BeOfType<UnauthorizedResult>();
@@ -89,10 +90,10 @@ namespace UnitTesting.Controllers
             var conversationId = "conv-1";
             var pagedResult = new PagedResult<MessageDto>
             {
-                Items = new List<MessageDto> { new MessageDto { Id = "msg-1", Body = "Hello" } },
+                Items = new List<MessageDto> { new MessageDto { Id = "msg-1", Body = "Hello", ChatId = conversationId } },
                 TotalCount = 1,
                 Page = 1,
-                PageSize = 20
+                PageSize = 30
             };
             var resultData = new Result<PagedResult<MessageDto>>
             {
@@ -100,7 +101,7 @@ namespace UnitTesting.Controllers
                 Data = pagedResult
             };
 
-            _mediatorMock.Setup(m => m.Send(It.Is<GetMessagesQuery>(q => q.ConversationId == conversationId && q.UserId == CurrentUserId), It.IsAny<CancellationToken>()))
+            _mediatorMock.Setup(m => m.Send(It.Is<GetChatMessagesQuery>(q => q.ChatId == conversationId && q.UserId == CurrentUserId), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(resultData);
 
             // Act
@@ -123,38 +124,37 @@ namespace UnitTesting.Controllers
                 Message = "Conversation not found."
             };
 
-            _mediatorMock.Setup(m => m.Send(It.Is<GetMessagesQuery>(q => q.ConversationId == conversationId), It.IsAny<CancellationToken>()))
+            _mediatorMock.Setup(m => m.Send(It.Is<GetChatMessagesQuery>(q => q.ChatId == conversationId), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(resultData);
 
             // Act
             var result = await _controller.GetMessages(conversationId);
 
             // Assert
-            var notFoundResult = result.Should().BeOfType<NotFoundObjectResult>().Subject;
+            var notFoundResult = result.Should().BeOfType<ObjectResult>().Subject;
+            notFoundResult.StatusCode.Should().Be(404);
             var problem = notFoundResult.Value.Should().BeOfType<ProblemDetails>().Subject;
             problem.Status.Should().Be(404);
-            problem.Title.Should().Be("Conversation Not Found");
+            problem.Title.Should().Be("Not Found");
         }
 
         [Fact]
-        public async Task SendMessage_ShouldReturnCreated_WithMessageDto_WhenConversationExists()
+        public async Task SendTextMessage_ShouldReturnCreated_WithMessageDto_WhenConversationExists()
         {
             // Arrange
             var conversationId = "conv-1";
             var body = "Hello";
-            var responseDto = new MessageDto { Id = "msg-1", ConversationId = conversationId, Body = body };
+            var responseDto = new MessageDto { Id = "msg-1", ChatId = conversationId, Body = body };
             var resultData = new Result<MessageDto> { Succeeded = true, Data = responseDto };
 
-            _mediatorMock.Setup(m => m.Send(It.Is<SendMessageCommand>(c => 
-                c.ConversationId == conversationId && 
+            _mediatorMock.Setup(m => m.Send(It.Is<SendTextMessageCommand>(c => 
+                c.ChatId == conversationId && 
                 c.SenderId == CurrentUserId && 
-                c.Body == body && 
-                c.JobPostId == null && 
-                c.ReceiverId == null), It.IsAny<CancellationToken>()))
+                c.Text == body), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(resultData);
 
             // Act
-            var result = await _controller.SendMessage(conversationId, body, null, null, null);
+            var result = await _controller.SendTextMessage(conversationId, new SendTextMessageRequest { Text = body });
 
             // Assert
             var createdResult = result.Should().BeOfType<ObjectResult>().Subject;
@@ -163,41 +163,17 @@ namespace UnitTesting.Controllers
         }
 
         [Fact]
-        public async Task SendMessage_ShouldReturnCreated_WithMessageDto_WhenInitiatingConversation()
-        {
-            // Arrange
-            var newConversationId = "new-conv-uuid";
-            var body = "Hello regarding this job";
-            var jobPostId = "job-123";
-            var receiverId = "freelancer-456";
-            var responseDto = new MessageDto { Id = "msg-1", ConversationId = newConversationId, Body = body };
-            var resultData = new Result<MessageDto> { Succeeded = true, Data = responseDto };
-
-            _mediatorMock.Setup(m => m.Send(It.Is<SendMessageCommand>(c => 
-                c.ConversationId == newConversationId && 
-                c.SenderId == CurrentUserId && 
-                c.Body == body && 
-                c.JobPostId == jobPostId && 
-                c.ReceiverId == receiverId), It.IsAny<CancellationToken>()))
-                         .ReturnsAsync(resultData);
-
-            // Act
-            var result = await _controller.SendMessage(newConversationId, body, null, jobPostId, receiverId);
-
-            // Assert
-            var createdResult = result.Should().BeOfType<ObjectResult>().Subject;
-            createdResult.StatusCode.Should().Be(201);
-            createdResult.Value.Should().BeEquivalentTo(responseDto);
-        }
-
-        [Fact]
-        public async Task SendMessage_ShouldReturnBadRequest_WhenBodyIsEmpty()
+        public async Task SendTextMessage_ShouldReturnBadRequest_WhenBodyIsEmpty()
         {
             // Act
-            var result = await _controller.SendMessage("conv-1", " ", null, null, null);
+            var result = await _controller.SendTextMessage("conv-1", new SendTextMessageRequest { Text = " " });
 
             // Assert
-            result.Should().BeOfType<BadRequestObjectResult>();
+            var badRequestResult = result.Should().BeOfType<BadRequestObjectResult>().Subject;
+            badRequestResult.StatusCode.Should().Be(400);
+            var problem = badRequestResult.Value.Should().BeOfType<ProblemDetails>().Subject;
+            problem.Status.Should().Be(400);
+            problem.Title.Should().Be("Invalid Request");
         }
     }
 }

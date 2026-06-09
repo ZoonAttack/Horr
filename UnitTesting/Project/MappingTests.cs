@@ -87,9 +87,10 @@ namespace UnitTesting.Project
         public void DeliveryAttachment_ToDto_MapsAllFieldsCorrectly()
         {
             // Arrange
+            var attachmentId = Guid.NewGuid();
             var attachment = new DeliveryAttachment
             {
-                Id = 10,
+                Id = attachmentId,
                 WorkDeliveryId = 5,
                 FileUrl = "https://example.com/file.zip",
                 FileType = "application/zip",

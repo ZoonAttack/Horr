@@ -1,13 +1,15 @@
+using Entities.Common;
+using Entities.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Entities.Project
 {
     [Table("contract_milestones")]
-    public class ContractMilestone
+    public class ContractMilestone : ISoftDeletable
     {
         [Key]
-        public int Id { get; set; }
+        public Guid Id { get; set; } = Guid.NewGuid();
 
         [Required]
         public int ContractId { get; set; }
@@ -17,14 +19,21 @@ namespace Entities.Project
 
         [Required]
         [MaxLength(200)]
-        public string Description { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+
+        public string? Description { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal Amount { get; set; }
 
         public DateTime DueDate { get; set; }
 
-        // Optionally track milestone status (e.g., Pending, Funded, Completed, Paid)
-        // Leaving it simple for now as requested.
+        public MilestoneStatus Status { get; set; } = MilestoneStatus.Unfunded;
+
+        public DateTime? FundedAt { get; set; }
+
+        public DateTime? ReleasedAt { get; set; }
+
+        public bool IsDeleted { get; set; } = false;
     }
 }

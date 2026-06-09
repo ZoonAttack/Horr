@@ -9,7 +9,7 @@ namespace ServiceContracts.DTOs.Chat
     {
         public string Id { get; set; }
 
-        public string ConversationId { get; set; }
+        public string ChatId { get; set; }
 
         public string SenderId { get; set; }
 
@@ -18,5 +18,15 @@ namespace ServiceContracts.DTOs.Chat
         public MessageStatus Status { get; set; }
 
         public DateTime SentAt { get; set; }
+
+        public MessageType Type { get; set; }
+
+        public string? TextContent { get; set; }
+
+        public string? FileUrl { get; set; }
+
+        public string? FileName { get; set; }
+
+        public long? FileSizeBytes { get; set; }
     }
 }

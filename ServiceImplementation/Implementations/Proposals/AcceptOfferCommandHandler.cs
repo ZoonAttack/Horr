@@ -5,6 +5,7 @@ using Entities;
 using Entities.Project;
 using Entities.Enums;
 using ServiceContracts.DTOs.Contract;
+using Entities.Communication;
 using ServiceImplementation.Exceptions;
 using ServiceImplementation.Helpers;
 
@@ -54,8 +55,36 @@ namespace ServiceImplementation.Implementations.Proposals
                 CreatedAt = DateTime.UtcNow
             };
 
-            _context.Contracts.Add(contract);
-            await _context.SaveChangesAsync(cancellationToken);
+            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                _context.Contracts.Add(contract);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                // 2b. Automatically create Chat room for the active contract
+                var chatExists = await _context.Chats.AnyAsync(c => c.ContractId == contract.Id, cancellationToken);
+                if (!chatExists)
+                {
+                    var chat = new Chat
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        ContractId = contract.Id,
+                        ClientId = contract.ClientId,
+                        FreelancerId = contract.FreelancerId,
+                        CreatedAt = DateTime.UtcNow,
+                        IsDeleted = false
+                    };
+                    _context.Chats.Add(chat);
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+
+                await transaction.CommitAsync(cancellationToken);
+            }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
 
             // 3. Return Read DTO
             return new ContractReadDTO
