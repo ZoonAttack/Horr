@@ -19,6 +19,10 @@ namespace Horr.Controllers.Admin
             _mediator = mediator;
         }
 
+        /// <summary>
+        /// Retrieves a list of all pending deposit requests. Only accessible by Admins.
+        /// </summary>
+        /// <returns>A list of pending deposit requests.</returns>
         [HttpGet("deposit-requests/pending")]
         public async Task<ActionResult<IEnumerable<DepositRequestDto>>> GetPendingDeposits()
         {
@@ -26,6 +30,12 @@ namespace Horr.Controllers.Admin
             return Ok(result);
         }
 
+        /// <summary>
+        /// Approves or rejects a pending deposit request. Only accessible by Admins.
+        /// </summary>
+        /// <param name="id">The deposit request ID.</param>
+        /// <param name="dto">The review decision status and administrative note.</param>
+        /// <returns>The reviewed deposit request details.</returns>
         [HttpPatch("deposit-requests/{id}/review")]
         public async Task<ActionResult<DepositRequestDto>> ReviewDeposit(string id, [FromBody] ReviewDepositRequestCommandDto dto)
         {
@@ -33,6 +43,10 @@ namespace Horr.Controllers.Admin
             return Ok(result);
         }
 
+        /// <summary>
+        /// Retrieves a list of all pending withdrawal requests. Only accessible by Admins.
+        /// </summary>
+        /// <returns>A list of pending withdrawal requests.</returns>
         [HttpGet("withdrawal-requests/pending")]
         public async Task<ActionResult<IEnumerable<WithdrawalRequestDto>>> GetPendingWithdrawals()
         {
@@ -40,6 +54,12 @@ namespace Horr.Controllers.Admin
             return Ok(result);
         }
 
+        /// <summary>
+        /// Approves or rejects a pending withdrawal request. Only accessible by Admins.
+        /// </summary>
+        /// <param name="id">The withdrawal request ID.</param>
+        /// <param name="dto">The review decision status and administrative note.</param>
+        /// <returns>The reviewed withdrawal request details.</returns>
         [HttpPatch("withdrawal-requests/{id}/review")]
         public async Task<ActionResult<WithdrawalRequestDto>> ReviewWithdrawal(string id, [FromBody] ReviewWithdrawalRequestCommandDto dto)
         {

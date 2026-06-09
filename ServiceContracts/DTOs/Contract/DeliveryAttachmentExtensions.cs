@@ -14,6 +14,8 @@ namespace ServiceContracts.DTOs.Contract
                 WorkDeliveryId = attachment.WorkDeliveryId,
                 FileUrl = attachment.FileUrl,
                 FileType = attachment.FileType,
+                OriginalFileName = attachment.OriginalFileName,
+                FileSizeBytes = attachment.FileSizeBytes,
                 UploadedAt = attachment.UploadedAt
             };
         }

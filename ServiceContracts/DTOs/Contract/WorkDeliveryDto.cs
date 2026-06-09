@@ -8,7 +8,9 @@ namespace ServiceContracts.DTOs.Contract
         public int Id { get; set; }
         public int ContractId { get; set; }
         public string Note { get; set; } = string.Empty;
+        public string? RevisionNote { get; set; }
         public ActionStatus ActionStatus { get; set; }
         public DateTime SubmittedAt { get; set; }
+        public List<AttachmentDto> Attachments { get; set; } = new List<AttachmentDto>();
     }
 }

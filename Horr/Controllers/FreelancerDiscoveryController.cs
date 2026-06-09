@@ -20,6 +20,21 @@ namespace Horr.Controllers
             _mediator = mediator;
         }
 
+        /// <summary>
+        /// Searches for freelancers based on various filters.
+        /// </summary>
+        /// <param name="searchQuery">The text query to search.</param>
+        /// <param name="skillIds">Optional list of skill IDs to filter by.</param>
+        /// <param name="minHourlyRate">Optional minimum hourly rate.</param>
+        /// <param name="maxHourlyRate">Optional maximum hourly rate.</param>
+        /// <param name="minYearsExperience">Optional minimum years of experience.</param>
+        /// <param name="minTrustScore">Optional minimum trust score.</param>
+        /// <param name="isVerified">Optional verification status filter.</param>
+        /// <param name="sortBy">Sorting column (default "TrustScore").</param>
+        /// <param name="sortDescending">Whether to sort in descending order (default true).</param>
+        /// <param name="page">Page number (default 1).</param>
+        /// <param name="pageSize">Number of items per page (default 10).</param>
+        /// <returns>A paged list of freelancer search results.</returns>
         [HttpGet("search")]
         public async Task<ActionResult<PagedResult<FreelancerSearchResultDTO>>> SearchFreelancers(
             [FromQuery] string? searchQuery,
@@ -48,6 +63,11 @@ namespace Horr.Controllers
             return Ok(result.Data);
         }
 
+        /// <summary>
+        /// Saves a freelancer to the client's saved list.
+        /// </summary>
+        /// <param name="freelancerId">The freelancer ID to save.</param>
+        /// <returns>A success message.</returns>
         [HttpPost("{freelancerId}/save")]
         public async Task<IActionResult> SaveFreelancer(string freelancerId)
         {
@@ -59,6 +79,11 @@ namespace Horr.Controllers
             return Ok(new { message = "Freelancer saved successfully." });
         }
 
+        /// <summary>
+        /// Removes a freelancer from the client's saved list.
+        /// </summary>
+        /// <param name="freelancerId">The freelancer ID to unsave.</param>
+        /// <returns>A success message.</returns>
         [HttpDelete("{freelancerId}/unsave")]
         public async Task<IActionResult> UnsaveFreelancer(string freelancerId)
         {
@@ -70,6 +95,12 @@ namespace Horr.Controllers
             return Ok(new { message = "Freelancer removed from saved list." });
         }
 
+        /// <summary>
+        /// Retrieves the list of saved freelancers for the logged-in client.
+        /// </summary>
+        /// <param name="page">Page number (default 1).</param>
+        /// <param name="pageSize">Number of items per page (default 10).</param>
+        /// <returns>A paged list of saved freelancers.</returns>
         [HttpGet("saved")]
         public async Task<ActionResult<PagedResult<FreelancerSearchResultDTO>>> GetSavedFreelancers(
             [FromQuery] int page = 1, 

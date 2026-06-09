@@ -22,6 +22,8 @@ using ServiceContracts.AI;
 using ServiceContracts.Recommendations;
 using ServiceImplementation.Implementations.AI;
 using ServiceImplementation.Implementations.Recommendations;
+using ServiceContracts.Storage;
+using ServiceImplementation.Storage;
 
 namespace Horr
 {
@@ -76,6 +78,7 @@ namespace Horr
             builder.Services.AddHttpClient();
             builder.Services.AddScoped<IGeminiService, GeminiService>();
             builder.Services.AddScoped<IRecommendationService, RecommendationService>();
+            builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
             // MediatR Registration
             builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(AuthService).Assembly));

@@ -26,6 +26,11 @@ namespace Horr.Controllers.Authentication
         }
 
 
+        /// <summary>
+        /// Changes the password for the logged-in user.
+        /// </summary>
+        /// <param name="dto">The password change details.</param>
+        /// <returns>A status indicating success.</returns>
         [HttpPost("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDTO dto)
         {
@@ -38,6 +43,11 @@ namespace Horr.Controllers.Authentication
             return Ok(result); // Password changed successfully
         }
 
+        /// <summary>
+        /// Registers a new user in the system.
+        /// </summary>
+        /// <param name="dto">The registration details.</param>
+        /// <returns>The registration result details.</returns>
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto dto)
         {
@@ -53,6 +63,13 @@ namespace Horr.Controllers.Authentication
             return Ok(result);// Meaning the email was sent successfully
         }
 
+        /// <summary>
+        /// Changes the email of a user using a verification token.
+        /// </summary>
+        /// <param name="userId">The ID of the user.</param>
+        /// <param name="newEmail">The new email address.</param>
+        /// <param name="token">The verification token.</param>
+        /// <returns>A status indicating success.</returns>
         [HttpPatch("change-email")]
         public async Task<IActionResult> ChangeEmail(string userId,string newEmail, string token)
         {
@@ -67,6 +84,12 @@ namespace Horr.Controllers.Authentication
             return Ok(result); 
         }
 
+        /// <summary>
+        /// Confirms a user's email address using a verification token.
+        /// </summary>
+        /// <param name="userId">The ID of the user.</param>
+        /// <param name="token">The email confirmation token.</param>
+        /// <returns>A status indicating success.</returns>
         [HttpPost("confirm-email")]
         public async Task<IActionResult> ConfirmEmail(string userId, string token)
         {
@@ -77,6 +100,12 @@ namespace Horr.Controllers.Authentication
 
             return Ok(result); // Email confirmed successfully(should redirect to login page in react for now)
         }
+
+        /// <summary>
+        /// Resends the confirmation email to a user.
+        /// </summary>
+        /// <param name="email">The email address of the user.</param>
+        /// <returns>A status indicating success.</returns>
         [HttpPost("resend-confirmation-email")]
         public async Task<IActionResult> ResendConfirmationEmail(string email)
         {
@@ -86,6 +115,11 @@ namespace Horr.Controllers.Authentication
             return Ok(result); // Confirmation email resent successfully
         }
 
+        /// <summary>
+        /// Authenticates a user and returns a JWT token.
+        /// </summary>
+        /// <param name="dto">The login credentials.</param>
+        /// <returns>The authenticated user details and JWT token.</returns>
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDTO dto)
         {
@@ -97,6 +131,10 @@ namespace Horr.Controllers.Authentication
             return Ok(result.Data.Token);
         }
 
+        /// <summary>
+        /// Logs out the logged-in user by invalidating the refresh token.
+        /// </summary>
+        /// <returns>A status indicating success.</returns>
         [HttpPost("logout")]
         [Authorize]
         public async Task<IActionResult> Logout()
@@ -110,6 +148,10 @@ namespace Horr.Controllers.Authentication
             return Ok(new { Message = "Logged out successfully." });
         }
 
+        /// <summary>
+        /// Refreshes the active JWT token using a refresh token cookie.
+        /// </summary>
+        /// <returns>The new JWT token.</returns>
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken()
         {

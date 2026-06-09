@@ -26,6 +26,12 @@ namespace Entities.Project
         [MaxLength(100)]
         public string FileType { get; set; } = string.Empty;
 
+        [Required]
+        [MaxLength(255)]
+        public string OriginalFileName { get; set; } = string.Empty;
+
+        public long FileSizeBytes { get; set; }
+
         public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
     }
 }

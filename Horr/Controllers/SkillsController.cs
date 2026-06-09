@@ -21,6 +21,10 @@ namespace Horr.Controllers
             _skillService = skillService;
         }
 
+        /// <summary>
+        /// Retrieves all skills available in the system.
+        /// </summary>
+        /// <returns>A list of all skills.</returns>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<SkillDto>>> GetAllSkills()
         {
@@ -28,6 +32,11 @@ namespace Horr.Controllers
             return Ok(result.Data);
         }
 
+        /// <summary>
+        /// Retrieves skills under a specific category.
+        /// </summary>
+        /// <param name="categoryId">The category ID to filter skills.</param>
+        /// <returns>A list of skills in the specified category.</returns>
         [HttpGet("category/{categoryId}")]
         public async Task<ActionResult<IEnumerable<SkillDto>>> GetSkillsByCategory(string categoryId)
         {
@@ -35,6 +44,10 @@ namespace Horr.Controllers
             return Ok(result.Data);
         }
 
+        /// <summary>
+        /// Retrieves the list of skills associated with the logged-in freelancer.
+        /// </summary>
+        /// <returns>A list of the freelancer's skills.</returns>
         [HttpGet("my-skills")]
         public async Task<ActionResult<IEnumerable<FreelancerSkillDto>>> GetMySkills()
         {
@@ -47,6 +60,11 @@ namespace Horr.Controllers
             return Ok(result.Data);
         }
 
+        /// <summary>
+        /// Adds a skill to the logged-in freelancer's profile.
+        /// </summary>
+        /// <param name="dto">The details of the skill to add.</param>
+        /// <returns>The added freelancer skill details.</returns>
         [HttpPost("my-skills")]
         public async Task<ActionResult<FreelancerSkillDto>> AddMySkill([FromBody] AddFreelancerSkillDto dto)
         {
@@ -65,6 +83,11 @@ namespace Horr.Controllers
             return CreatedAtAction(nameof(GetMySkills), result.Data);
         }
 
+        /// <summary>
+        /// Removes a skill from the logged-in freelancer's profile.
+        /// </summary>
+        /// <param name="skillId">The skill ID to remove.</param>
+        /// <returns>No content on success.</returns>
         [HttpDelete("my-skills/{skillId}")]
         public async Task<IActionResult> DeleteMySkill(string skillId)
         {

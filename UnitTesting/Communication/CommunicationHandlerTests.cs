@@ -365,5 +365,52 @@ namespace UnitTesting.Communication
             result.Succeeded.Should().BeFalse();
             result.ErrorCode.Should().Be("JOB_NOT_FOUND");
         }
+
+        [Fact]
+        public async Task SendMessage_Should_ReuseExistingConversation_WhenInviteToJobPairAlreadyExists()
+        {
+            // Arrange
+            await SeedBaseData();
+            await SeedJobData();
+            var handler = new SendMessageCommandHandler(_context, _mockHubContext.Object);
+            
+            // First, create the initial conversation for the job post
+            var command1 = new SendMessageCommand(
+                "new-conv-id", 
+                "user-1", 
+                "Initial invitation message regarding job", 
+                null, 
+                "job-123", 
+                "user-2"
+            );
+            var result1 = await handler.Handle(command1, CancellationToken.None);
+            result1.Succeeded.Should().BeTrue();
+
+            // Act - attempt to send a new invite to the same freelancer for the same job with a different/new ConversationId
+            var command2 = new SendMessageCommand(
+                "another-temp-conv-id", 
+                "user-1", 
+                "Follow up invitation message", 
+                null, 
+                "job-123", 
+                "user-2"
+            );
+            var result2 = await handler.Handle(command2, CancellationToken.None);
+
+            // Assert
+            result2.Succeeded.Should().BeTrue();
+            // It should have resolved to the existing conversation ID: "new-conv-id"
+            result2.Data.ConversationId.Should().Be("new-conv-id");
+
+            // Verify that only one conversation actually exists for this job post
+            var conversationsCount = await _context.Conversations.CountAsync(c => c.JobPostId == "job-123");
+            conversationsCount.Should().Be(1);
+
+            // Verify both messages are in "new-conv-id"
+            var messages = await _context.Messages.Where(m => m.ConversationId == "new-conv-id").ToListAsync();
+            messages.Should().HaveCount(2);
+            messages.Should().ContainSingle(m => m.Body == "Initial invitation message regarding job");
+            messages.Should().ContainSingle(m => m.Body == "Follow up invitation message");
+        }
     }
 }

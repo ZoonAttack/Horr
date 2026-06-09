@@ -42,7 +42,19 @@ namespace ServiceImplementation.Implementations.Communication
             try
             {
                 var conversation = await _context.Conversations
+                    .Include(c => c.Participants)
                     .FirstOrDefaultAsync(c => c.Id == request.ConversationId, cancellationToken);
+
+                if (conversation == null && !string.IsNullOrEmpty(request.JobPostId) && !string.IsNullOrEmpty(request.ReceiverId))
+                {
+                    conversation = await _context.Conversations
+                        .Include(c => c.Participants)
+                        .FirstOrDefaultAsync(c => 
+                            c.JobPostId == request.JobPostId &&
+                            c.Participants.Any(p => p.UserId == request.SenderId) &&
+                            c.Participants.Any(p => p.UserId == request.ReceiverId), 
+                            cancellationToken);
+                }
 
                 if (conversation == null)
                 {
@@ -113,7 +125,7 @@ namespace ServiceImplementation.Implementations.Communication
                 var message = new Message
                 {
                     Id = Guid.NewGuid().ToString(),
-                    ConversationId = request.ConversationId,
+                    ConversationId = conversation.Id,
                     SenderId = request.SenderId,
                     Body = request.Body,
                     Status = MessageStatus.Unread,
@@ -169,7 +181,7 @@ namespace ServiceImplementation.Implementations.Communication
                 };
 
                 // Broadcast
-                await _hubContext.Clients.Group(request.ConversationId)
+                await _hubContext.Clients.Group(conversation.Id)
                     .SendAsync("ReceiveMessage", messageDto, cancellationToken);
 
                 await transaction.CommitAsync(cancellationToken);

@@ -26,6 +26,10 @@ namespace Horr.Controllers.FreelancerProfile
             _context = context;
         }
 
+        /// <summary>
+        /// Retrieves the list of portfolio items for the logged-in freelancer.
+        /// </summary>
+        /// <returns>A list of portfolio item details.</returns>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<PortfolioItemDto>>> GetPortfolio()
         {
@@ -59,6 +63,11 @@ namespace Horr.Controllers.FreelancerProfile
             return Ok(items);
         }
 
+        /// <summary>
+        /// Retrieves a specific portfolio item by its ID.
+        /// </summary>
+        /// <param name="id">The ID of the portfolio item.</param>
+        /// <returns>The portfolio item details.</returns>
         [HttpGet("{id}")]
         public async Task<ActionResult<PortfolioItemDto>> GetById(string id)
         {
@@ -92,6 +101,17 @@ namespace Horr.Controllers.FreelancerProfile
             });
         }
 
+        /// <summary>
+        /// Creates a new portfolio item with supporting media (images, videos, thumbnail).
+        /// </summary>
+        /// <param name="title">Title of the portfolio item.</param>
+        /// <param name="description">Description of the project/work done.</param>
+        /// <param name="role">The freelancer's role in the project.</param>
+        /// <param name="visitLink">Optional external project URL.</param>
+        /// <param name="thumbnail">The project thumbnail image.</param>
+        /// <param name="images">Optional list of additional project images.</param>
+        /// <param name="videos">Optional list of project demonstration videos.</param>
+        /// <returns>The created portfolio item details.</returns>
         [HttpPost]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<PortfolioItemDto>> Create([FromForm] string title, [FromForm] string description, [FromForm] string? role, [FromForm] string? visitLink, [FromForm] IFormFile thumbnail, [FromForm] List<IFormFile>? images, [FromForm] List<IFormFile>? videos)
@@ -161,6 +181,18 @@ namespace Horr.Controllers.FreelancerProfile
             });
         }
 
+        /// <summary>
+        /// Updates an existing portfolio item and replaces its media files.
+        /// </summary>
+        /// <param name="id">The portfolio item ID to update.</param>
+        /// <param name="title">Updated title.</param>
+        /// <param name="description">Updated description.</param>
+        /// <param name="role">Updated role.</param>
+        /// <param name="visitLink">Updated external project URL.</param>
+        /// <param name="thumbnail">Optional updated thumbnail image.</param>
+        /// <param name="images">Optional list of updated project images.</param>
+        /// <param name="videos">Optional list of updated project videos.</param>
+        /// <returns>The updated portfolio item details.</returns>
         [HttpPut("{id}")]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<PortfolioItemDto>> Update(string id, [FromForm] string title, [FromForm] string description, [FromForm] string? role, [FromForm] string? visitLink, [FromForm] IFormFile? thumbnail, [FromForm] List<IFormFile>? images, [FromForm] List<IFormFile>? videos)
@@ -236,6 +268,11 @@ namespace Horr.Controllers.FreelancerProfile
             });
         }
 
+        /// <summary>
+        /// Soft deletes a portfolio item by its ID.
+        /// </summary>
+        /// <param name="id">The portfolio item ID to delete.</param>
+        /// <returns>No content on success.</returns>
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
