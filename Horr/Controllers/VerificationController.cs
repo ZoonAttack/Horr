@@ -31,6 +31,13 @@ namespace Horr.Controllers
             _userManager = userManager;
         }
 
+        /// <summary>
+        /// Submits a verification request with ID front image, ID back image, and a selfie. Only accessible by Freelancers.
+        /// </summary>
+        /// <param name="frontImage">Front image of ID card.</param>
+        /// <param name="backImage">Back image of ID card.</param>
+        /// <param name="selfie">Selfie image of the user holding their ID.</param>
+        /// <returns>The submitted verification request details.</returns>
         [HttpPost("submit")]
         [Authorize(Roles = "Freelancer")]
         [Consumes("multipart/form-data")]
@@ -77,6 +84,10 @@ namespace Horr.Controllers
             return CreatedAtAction(nameof(GetMyStatus), new { }, MapToDto(request, user.FullName, user.IsVerified));
         }
 
+        /// <summary>
+        /// Retrieves the verification status of the logged-in freelancer.
+        /// </summary>
+        /// <returns>The freelancer's current verification request details.</returns>
         [HttpGet("my-status")]
         [Authorize(Roles = "Freelancer")]
         public async Task<IActionResult> GetMyStatus()
@@ -95,6 +106,10 @@ namespace Horr.Controllers
             return Ok(MapToDto(request, user.FullName, user.IsVerified));
         }
 
+        /// <summary>
+        /// Retrieves a list of all pending verification requests. Only accessible by Admins.
+        /// </summary>
+        /// <returns>A list of pending verification requests.</returns>
         [HttpGet("pending")]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> GetPending()
@@ -108,6 +123,10 @@ namespace Horr.Controllers
             return Ok(requests.Select(r => MapToDto(r, r.User?.FullName ?? "Unknown", r.User?.IsVerified ?? false)).ToList());
         }
 
+        /// <summary>
+        /// Retrieves all verification requests (approved, pending, or rejected). Only accessible by Admins.
+        /// </summary>
+        /// <returns>A list of all verification requests.</returns>
         [HttpGet("all")]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> GetAll()
@@ -120,6 +139,11 @@ namespace Horr.Controllers
             return Ok(requests.Select(r => MapToDto(r, r.User?.FullName ?? "Unknown", r.User?.IsVerified ?? false)).ToList());
         }
 
+        /// <summary>
+        /// Reviews (approves or rejects) a pending verification request. Only accessible by Admins.
+        /// </summary>
+        /// <param name="dto">The review decision and optional rejection details.</param>
+        /// <returns>The updated verification request details.</returns>
         [HttpPost("review")]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Review([FromBody] ReviewVerificationDto dto)

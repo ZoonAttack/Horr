@@ -32,6 +32,10 @@ namespace Horr.Controllers.FreelancerProfile
             throw new UnauthorizedAccessException("Invalid User ID");
         }
 
+        /// <summary>
+        /// Retrieves the list of professional experience records for the logged-in user.
+        /// </summary>
+        /// <returns>A list of experience records.</returns>
         [HttpGet]
         public async Task<IActionResult> GetExperience()
         {
@@ -46,6 +50,11 @@ namespace Horr.Controllers.FreelancerProfile
             return Ok(result.Data);
         }
 
+        /// <summary>
+        /// Soft deletes a professional experience record by its ID.
+        /// </summary>
+        /// <param name="id">The ID of the experience record to delete.</param>
+        /// <returns>No content on success.</returns>
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteExperience(string id)
         {

@@ -20,6 +20,10 @@ namespace Horr.Controllers
             _jobService = jobService;
         }
 
+        /// <summary>
+        /// Retrieves the profile details of the logged-in client.
+        /// </summary>
+        /// <returns>The client profile details.</returns>
         [HttpGet("me")]
         public async Task<IActionResult> GetMe()
         {
@@ -29,6 +33,10 @@ namespace Horr.Controllers
             return BadRequest(new { result.ErrorCode, result.Message });
         }
 
+        /// <summary>
+        /// Retrieves onboarding data for the logged-in client.
+        /// </summary>
+        /// <returns>The onboarding details.</returns>
         [HttpGet("onboarding")]
         public async Task<IActionResult> GetOnboarding()
         {
@@ -38,6 +46,10 @@ namespace Horr.Controllers
             return BadRequest(new { result.ErrorCode, result.Message });
         }
 
+        /// <summary>
+        /// Retrieves all jobs created by the logged-in client.
+        /// </summary>
+        /// <returns>A list of jobs created by the client.</returns>
         [HttpGet("jobs")]
         public async Task<IActionResult> GetClientJobs()
         {

@@ -22,6 +22,15 @@ namespace Horr.Controllers
             _mediator = mediator;
         }
 
+        /// <summary>
+        /// Creates a new service catalog listing.
+        /// </summary>
+        /// <param name="dto">The service details.</param>
+        /// <param name="images">Optional list of service images.</param>
+        /// <param name="video">Optional service video file.</param>
+        /// <param name="documents">Optional supporting documents.</param>
+        /// <param name="coverImageFileName">Optional file name of the cover image.</param>
+        /// <returns>The created service catalog item details.</returns>
         [HttpPost]
         [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(ServiceCatalogItemDto), 201)]
@@ -43,6 +52,16 @@ namespace Horr.Controllers
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
 
+        /// <summary>
+        /// Updates an existing service catalog listing.
+        /// </summary>
+        /// <param name="id">The service catalog item ID.</param>
+        /// <param name="dto">The updated service details.</param>
+        /// <param name="images">Optional updated service images.</param>
+        /// <param name="video">Optional updated service video file.</param>
+        /// <param name="documents">Optional updated supporting documents.</param>
+        /// <param name="coverImageFileName">Optional updated cover image file name.</param>
+        /// <returns>The updated service catalog item details.</returns>
         [HttpPut("{id}")]
         [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(ServiceCatalogItemDto), 200)]
@@ -66,6 +85,11 @@ namespace Horr.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// Deletes a service catalog listing by its ID.
+        /// </summary>
+        /// <param name="id">The service catalog item ID.</param>
+        /// <returns>No content on success.</returns>
         [HttpDelete("{id}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
@@ -78,6 +102,10 @@ namespace Horr.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Retrieves service listings belonging to the logged-in freelancer.
+        /// </summary>
+        /// <returns>Grouped service catalog listings details.</returns>
         [HttpGet("my-services")]
         [ProducesResponseType(typeof(ServiceGroupedDto), 200)]
         public async Task<IActionResult> GetMyServices()
@@ -89,6 +117,11 @@ namespace Horr.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// Retrieves a service catalog listing by its ID.
+        /// </summary>
+        /// <param name="id">The service catalog item ID.</param>
+        /// <returns>The service details.</returns>
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(ServiceCatalogItemDto), 200)]
         [ProducesResponseType(404)]

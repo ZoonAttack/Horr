@@ -19,6 +19,11 @@ namespace Horr.Controllers
             _mediator = mediator;
         }
 
+        /// <summary>
+        /// Submits a new proposal for a job post.
+        /// </summary>
+        /// <param name="dto">The details of the proposal to submit.</param>
+        /// <returns>The created proposal details.</returns>
         [HttpPost]
         [ProducesResponseType(typeof(ProposalReadDTO), 201)]
         [ProducesResponseType(400)]
@@ -36,6 +41,10 @@ namespace Horr.Controllers
             return CreatedAtAction(nameof(GetMyProposals), new { id = result.Data.Id }, result.Data);
         }
 
+        /// <summary>
+        /// Retrieves the list of proposals submitted by the logged-in freelancer.
+        /// </summary>
+        /// <returns>The freelancer's submitted proposals.</returns>
         [HttpGet("my-proposals")]
         [ProducesResponseType(typeof(MyProposalsResponseDto), 200)]
         public async Task<IActionResult> GetMyProposals()
@@ -48,6 +57,11 @@ namespace Horr.Controllers
             return Ok(result.Data);
         }
 
+        /// <summary>
+        /// Withdraws a submitted proposal.
+        /// </summary>
+        /// <param name="id">The proposal ID to withdraw.</param>
+        /// <returns>No content on success.</returns>
         [HttpDelete("{id}/withdraw")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]

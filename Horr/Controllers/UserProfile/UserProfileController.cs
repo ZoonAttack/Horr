@@ -21,6 +21,11 @@ namespace Horr.Controllers.UserProfile
         {
             _profileSettingsService = profileSettingsService;
         }
+
+        /// <summary>
+        /// Retrieves the profile details of the logged-in user.
+        /// </summary>
+        /// <returns>The user profile details.</returns>
         [HttpGet]
         public async Task<IActionResult> GetProfile()
         {
@@ -30,6 +35,10 @@ namespace Horr.Controllers.UserProfile
             return Ok(response);
         }
 
+        /// <summary>
+        /// Retrieves freelancer-specific profile details for the logged-in user.
+        /// </summary>
+        /// <returns>The freelancer profile details.</returns>
         [HttpGet("freelancer-details")]
         public async Task<IActionResult> GetFreelancerDetails()
         {
@@ -39,6 +48,11 @@ namespace Horr.Controllers.UserProfile
             return Ok(result.Data);
         }
 
+        /// <summary>
+        /// Retrieves the public profile details of a user by their hashed user ID.
+        /// </summary>
+        /// <param name="userIdHash">The hashed user ID.</param>
+        /// <returns>The public profile details.</returns>
         [HttpGet("public/{userIdHash}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetPublicProfile(string userIdHash)
@@ -48,6 +62,11 @@ namespace Horr.Controllers.UserProfile
             return Ok(response);
         }
 
+        /// <summary>
+        /// Updates the full name of the logged-in user.
+        /// </summary>
+        /// <param name="fullname">The new full name.</param>
+        /// <returns>A status indicating success and the updated name.</returns>
         [HttpPatch("name")]
         public async Task<IActionResult> UpdateName([FromBody] string fullname)
         {
@@ -58,6 +77,11 @@ namespace Horr.Controllers.UserProfile
             return Ok(new { message = "Name updated successfully.",  data = response.Data });
         }
 
+        /// <summary>
+        /// Initiates or completes the email update process for the logged-in user.
+        /// </summary>
+        /// <param name="email">The new email address.</param>
+        /// <returns>A status indicating success.</returns>
         [HttpPatch("email")]
         public async Task<IActionResult> UpdateEmail([FromBody] string email)
         {
@@ -69,6 +93,11 @@ namespace Horr.Controllers.UserProfile
             return Ok(new { message = response.Message, data = response.Data });
         }
 
+        /// <summary>
+        /// Updates the professional title of the logged-in freelancer.
+        /// </summary>
+        /// <param name="title">The new professional title.</param>
+        /// <returns>A status indicating success and the updated title.</returns>
         [HttpPatch("title")]
         public async Task<IActionResult> UpdateTitle([FromBody] string title)
         {
@@ -78,6 +107,11 @@ namespace Horr.Controllers.UserProfile
             return Ok(new { message = "Title updated successfully.", data = response.Data });
         }
 
+        /// <summary>
+        /// Updates the professional biography of the logged-in freelancer.
+        /// </summary>
+        /// <param name="bio">The new biography text.</param>
+        /// <returns>A status indicating success and the updated biography.</returns>
         [HttpPatch("bio")]
         public async Task<IActionResult> UpdateBio([FromBody] string? bio)
         {
@@ -87,6 +121,11 @@ namespace Horr.Controllers.UserProfile
             return Ok(new { message = "Bio updated successfully.", data = response.Data });
         }
 
+        /// <summary>
+        /// Updates the experience level of the logged-in freelancer.
+        /// </summary>
+        /// <param name="dto">The updated experience level details.</param>
+        /// <returns>A status indicating success and the updated experience level.</returns>
         [HttpPatch("experience-level")]
         public async Task<IActionResult> UpdateExperienceLevel([FromBody] ExperienceUpdateDto dto)
         {
@@ -96,6 +135,11 @@ namespace Horr.Controllers.UserProfile
             return Ok(new { message = "Experience updated successfully.", data = response.Data });
         }
 
+        /// <summary>
+        /// Creates a new billing payment method for the logged-in user.
+        /// </summary>
+        /// <param name="dto">The payment method details.</param>
+        /// <returns>A status indicating success and the created payment method details.</returns>
         [HttpPost("payment-method")]
         public async Task<IActionResult> CreatePaymentMethod([FromBody] PaymentMethodCreateDTO dto)
         {
@@ -104,6 +148,13 @@ namespace Horr.Controllers.UserProfile
             if (!response.Succeeded) return NotFound("User not found.");
             return Ok(new { message = "Billing information created successfully.", data = response.Data });
         }
+
+        /// <summary>
+        /// Updates an existing billing payment method by its ID.
+        /// </summary>
+        /// <param name="id">The payment method ID.</param>
+        /// <param name="dto">The updated payment method details.</param>
+        /// <returns>The updated payment method details.</returns>
         [HttpPut("payment-method/{id}")]
         public async Task<IActionResult> UpdatePaymentMethod([FromRoute] string id, [FromBody] PaymentMethodUpdateDTO dto)
         {
@@ -113,6 +164,11 @@ namespace Horr.Controllers.UserProfile
             return Ok(response.Data);
         }
 
+        /// <summary>
+        /// Deletes a billing payment method by its ID.
+        /// </summary>
+        /// <param name="id">The payment method ID.</param>
+        /// <returns>No content on success.</returns>
         [HttpDelete("payment-method/{id}")]
         public async Task<IActionResult> DeletePaymentMethod([FromRoute] string id)
         {
@@ -135,6 +191,11 @@ namespace Horr.Controllers.UserProfile
         //    return Ok(new { message = "Account updated successfully." });
         //}
 
+        /// <summary>
+        /// Updates the location information for the logged-in user.
+        /// </summary>
+        /// <param name="dto">The updated location details.</param>
+        /// <returns>A status indicating success.</returns>
         [HttpPatch("location")]
         public async Task<IActionResult> UpdateLocation([FromBody] LocationUpdateDto dto)
         {
@@ -148,6 +209,11 @@ namespace Horr.Controllers.UserProfile
             return Ok(new { message = "Location updated successfully." });
         }
 
+        /// <summary>
+        /// Updates general freelancer-specific details for the logged-in user.
+        /// </summary>
+        /// <param name="dto">The updated freelancer details.</param>
+        /// <returns>A status indicating success and the updated freelancer details.</returns>
         [HttpPatch("freelancer-details")]
         public async Task<IActionResult> UpdateFreelancerDetails([FromBody] ServiceContracts.DTOs.UserDTOs.FreelancerManagement.FreelancerUpdateDTO dto)
         {

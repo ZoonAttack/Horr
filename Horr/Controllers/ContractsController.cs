@@ -23,6 +23,13 @@ namespace Horr.Controllers
             _mediator = mediator;
         }
 
+        /// <summary>
+        /// Retrieves the list of contracts associated with the logged-in user.
+        /// </summary>
+        /// <param name="status">Optional status to filter contracts.</param>
+        /// <param name="page">Page number (default 1).</param>
+        /// <param name="pageSize">Number of items per page (default 10).</param>
+        /// <returns>A paged list of contract details.</returns>
         [HttpGet("my-contracts")]
         [ProducesResponseType(typeof(IEnumerable<ContractReadDTO>), 200)]
         public async Task<IActionResult> GetMyContracts(
@@ -43,6 +50,11 @@ namespace Horr.Controllers
             return Ok(result.Data);
         }
 
+        /// <summary>
+        /// Retrieves details of a specific contract by its ID.
+        /// </summary>
+        /// <param name="id">The contract ID.</param>
+        /// <returns>The contract details.</returns>
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(ContractReadDTO), 200)]
         [ProducesResponseType(404)]
@@ -56,6 +68,11 @@ namespace Horr.Controllers
             return Ok(result.Data);
         }
 
+        /// <summary>
+        /// Accepts a contract offer.
+        /// </summary>
+        /// <param name="id">The contract ID.</param>
+        /// <returns>A boolean indicating success.</returns>
         [HttpPost("{id}/accept-offer")]
         [ProducesResponseType(typeof(bool), 201)]
         [ProducesResponseType(404)]
@@ -73,6 +90,11 @@ namespace Horr.Controllers
             return StatusCode(201, result.Data);
         }
 
+        /// <summary>
+        /// Declines a contract offer.
+        /// </summary>
+        /// <param name="id">The contract ID.</param>
+        /// <returns>No content on success.</returns>
         [HttpPost("{id}/decline-offer")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
@@ -90,6 +112,13 @@ namespace Horr.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Delivers work for a contract.
+        /// </summary>
+        /// <param name="id">The contract ID.</param>
+        /// <param name="note">Note describing the delivery.</param>
+        /// <param name="files">List of uploaded files.</param>
+        /// <returns>The created work delivery details.</returns>
         [HttpPost("{id}/deliver-work")]
         [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(WorkDeliveryDto), 201)]
@@ -103,11 +132,20 @@ namespace Horr.Controllers
             var result = await _mediator.Send(new DeliverWorkCommand(id, note, userId, files));
             if (!result.Succeeded)
             {
-                return BadRequest(result);
+                {
+                    return BadRequest(result);
+                }
             }
             return StatusCode(201, result.Data);
         }
 
+        /// <summary>
+        /// Downloads an attachment for a contract delivery.
+        /// </summary>
+        /// <param name="id">The contract ID.</param>
+        /// <param name="deliveryId">The work delivery ID.</param>
+        /// <param name="attachmentId">The attachment ID.</param>
+        /// <returns>The requested file attachment.</returns>
         [HttpGet("{id}/deliveries/{deliveryId}/attachments/{attachmentId}/download")]
         [ProducesResponseType(typeof(FileResult), 200)]
         [ProducesResponseType(401)]
@@ -128,6 +166,11 @@ namespace Horr.Controllers
             return PhysicalFile(result.Data.PhysicalPath, result.Data.ContentType, result.Data.OriginalFileName);
         }
 
+        /// <summary>
+        /// Marks a contract as completed.
+        /// </summary>
+        /// <param name="id">The contract ID.</param>
+        /// <returns>No content on success.</returns>
         [HttpPost("{id}/complete")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
@@ -145,6 +188,11 @@ namespace Horr.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Rejects a contract delivery.
+        /// </summary>
+        /// <param name="id">The contract ID.</param>
+        /// <returns>No content on success.</returns>
         [HttpPost("{id}/reject")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
@@ -162,6 +210,12 @@ namespace Horr.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Submits a review for a completed contract.
+        /// </summary>
+        /// <param name="id">The contract ID.</param>
+        /// <param name="dto">The review details.</param>
+        /// <returns>The created contract review details.</returns>
         [HttpPost("{id}/reviews")]
         [ProducesResponseType(typeof(ContractReviewReadDTO), 201)]
         [ProducesResponseType(404)]
@@ -189,6 +243,11 @@ namespace Horr.Controllers
             return StatusCode(201, result.Data);
         }
 
+        /// <summary>
+        /// Creates a direct contract offer from a client to a freelancer.
+        /// </summary>
+        /// <param name="command">The details of the direct offer.</param>
+        /// <returns>The created contract details.</returns>
         [HttpPost("create-offer")]
         [Authorize(Policy = "ClientOnly")]
         [ProducesResponseType(typeof(ContractDto), 201)]
