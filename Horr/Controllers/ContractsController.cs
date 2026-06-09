@@ -113,6 +113,29 @@ namespace Horr.Controllers
         }
 
         /// <summary>
+        /// Revokes a pending contract offer.
+        /// </summary>
+        /// <param name="id">The contract ID.</param>
+        /// <returns>No content on success.</returns>
+        [HttpPost("{id}/revoke-offer")]
+        [Authorize(Policy = "ClientOnly")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(422)]
+        public async Task<IActionResult> RevokeOffer(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var result = await _mediator.Send(new RevokeOfferCommand(id, userId));
+            if (!result.Succeeded)
+            {
+                return BadRequest(result);
+            }
+            return NoContent();
+        }
+
+        /// <summary>
         /// Delivers work for a contract.
         /// </summary>
         /// <param name="id">The contract ID.</param>

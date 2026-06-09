@@ -81,32 +81,6 @@ namespace ServiceImplementation.Implementations.Contracts
             // Mark the proposal as Offer (accepted)
             contract.Proposal.Status = ProposalStatus.Offer;
 
-            // Escrow Logic: Deduct the agreed rate from the client's wallet
-            var clientWallet = await _context.WalletBalances.FirstOrDefaultAsync(w => w.UserId == contract.ClientId, cancellationToken);
-            if (clientWallet == null || clientWallet.BalanceEGP < contract.AgreedRate)
-            {
-                return new Result<bool>
-                {
-                    Succeeded = false,
-                    ErrorCode = ErrorCodes.InsufficientBalance,
-                    Message = "Client does not have sufficient balance to fund this contract."
-                };
-            }
-
-            clientWallet.BalanceEGP -= contract.AgreedRate;
-            clientWallet.LastUpdatedAt = DateTime.UtcNow;
-
-            var transaction = new Entities.Payment.Transaction
-            {
-                UserId = contract.ClientId,
-                Amount = contract.AgreedRate,
-                Direction = TransactionDirection.Debit,
-                Type = TransactionType.Escrow,
-                Description = $"Funds held in escrow for Contract ID: {contract.Id}",
-                CreatedAt = DateTime.UtcNow
-            };
-            _context.Transactions.Add(transaction);
-
             // Automatically create Chat room for the active contract if not exists
             var chatExists = await _context.Chats.AnyAsync(c => c.ContractId == contract.Id, cancellationToken);
             if (!chatExists)

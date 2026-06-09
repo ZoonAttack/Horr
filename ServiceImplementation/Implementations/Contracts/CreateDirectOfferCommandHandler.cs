@@ -11,6 +11,7 @@ using ServiceContracts.DTOs.Contract;
 using ServiceContracts.DTOs.Responses;
 using ServiceImplementation.Helpers;
 using Services;
+using Entities.Payment;
 
 namespace ServiceImplementation.Implementations.Contracts
 {
@@ -89,8 +90,21 @@ namespace ServiceImplementation.Implementations.Contracts
 
             _context.Contracts.Add(contract);
 
-            // Funds are NOT deducted here — only verified.
-            // Deduction happens when the freelancer accepts (escrow logic).
+            // Deduct funds immediately for Escrow
+            wallet.BalanceEGP -= totalAmount;
+            wallet.LastUpdatedAt = DateTime.UtcNow;
+
+            var transaction = new Transaction
+            {
+                UserId = request.ClientId,
+                Amount = totalAmount,
+                Direction = TransactionDirection.Debit,
+                Type = TransactionType.Escrow,
+                Description = $"Funds held in escrow for Contract Offer",
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.Transactions.Add(transaction);
+
             await _context.SaveChangesAsync(cancellationToken);
 
             return new Result<ContractDto>
