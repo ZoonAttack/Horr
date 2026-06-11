@@ -219,6 +219,7 @@ namespace Horr
             app.MapControllers();
             app.MapHub<ChatHub>("/hubs/chat");
             await SeedRolesAsync(app.Services);
+            await DatabaseSeeder.SeedDataAsync(app.Services);
             app.Run();
         }
 
