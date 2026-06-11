@@ -15,7 +15,7 @@ namespace ServiceImplementation.Mappings.Communication
                 ? chat.Freelancer?.User
                 : chat.Client?.User;
 
-            var lastMessage = chat.Messages?.OrderByDescending(m => m.SentAt).FirstOrDefault();
+            var lastMessage = chat.Messages?.OrderByDescending(m => m.SentAt).ThenByDescending(m => m.Id).FirstOrDefault();
             string preview = string.Empty;
             if (lastMessage != null)
             {

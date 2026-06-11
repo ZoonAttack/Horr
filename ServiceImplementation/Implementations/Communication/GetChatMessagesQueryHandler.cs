@@ -76,7 +76,8 @@ namespace ServiceImplementation.Implementations.Communication
                 var query = _context.Messages
                     .Include(m => m.Sender)
                     .Where(m => m.ChatId == request.ChatId)
-                    .OrderByDescending(m => m.SentAt);
+                    .OrderByDescending(m => m.SentAt)
+                    .ThenByDescending(m => m.Id);
 
                 var totalCount = await query.CountAsync(cancellationToken);
                 
