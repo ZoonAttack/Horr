@@ -5,6 +5,7 @@ using Entities.Enums;
 using Microsoft.EntityFrameworkCore;
 using ServiceContracts.DTOs.JobManagement;
 using ServiceContracts.DTOs.Responses;
+using ServiceContracts.DTOs.Proposal;
 using ServiceImplementation.Helpers;
 using Services.Client;
 using System;
@@ -442,6 +443,46 @@ namespace ServiceImplementation.Implementations.ClientImplementation
                 Succeeded = true,
                 Message = "Job deleted successfully.",
                 Data = true
+            };
+        }
+
+        public async Task<Result<List<ClientProposalSummaryDto>>> GetClientProposalsAsync(string clientId)
+        {
+            var clientUser = await _db.Users.FirstOrDefaultAsync(u => u.Id == clientId);
+            if (clientUser == null || clientUser.IsDeleted)
+            {
+                return new Result<List<ClientProposalSummaryDto>>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.AccountDeleted,
+                    Message = "Client account not found or is deleted."
+                };
+            }
+
+            var proposals = await _db.Proposals
+                .Where(p => p.JobPost.ClientId == clientId && !p.IsDeleted && !p.JobPost.IsDeleted)
+                .OrderByDescending(p => p.CreatedAt)
+                .Select(p => new ClientProposalSummaryDto
+                {
+                    Id = p.Id,
+                    FreelancerId = p.FreelancerId,
+                    FreelancerName = p.Freelancer.User.FullName,
+                    BidRate = p.BidRate,
+                    CoverLetter = p.CoverLetter,
+                    Status = p.Status,
+                    CreatedAt = p.CreatedAt,
+                    JobPostId = p.JobPostId,
+                    JobPostTitle = p.JobPost.Title,
+                    JobBudget = p.JobPost.Budget,
+                    JobType = p.JobPost.JobType
+                })
+                .ToListAsync();
+
+            return new Result<List<ClientProposalSummaryDto>>
+            {
+                Succeeded = true,
+                Message = "Client proposals retrieved successfully.",
+                Data = proposals
             };
         }
     }

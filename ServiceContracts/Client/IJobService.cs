@@ -1,5 +1,6 @@
 using ServiceContracts.DTOs.JobManagement;
 using ServiceContracts.DTOs.Responses;
+using ServiceContracts.DTOs.Proposal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,5 +19,6 @@ namespace Services.Client
         public Task<Result<List<ClientJobSummaryDto>>> GetClientJobsAsync(string clientId);
         public Task<Result<JobDetailsDto>> UpdateJobAsync(string clientId, string jobId, JobDetailsDto jobDetails);
         public Task<Result<bool>> DeleteJobAsync(string clientId, string jobId);
+        public Task<Result<List<ClientProposalSummaryDto>>> GetClientProposalsAsync(string clientId);
     }
 }

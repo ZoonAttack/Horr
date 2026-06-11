@@ -7,6 +7,7 @@ using ServiceContracts.Client;
 using ServiceContracts.DTOs.JobManagement;
 using ServiceContracts.DTOs.Responses;
 using ServiceContracts.DTOs.UserDTOs;
+using ServiceContracts.DTOs.Proposal;
 using Services.Client;
 using System.Collections.Generic;
 using System.Security.Claims;
@@ -128,6 +129,53 @@ namespace UnitTesting.Controllers
             // Assert
             var okResult = actionResult.Should().BeOfType<OkObjectResult>().Subject;
             okResult.Value.Should().BeEquivalentTo(jobs);
+        }
+
+        [Fact]
+        public async Task GetClientProposals_ShouldReturnOk_WhenServiceSucceeds()
+        {
+            // Arrange
+            var proposals = new List<ClientProposalSummaryDto>
+            {
+                new ClientProposalSummaryDto { Id = 1, FreelancerName = "Freelancer 1", JobPostTitle = "Job Title 1" }
+            };
+            var result = new Result<List<ClientProposalSummaryDto>>
+            {
+                Succeeded = true,
+                Data = proposals
+            };
+
+            _jobServiceMock.Setup(s => s.GetClientProposalsAsync(TestUserId))
+                .ReturnsAsync(result);
+
+            // Act
+            var actionResult = await _controller.GetClientProposals();
+
+            // Assert
+            var okResult = actionResult.Should().BeOfType<OkObjectResult>().Subject;
+            okResult.Value.Should().BeEquivalentTo(proposals);
+        }
+
+        [Fact]
+        public async Task GetClientProposals_ShouldReturnBadRequest_WhenServiceFails()
+        {
+            // Arrange
+            var result = new Result<List<ClientProposalSummaryDto>>
+            {
+                Succeeded = false,
+                ErrorCode = "ERROR_CODE",
+                Message = "An error occurred"
+            };
+
+            _jobServiceMock.Setup(s => s.GetClientProposalsAsync(TestUserId))
+                .ReturnsAsync(result);
+
+            // Act
+            var actionResult = await _controller.GetClientProposals();
+
+            // Assert
+            var badRequestResult = actionResult.Should().BeOfType<BadRequestObjectResult>().Subject;
+            badRequestResult.Value.Should().BeEquivalentTo(new { result.ErrorCode, result.Message });
         }
     }
 }

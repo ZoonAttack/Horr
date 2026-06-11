@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ServiceContracts.Client;
 using Services.Client;
+using ServiceContracts.DTOs.Proposal;
 
 namespace Horr.Controllers
 {
@@ -55,6 +56,21 @@ namespace Horr.Controllers
         {
             string userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
             var result = await _jobService.GetClientJobsAsync(userId);
+            if (result.Succeeded) return Ok(result.Data);
+            return BadRequest(new { result.ErrorCode, result.Message });
+        }
+
+        /// <summary>
+        /// Retrieves all proposals submitted to jobs created by the logged-in client.
+        /// </summary>
+        /// <returns>A list of proposals directed to the client.</returns>
+        [HttpGet("proposals")]
+        [ProducesResponseType(typeof(IEnumerable<ClientProposalSummaryDto>), 200)]
+        [ProducesResponseType(400)]
+        public async Task<IActionResult> GetClientProposals()
+        {
+            string userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            var result = await _jobService.GetClientProposalsAsync(userId);
             if (result.Succeeded) return Ok(result.Data);
             return BadRequest(new { result.ErrorCode, result.Message });
         }
