@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Entities;
@@ -30,11 +31,14 @@ namespace ServiceImplementation.Implementations.Contracts
                 .Include(c => c.Client)
                 .Include(c => c.Freelancer)
                 .Include(c => c.WorkDeliveries)
+                .Include(c => c.ContractMilestones)
                 .FirstOrDefaultAsync(c => c.Id == request.ContractId, cancellationToken);
 
             if (contract == null)
             {
-                return new Result<ContractReadDTO> { Succeeded = false, ErrorCode = ErrorCodes.ContractNotFound, Message = "Contract not found." };
+                {
+                    return new Result<ContractReadDTO> { Succeeded = false, ErrorCode = ErrorCodes.ContractNotFound, Message = "Contract not found." };
+                }
             }
 
             // Check if user is part of the contract
@@ -49,7 +53,7 @@ namespace ServiceImplementation.Implementations.Contracts
                 ProposalId = contract.ProposalId,
                 ClientId = contract.ClientId,
                 FreelancerId = contract.FreelancerId,
-                Proposal_Title = contract.Proposal?.JobPost?.Title,
+                Proposal_Title = contract.Proposal?.JobPost?.Title ?? contract.JobPost?.Title ?? "Direct Offer",
                 Client_Name = contract.Client?.FullName,
                 Freelancer_Name = contract.Freelancer?.FullName,
                 AgreedRate = contract.AgreedRate,
@@ -57,6 +61,18 @@ namespace ServiceImplementation.Implementations.Contracts
                 StartedAt = contract.StartedAt,
                 ClosedAt = contract.ClosedAt,
                 CreatedAt = contract.CreatedAt,
+                Description = contract.CustomJobDescription ?? contract.Proposal?.JobPost?.Description ?? string.Empty,
+                Milestones = contract.ContractMilestones?
+                    .Where(m => !m.IsDeleted)
+                    .Select(m => new ContractMilestoneDto
+                    {
+                        Id = m.Id,
+                        Title = m.Title,
+                        Description = m.Description,
+                        Amount = m.Amount,
+                        DueDate = m.DueDate,
+                        Status = m.Status.ToString()
+                    }).ToList() ?? new List<ContractMilestoneDto>(),
                 LatestDeliverySummary = contract.WorkDeliveries
                     .OrderByDescending(d => d.SubmittedAt)
                     .Select(d => d.Note)

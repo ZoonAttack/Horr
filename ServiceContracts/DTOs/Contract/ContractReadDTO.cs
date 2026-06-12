@@ -37,5 +37,8 @@ namespace ServiceContracts.DTOs.Contract
         public DateTime CreatedAt { get; set; }
         public string? LatestDeliverySummary { get; set; }
 
+        // New details for milestone deliverables and description
+        public string? Description { get; set; }
+        public List<ContractMilestoneDto>? Milestones { get; set; }
     }
 }
