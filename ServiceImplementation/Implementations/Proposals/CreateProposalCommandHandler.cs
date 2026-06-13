@@ -65,10 +65,10 @@ namespace ServiceImplementation.Implementations.Proposals
             }
 
             // Validate job-type specific requirements - Enforce single-payment only
-            //if (dto.Terms != null && dto.Terms.Any())
-            //{
-            //    throw new ValidationException("Validation failed", new List<string> { "Milestone-based proposals are not supported right now. Proposals must be single-payment (do not provide milestone terms)." });
-            //}
+            if (dto.Terms != null && dto.Terms.Any())
+            {
+                throw new ValidationException("Validation failed", new List<string> { "Milestone-based proposals are not supported right now. Proposals must be single-payment (do not provide milestone terms)." });
+            }
 
             // 6. Calculate HORR Fee
             decimal horrFee = Math.Round(dto.BidRate * 0.10m, 2);
