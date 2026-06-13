@@ -58,6 +58,29 @@ namespace ServiceImplementation.Implementations.Contracts
                         Errors = new List<string> { "The provided proposal ID does not exist." }
                     };
                 }
+
+                if (proposal.Status != ProposalStatus.Submitted)
+                {
+                    return new Result<ContractDto>
+                    {
+                        Succeeded = false,
+                        ErrorCode = ErrorCodes.InvalidState,
+                        Message = "Offers can only be created for submitted proposals.",
+                        Errors = new List<string> { $"The proposal status is '{proposal.Status}', but must be 'Submitted' to create an offer." }
+                    };
+                }
+
+                var contractExists = await _context.Contracts.AnyAsync(c => c.ProposalId == request.ProposalId.Value, cancellationToken);
+                if (contractExists)
+                {
+                    return new Result<ContractDto>
+                    {
+                        Succeeded = false,
+                        ErrorCode = ErrorCodes.InvalidState,
+                        Message = "An offer or contract already exists for this proposal.",
+                        Errors = new List<string> { "An offer or contract already exists for this proposal." }
+                    };
+                }
             }
 
             var totalAmount = request.AgreedRate ?? proposal?.BidRate ?? job.Budget;
@@ -110,7 +133,6 @@ namespace ServiceImplementation.Implementations.Contracts
                 DueDate = DateTime.UtcNow.AddDays(14),
                 Status = MilestoneStatus.Unfunded
             };
-
             _context.Contracts.Add(contract);
             _context.ContractMilestones.Add(milestone);
             await _context.SaveChangesAsync(cancellationToken);

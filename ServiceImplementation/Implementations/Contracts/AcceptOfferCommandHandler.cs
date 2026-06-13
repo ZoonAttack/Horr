@@ -72,14 +72,16 @@ namespace ServiceImplementation.Implementations.Contracts
                 };
             }
 
-            // Also ensure the underlying proposal is in the right state
-            ContractStateGuard.EnsureCanAcceptOffer(contract.Proposal);
+            // Also ensure the underlying proposal is in the right state if it exists
+            if (contract.Proposal != null)
+            {
+                ContractStateGuard.EnsureCanAcceptOffer(contract.Proposal);
+                // Mark the proposal as Offer (accepted)
+                contract.Proposal.Status = ProposalStatus.Offer;
+            }
 
             contract.Status = ContractStatus.Active;
             contract.AcceptedAt = DateTime.UtcNow;
-
-            // Mark the proposal as Offer (accepted)
-            contract.Proposal.Status = ProposalStatus.Offer;
 
             // Automatically create Chat room for the active contract if not exists
             var chatExists = await _context.Chats.AnyAsync(c => c.ContractId == contract.Id, cancellationToken);

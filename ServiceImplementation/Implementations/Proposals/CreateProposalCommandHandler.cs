@@ -64,11 +64,11 @@ namespace ServiceImplementation.Implementations.Proposals
                 throw new NotFoundException($"Job post with ID {dto.JobPostId} not found.");
             }
 
-            //// Validate job-type specific requirements - Enforce single-payment only
-            //if (dto.Terms != null && dto.Terms.Any())
-            //{
-            //    throw new ValidationException("Validation failed", new List<string> { "Milestone-based proposals are not supported right now. Proposals must be single-payment (do not provide milestone terms)." });
-            //}
+            // Validate job-type specific requirements - Enforce single-payment only
+            if (dto.Terms != null && dto.Terms.Any())
+            {
+                throw new ValidationException("Validation failed", new List<string> { "Milestone-based proposals are not supported right now. Proposals must be single-payment (do not provide milestone terms)." });
+            }
 
             // 6. Calculate HORR Fee
             decimal horrFee = Math.Round(dto.BidRate * 0.10m, 2);
@@ -82,6 +82,7 @@ namespace ServiceImplementation.Implementations.Proposals
                 BidRate = dto.BidRate,
                 HORRFee = horrFee,
                 CoverLetter = dto.CoverLetter,
+                Status = ProposalStatus.Submitted,
                 CreatedAt = DateTime.UtcNow,
                 Terms = new List<ProposalTerm>
                 {

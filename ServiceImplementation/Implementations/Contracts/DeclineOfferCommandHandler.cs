@@ -73,10 +73,13 @@ namespace ServiceImplementation.Implementations.Contracts
                 };
             }
 
-            ContractStateGuard.EnsureCanDeclineOffer(contract.Proposal);
-
-            // Set proposal back to Rejected (not deleting any record per EARS)
-            contract.Proposal.Status = ProposalStatus.Rejected;
+            // Also ensure the underlying proposal is in the right state if it exists
+            if (contract.Proposal != null)
+            {
+                ContractStateGuard.EnsureCanDeclineOffer(contract.Proposal);
+                // Set proposal back to Rejected (not deleting any record per EARS)
+                contract.Proposal.Status = ProposalStatus.Rejected;
+            }
 
             // Mark contract as Rejected
             contract.Status = ContractStatus.Rejected;

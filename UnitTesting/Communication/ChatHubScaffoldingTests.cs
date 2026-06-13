@@ -27,7 +27,7 @@ namespace UnitTesting.Communication
             // Act
             // SignalR hubs respond to GET /negotiate or return 405 on raw GET.
             // A 404 would mean it's not registered.
-            var response = await client.GetAsync("/chatHub");
+            var response = await client.GetAsync("/hubs/chat");
 
             // Assert
             response.StatusCode.Should().NotBe(HttpStatusCode.NotFound);

@@ -261,5 +261,132 @@ namespace UnitTesting.Project
             result.Data.Items.First().Id.Should().Be(101);
             result.Data.TotalCount.Should().Be(1);
         }
+
+        [Fact]
+        public async Task CreateDirectOffer_ShouldFail_WhenProposalNotSubmitted()
+        {
+            using var context = GetContext();
+            context.Users.Add(new Entities.Users.User { Id = "client1", FullName = "Client" });
+            context.Users.Add(new Entities.Users.User { Id = "free1", FullName = "Freelancer" });
+            context.WalletBalances.Add(new Entities.Payment.WalletBalance { UserId = "client1", BalanceEGP = 1000, LastUpdatedAt = DateTime.UtcNow });
+            var jp = new JobPost { Id = "job1", Title = "Job", Description = "Desc", ClientId = "client1", Budget = 1000 };
+            context.JobPosts.Add(jp);
+            var proposal = new Proposal { Id = 5, JobPostId = "job1", FreelancerId = "free1", Status = ProposalStatus.Rejected, BidRate = 500, CoverLetter = "test" };
+            context.Proposals.Add(proposal);
+            await context.SaveChangesAsync();
+
+            var escrowMock = new Mock<Services.Wallet.IEscrowService>();
+            var handler = new CreateDirectOfferCommandHandler(context, escrowMock.Object);
+            var command = new CreateDirectOfferCommand
+            {
+                ClientId = "client1",
+                FreelancerId = "free1",
+                JobPostId = "job1",
+                ProposalId = 5,
+                AgreedRate = 500
+            };
+
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            result.Succeeded.Should().BeFalse();
+            result.ErrorCode.Should().Be(ServiceImplementation.Helpers.ErrorCodes.InvalidState);
+            result.Message.Should().Contain("submitted");
+        }
+
+        [Fact]
+        public async Task CreateDirectOffer_ShouldFail_WhenProposalAlreadyHasContract()
+        {
+            using var context = GetContext();
+            context.Users.Add(new Entities.Users.User { Id = "client1", FullName = "Client" });
+            context.Users.Add(new Entities.Users.User { Id = "free1", FullName = "Freelancer" });
+            context.WalletBalances.Add(new Entities.Payment.WalletBalance { UserId = "client1", BalanceEGP = 1000, LastUpdatedAt = DateTime.UtcNow });
+            var jp = new JobPost { Id = "job1", Title = "Job", Description = "Desc", ClientId = "client1", Budget = 1000 };
+            context.JobPosts.Add(jp);
+            var proposal = new Proposal { Id = 6, JobPostId = "job1", FreelancerId = "free1", Status = ProposalStatus.Submitted, BidRate = 500, CoverLetter = "test" };
+            context.Proposals.Add(proposal);
+            var existingContract = new Contract { Id = 99, ClientId = "client1", FreelancerId = "free1", ProposalId = 6, AgreedRate = 500, Status = ContractStatus.Draft };
+            context.Contracts.Add(existingContract);
+            await context.SaveChangesAsync();
+
+            var escrowMock = new Mock<Services.Wallet.IEscrowService>();
+            var handler = new CreateDirectOfferCommandHandler(context, escrowMock.Object);
+            var command = new CreateDirectOfferCommand
+            {
+                ClientId = "client1",
+                FreelancerId = "free1",
+                JobPostId = "job1",
+                ProposalId = 6,
+                AgreedRate = 500
+            };
+
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            result.Succeeded.Should().BeFalse();
+            result.ErrorCode.Should().Be(ServiceImplementation.Helpers.ErrorCodes.InvalidState);
+            result.Message.Should().Contain("already exists");
+        }
+
+        [Fact]
+        public async Task AcceptOffer_ShouldSucceed_WhenProposalIsNull()
+        {
+            using var context = GetContext();
+            context.Users.Add(new Entities.Users.User { Id = "free1", UserName = "free1", Email = "f1@t.com", FullName = "Free 1" });
+            var contract = new Contract
+            {
+                Id = 50,
+                ProposalId = null,
+                Proposal = null,
+                ClientId = "client1",
+                FreelancerId = "free1",
+                AgreedRate = 500,
+                Status = ContractStatus.Draft
+            };
+            context.Contracts.Add(contract);
+            await context.SaveChangesAsync();
+
+            var handler = new AcceptOfferCommandHandler(context);
+            var command = new AcceptOfferCommand(50, "free1");
+
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            result.Succeeded.Should().BeTrue();
+            result.Data.Should().BeTrue();
+
+            var dbContract = await context.Contracts.FindAsync(50);
+            dbContract!.Status.Should().Be(ContractStatus.Active);
+            dbContract.AcceptedAt.Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task DeclineOffer_ShouldSucceed_WhenProposalIsNull()
+        {
+            using var context = GetContext();
+            context.Users.Add(new Entities.Users.User { Id = "free1", UserName = "free1", Email = "f1@t.com", FullName = "Free 1" });
+            var contract = new Contract
+            {
+                Id = 51,
+                ProposalId = null,
+                Proposal = null,
+                ClientId = "client1",
+                FreelancerId = "free1",
+                AgreedRate = 500,
+                Status = ContractStatus.Draft
+            };
+            context.Contracts.Add(contract);
+            await context.SaveChangesAsync();
+
+            var escrowMock = new Mock<Services.Wallet.IEscrowService>();
+            var handler = new DeclineOfferCommandHandler(context, escrowMock.Object);
+            var command = new DeclineOfferCommand(51, "free1");
+
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            result.Succeeded.Should().BeTrue();
+            result.Data.Should().BeTrue();
+
+            var dbContract = await context.Contracts.FindAsync(51);
+            dbContract!.Status.Should().Be(ContractStatus.Rejected);
+            dbContract.RejectedAt.Should().NotBeNull();
+        }
     }
 }
