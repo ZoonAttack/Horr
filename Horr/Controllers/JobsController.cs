@@ -81,6 +81,24 @@ namespace Horr.Controllers
         }
 
         /// <summary>
+        /// Retrieves the saved job posts for the logged-in freelancer.
+        /// </summary>
+        /// <param name="page">Page number (default 1).</param>
+        /// <param name="pageSize">Number of items per page (default 10).</param>
+        /// <returns>A paged list of saved jobs.</returns>
+        [HttpGet("saved")]
+        [Authorize(Policy = "FreelancerOnly")]
+        public async Task<IActionResult> GetSavedJobs([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            string userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var result = await _mediator.Send(new GetSavedJobsQuery(userId, page, pageSize));
+            if (!result.Succeeded) return BadRequest(result);
+            return Ok(result.Data);
+        }
+
+        /// <summary>
         /// Saves a job post to the freelancer's saved list.
         /// </summary>
         /// <param name="id">The job post ID.</param>
