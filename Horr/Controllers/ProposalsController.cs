@@ -100,5 +100,29 @@ namespace Horr.Controllers
             }
             return NoContent();
         }
+
+        /// <summary>
+        /// Updates a freelancer's proposal.
+        /// </summary>
+        /// <param name="id">The proposal ID.</param>
+        /// <param name="dto">The updated details of the proposal.</param>
+        /// <returns>The updated proposal details.</returns>
+        [HttpPut("{id}")]
+        [ProducesResponseType(typeof(ProposalReadDTO), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(422)]
+        public async Task<IActionResult> Update(int id, [FromBody] ProposalUpdateDTO dto)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var result = await _mediator.Send(new UpdateProposalCommand(id, dto, userId));
+            if (!result.Succeeded)
+            {
+                return BadRequest(result);
+            }
+            return Ok(result.Data);
+        }
     }
 }

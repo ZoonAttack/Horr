@@ -175,5 +175,76 @@ namespace UnitTesting.Controllers
             problem.Status.Should().Be(400);
             problem.Title.Should().Be("Invalid Request");
         }
+
+        [Fact]
+        public async Task GetChatByContract_ShouldReturnOk_WithChatSummary_WhenExists()
+        {
+            // Arrange
+            var contractId = 42;
+            var summary = new ChatSummaryDto { ChatId = "conv-1", ContractId = contractId };
+            var resultData = new Result<ChatSummaryDto> { Succeeded = true, Data = summary };
+
+            _mediatorMock.Setup(m => m.Send(It.Is<GetChatByContractQuery>(q => q.ContractId == contractId && q.UserId == CurrentUserId), It.IsAny<CancellationToken>()))
+                         .ReturnsAsync(resultData);
+
+            // Act
+            var result = await _controller.GetChatByContract(contractId);
+
+            // Assert
+            var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+            okResult.Value.Should().BeEquivalentTo(summary);
+        }
+
+        [Fact]
+        public async Task GetChatByContract_ShouldReturnForbidden_WhenUnauthorized()
+        {
+            // Arrange
+            var contractId = 42;
+            var resultData = new Result<ChatSummaryDto>
+            {
+                Succeeded = false,
+                ErrorCode = ServiceImplementation.Helpers.ErrorCodes.Unauthorized,
+                Message = "Unauthorized access."
+            };
+
+            _mediatorMock.Setup(m => m.Send(It.Is<GetChatByContractQuery>(q => q.ContractId == contractId), It.IsAny<CancellationToken>()))
+                         .ReturnsAsync(resultData);
+
+            // Act
+            var result = await _controller.GetChatByContract(contractId);
+
+            // Assert
+            var forbiddenResult = result.Should().BeOfType<ObjectResult>().Subject;
+            forbiddenResult.StatusCode.Should().Be(403);
+            var problem = forbiddenResult.Value.Should().BeOfType<ProblemDetails>().Subject;
+            problem.Status.Should().Be(403);
+            problem.Title.Should().Be("Forbidden");
+        }
+
+        [Fact]
+        public async Task GetChatByContract_ShouldReturnNotFound_WhenNotFound()
+        {
+            // Arrange
+            var contractId = 42;
+            var resultData = new Result<ChatSummaryDto>
+            {
+                Succeeded = false,
+                ErrorCode = "CONVERSATION_NOT_FOUND",
+                Message = "Not found."
+            };
+
+            _mediatorMock.Setup(m => m.Send(It.Is<GetChatByContractQuery>(q => q.ContractId == contractId), It.IsAny<CancellationToken>()))
+                         .ReturnsAsync(resultData);
+
+            // Act
+            var result = await _controller.GetChatByContract(contractId);
+
+            // Assert
+            var notFoundResult = result.Should().BeOfType<ObjectResult>().Subject;
+            notFoundResult.StatusCode.Should().Be(404);
+            var problem = notFoundResult.Value.Should().BeOfType<ProblemDetails>().Subject;
+            problem.Status.Should().Be(404);
+            problem.Title.Should().Be("Not Found");
+        }
     }
 }

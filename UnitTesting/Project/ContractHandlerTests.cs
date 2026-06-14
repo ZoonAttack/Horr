@@ -79,7 +79,7 @@ namespace UnitTesting.Project
             dbContract.AcceptedAt.Should().NotBeNull();
 
             var dbProposal = await context.Proposals.FindAsync(proposal.Id);
-            dbProposal!.Status.Should().Be(ProposalStatus.Offer);
+            dbProposal!.Status.Should().Be(ProposalStatus.Active);
         }
 
         // ─── DeclineOffer ─────────────────────────────────────────────────────

@@ -284,5 +284,58 @@ namespace UnitTesting.Communication
             result.ErrorCode.Should().Be(ErrorCodes.Unauthorized);
         }
 
+        [Fact]
+        public async Task GetChatByContract_Should_Return_ChatSummary_For_Authorized_Participant()
+        {
+            // Arrange
+            await SeedBaseData();
+            var handler = new GetChatByContractQueryHandler(_context);
+            var query = new GetChatByContractQuery(1, "user-1"); // contractId=1, user-1 is client
+
+            // Act
+            var result = await handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            result.Succeeded.Should().BeTrue();
+            result.Data.Should().NotBeNull();
+            result.Data.ChatId.Should().Be("conv-1");
+            result.Data.ContractId.Should().Be(1);
+        }
+
+        [Fact]
+        public async Task GetChatByContract_Should_Return_Unauthorized_For_NonParticipant()
+        {
+            // Arrange
+            await SeedBaseData();
+            var unauthorizedUser = new Entities.Users.User { Id = "unauthorized-user", FullName = "Stranger", Email = "stranger@test.com", UserName = "stranger" };
+            _context.Users.Add(unauthorizedUser);
+            await _context.SaveChangesAsync();
+
+            var handler = new GetChatByContractQueryHandler(_context);
+            var query = new GetChatByContractQuery(1, "unauthorized-user");
+
+            // Act
+            var result = await handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            result.Succeeded.Should().BeFalse();
+            result.ErrorCode.Should().Be(ErrorCodes.Unauthorized);
+        }
+
+        [Fact]
+        public async Task GetChatByContract_Should_Return_NotFound_For_Unknown_Contract()
+        {
+            // Arrange
+            await SeedBaseData();
+            var handler = new GetChatByContractQueryHandler(_context);
+            var query = new GetChatByContractQuery(999, "user-1");
+
+            // Act
+            var result = await handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            result.Succeeded.Should().BeFalse();
+            result.ErrorCode.Should().Be("CONVERSATION_NOT_FOUND");
+        }
     }
 }

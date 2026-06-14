@@ -76,8 +76,8 @@ namespace ServiceImplementation.Implementations.Contracts
             if (contract.Proposal != null)
             {
                 ContractStateGuard.EnsureCanAcceptOffer(contract.Proposal);
-                // Mark the proposal as Offer (accepted)
-                contract.Proposal.Status = ProposalStatus.Offer;
+                // Mark the proposal as Active (accepted)
+                contract.Proposal.Status = ProposalStatus.Active;
             }
 
             contract.Status = ContractStatus.Active;

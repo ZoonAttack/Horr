@@ -36,11 +36,20 @@ namespace ServiceImplementation.Implementations.Proposals
                 .Where(p => p.FreelancerId == request.FreelancerId)
                 .ToListAsync(cancellationToken);
 
+            var proposalIds = proposals.Select(p => p.Id).ToList();
+            var proposalContracts = await _context.Contracts
+                .Where(c => c.ProposalId != null && proposalIds.Contains(c.ProposalId.Value))
+                .ToDictionaryAsync(c => c.ProposalId!.Value, c => c.Id, cancellationToken);
+
             var response = new MyProposalsResponseDto();
 
             foreach (var p in proposals)
             {
                 var dto = MapToDto(p);
+                if (proposalContracts.TryGetValue(p.Id, out int contractId))
+                {
+                    dto.ContractId = contractId;
+                }
 
                 switch (p.Status)
                 {

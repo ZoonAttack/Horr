@@ -40,8 +40,8 @@ namespace ServiceImplementation.Implementations.Proposals
             // State Guard: Assert Proposal.Status = Submitted
             ContractStateGuard.EnsureCanAcceptOffer(proposal);
 
-            // 1. Update Proposal Status to Offer
-            proposal.Status = ProposalStatus.Offer;
+            // 1. Update Proposal Status to Active
+            proposal.Status = ProposalStatus.Active;
 
             // 2. Create Contract from Proposal data
             var contract = new Contract

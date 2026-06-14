@@ -15,6 +15,7 @@ namespace ServiceContracts.DTOs.Proposal
         public string CoverLetter { get; set; } = string.Empty;
         public ProposalStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
+        public int? ContractId { get; set; }
         public List<ProposalTermReadDTO> Terms { get; set; } = new List<ProposalTermReadDTO>();
     }
 

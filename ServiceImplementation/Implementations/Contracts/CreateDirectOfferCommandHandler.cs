@@ -135,6 +135,10 @@ namespace ServiceImplementation.Implementations.Contracts
             };
             _context.Contracts.Add(contract);
             _context.ContractMilestones.Add(milestone);
+            if (proposal != null)
+            {
+                proposal.Status = ProposalStatus.Offer;
+            }
             await _context.SaveChangesAsync(cancellationToken);
 
             // 4. Fund the milestone/escrow immediately

@@ -239,5 +239,169 @@ namespace UnitTesting.Proposals
             result.Succeeded.Should().BeFalse();
             result.ErrorCode.Should().Be(ServiceImplementation.Helpers.ErrorCodes.Unauthorized);
         }
+
+        [Fact]
+        public async Task UpdateProposal_Should_Succeed_When_Proposal_Submitted()
+        {
+            // ARRANGE
+            using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+            context.Users.Add(new Entities.Users.User { Id = "f1", UserName = "f1", Email = "f1@t.com", FullName = "F 1" });
+            context.Freelancers.Add(new Entities.Users.Freelancer { UserId = "f1", Availability = "Full-time" });
+            context.Categories.Add(new Category { Id = "1", Name = "1", Slug = "1" });
+            var job = new JobPost { Id = "1", Title = "Job", Description = "Desc", ClientId = "c1", CategoryId = "1", JobType = JobType.Hourly };
+            context.JobPosts.Add(job);
+
+            var proposal = new Proposal
+            {
+                Id = 1,
+                JobPostId = "1",
+                FreelancerId = "f1",
+                Status = ProposalStatus.Submitted,
+                BidRate = 100,
+                HORRFee = 10,
+                CoverLetter = new string('a', 60),
+                Terms = new List<ProposalTerm>
+                {
+                    new ProposalTerm { Id = 100, MilestoneTitle = "Single Payment", Amount = 100, DueDate = DateTime.UtcNow }
+                }
+            };
+            context.Proposals.Add(proposal);
+            await context.SaveChangesAsync();
+
+            var handler = new UpdateProposalCommandHandler(context);
+            var dto = new ProposalUpdateDTO
+            {
+                BidRate = 200,
+                CoverLetter = "This is my new updated cover letter and it is long enough."
+            };
+            var command = new UpdateProposalCommand(1, dto, "f1");
+
+            // ACT
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // ASSERT
+            result.Succeeded.Should().BeTrue();
+            result.Data.BidRate.Should().Be(200);
+            result.Data.HORRFee.Should().Be(20);
+            result.Data.CoverLetter.Should().Be("This is my new updated cover letter and it is long enough.");
+
+            var updatedProposal = await context.Proposals.Include(p => p.Terms).FirstAsync(p => p.Id == 1);
+            updatedProposal.BidRate.Should().Be(200);
+            updatedProposal.HORRFee.Should().Be(20);
+            updatedProposal.Terms.First().Amount.Should().Be(200);
+        }
+
+        [Fact]
+        public async Task UpdateProposal_Should_Throw_InvalidState_When_Proposal_Not_Submitted()
+        {
+            // ARRANGE
+            using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+            context.Users.Add(new Entities.Users.User { Id = "f1", UserName = "f1", Email = "f1@t.com", FullName = "F 1" });
+            context.Freelancers.Add(new Entities.Users.Freelancer { UserId = "f1", Availability = "Full-time" });
+            context.Categories.Add(new Category { Id = "1", Name = "1", Slug = "1" });
+            var job = new JobPost { Id = "1", Title = "Job", Description = "Desc", ClientId = "c1", CategoryId = "1", JobType = JobType.Hourly };
+            context.JobPosts.Add(job);
+
+            var proposal = new Proposal
+            {
+                Id = 1,
+                JobPostId = "1",
+                FreelancerId = "f1",
+                Status = ProposalStatus.Active, // Not Submitted
+                BidRate = 100,
+                HORRFee = 10,
+                CoverLetter = new string('a', 60)
+            };
+            context.Proposals.Add(proposal);
+            await context.SaveChangesAsync();
+
+            var handler = new UpdateProposalCommandHandler(context);
+            var dto = new ProposalUpdateDTO
+            {
+                BidRate = 200,
+                CoverLetter = "This is my new updated cover letter and it is long enough."
+            };
+            var command = new UpdateProposalCommand(1, dto, "f1");
+
+            // ACT & ASSERT
+            Func<Task> act = async () => await handler.Handle(command, CancellationToken.None);
+            await act.Should().ThrowAsync<InvalidStateException>();
+        }
+
+        [Fact]
+        public async Task UpdateProposal_Should_Throw_NotFound_When_Not_Owner()
+        {
+            // ARRANGE
+            using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+            context.Users.Add(new Entities.Users.User { Id = "f1", UserName = "f1", Email = "f1@t.com", FullName = "F 1" });
+            context.Freelancers.Add(new Entities.Users.Freelancer { UserId = "f1", Availability = "Full-time" });
+            context.Users.Add(new Entities.Users.User { Id = "not-the-owner", UserName = "notowner", Email = "notowner@t.com", FullName = "Not Owner" });
+            context.Freelancers.Add(new Entities.Users.Freelancer { UserId = "not-the-owner", Availability = "Full-time" });
+            context.Categories.Add(new Category { Id = "1", Name = "1", Slug = "1" });
+            var job = new JobPost { Id = "1", Title = "Job", Description = "Desc", ClientId = "c1", CategoryId = "1", JobType = JobType.Hourly };
+            context.JobPosts.Add(job);
+
+            var proposal = new Proposal
+            {
+                Id = 1,
+                JobPostId = "1",
+                FreelancerId = "f1",
+                Status = ProposalStatus.Submitted,
+                BidRate = 100,
+                HORRFee = 10,
+                CoverLetter = new string('a', 60)
+            };
+            context.Proposals.Add(proposal);
+            await context.SaveChangesAsync();
+
+            var handler = new UpdateProposalCommandHandler(context);
+            var dto = new ProposalUpdateDTO
+            {
+                BidRate = 200,
+                CoverLetter = "This is my new updated cover letter and it is long enough."
+            };
+            var command = new UpdateProposalCommand(1, dto, "not-the-owner"); // non-owner
+
+            // ACT & ASSERT
+            Func<Task> act = async () => await handler.Handle(command, CancellationToken.None);
+            await act.Should().ThrowAsync<NotFoundException>();
+        }
+
+        [Fact]
+        public async Task UpdateProposal_Should_Throw_ValidationException_When_Invalid_Inputs()
+        {
+            // ARRANGE
+            using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+            context.Users.Add(new Entities.Users.User { Id = "f1", UserName = "f1", Email = "f1@t.com", FullName = "F 1" });
+            context.Freelancers.Add(new Entities.Users.Freelancer { UserId = "f1", Availability = "Full-time" });
+            context.Categories.Add(new Category { Id = "1", Name = "1", Slug = "1" });
+            var job = new JobPost { Id = "1", Title = "Job", Description = "Desc", ClientId = "c1", CategoryId = "1", JobType = JobType.Hourly };
+            context.JobPosts.Add(job);
+
+            var proposal = new Proposal
+            {
+                Id = 1,
+                JobPostId = "1",
+                FreelancerId = "f1",
+                Status = ProposalStatus.Submitted,
+                BidRate = 100,
+                HORRFee = 10,
+                CoverLetter = new string('a', 60)
+            };
+            context.Proposals.Add(proposal);
+            await context.SaveChangesAsync();
+
+            var handler = new UpdateProposalCommandHandler(context);
+            var dto = new ProposalUpdateDTO
+            {
+                BidRate = -50, // Invalid bid rate
+                CoverLetter = "Short cover" // Too short
+            };
+            var command = new UpdateProposalCommand(1, dto, "f1");
+
+            // ACT & ASSERT
+            Func<Task> act = async () => await handler.Handle(command, CancellationToken.None);
+            await act.Should().ThrowAsync<ValidationException>();
+        }
     }
 }
