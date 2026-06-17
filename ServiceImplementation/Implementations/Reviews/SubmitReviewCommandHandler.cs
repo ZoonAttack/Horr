@@ -37,6 +37,7 @@ namespace ServiceImplementation.Implementations.Reviews
 
             var contract = await _context.Contracts
                 .Include(c => c.WorkDeliveries)
+                .Include(c => c.ContractDeliveries)
                 .Include(c => c.ContractReviews)
                 .FirstOrDefaultAsync(c => c.Id == request.ContractId, cancellationToken);
 

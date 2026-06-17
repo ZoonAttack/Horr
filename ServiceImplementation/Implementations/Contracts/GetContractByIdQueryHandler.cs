@@ -31,6 +31,7 @@ namespace ServiceImplementation.Implementations.Contracts
                 .Include(c => c.Client)
                 .Include(c => c.Freelancer)
                 .Include(c => c.WorkDeliveries)
+                .Include(c => c.ContractDeliveries)
                 .Include(c => c.ContractMilestones)
                 .FirstOrDefaultAsync(c => c.Id == request.ContractId, cancellationToken);
 
@@ -73,7 +74,10 @@ namespace ServiceImplementation.Implementations.Contracts
                         DueDate = m.DueDate,
                         Status = m.Status.ToString()
                     }).ToList() ?? new List<ContractMilestoneDto>(),
-                LatestDeliverySummary = contract.WorkDeliveries
+                LatestDeliverySummary = contract.ContractDeliveries
+                    .OrderByDescending(d => d.SubmittedAt)
+                    .Select(d => d.DeliveryNote)
+                    .FirstOrDefault() ?? contract.WorkDeliveries
                     .OrderByDescending(d => d.SubmittedAt)
                     .Select(d => d.Note)
                     .FirstOrDefault()

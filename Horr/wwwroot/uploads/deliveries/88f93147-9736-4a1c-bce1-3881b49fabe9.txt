@@ -1,0 +1,7 @@
+engineers can login and view their bookings..?
+
+let the engineer confirm the booking first. 
+
+maybe an engineer dashboard where they can confirm the bookings and after the confirmation an email gets sent to the client with the booking information ..?
+
+customers can choose between different event types(meeting types) each with different slots configuration

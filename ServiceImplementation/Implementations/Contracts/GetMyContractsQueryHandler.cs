@@ -72,7 +72,10 @@ namespace ServiceImplementation.Implementations.Contracts
                     StartedAt = c.StartedAt,
                     ClosedAt = c.ClosedAt,
                     CreatedAt = c.CreatedAt,
-                    LatestDeliverySummary = c.WorkDeliveries
+                    LatestDeliverySummary = c.ContractDeliveries
+                        .OrderByDescending(d => d.SubmittedAt)
+                        .Select(d => d.DeliveryNote)
+                        .FirstOrDefault() ?? c.WorkDeliveries
                         .OrderByDescending(d => d.SubmittedAt)
                         .Select(d => d.Note)
                         .FirstOrDefault()

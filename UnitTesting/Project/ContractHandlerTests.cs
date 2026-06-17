@@ -111,56 +111,7 @@ namespace UnitTesting.Project
             dbContract!.Status.Should().Be(ContractStatus.Rejected);
         }
 
-        // ─── DeliverWork ──────────────────────────────────────────────────────
-        [Fact]
-        public async Task DeliverWork_ShouldSaveDeliveryWithAttachments()
-        {
-            // Arrange
-            using var context = GetContext();
-            var freelancerId = "free1";
-            context.Users.Add(new Entities.Users.User { Id = freelancerId, UserName = "free1", Email = "f1@t.com", FullName = "Free 1" });
-            var contract = new Contract { Id = 10, ClientId = "client1", FreelancerId = freelancerId, Status = ContractStatus.Active };
-            context.Contracts.Add(contract);
-            await context.SaveChangesAsync();
 
-            // Mock IFormFile so no disk writes are needed (copy writes to MemoryStream)
-            var fileMock = new Mock<IFormFile>();
-            var content = "Hello World!";
-            var ms = new MemoryStream();
-            var writer = new StreamWriter(ms);
-            writer.Write(content);
-            writer.Flush();
-            ms.Position = 0;
-            fileMock.Setup(f => f.FileName).Returns("test.txt");
-            fileMock.Setup(f => f.Length).Returns(ms.Length);
-            fileMock.Setup(f => f.OpenReadStream()).Returns(ms);
-            fileMock.Setup(f => f.CopyToAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-            var files = new List<IFormFile> { fileMock.Object };
-
-            var storageMock = new Mock<IFileStorageService>();
-            storageMock.Setup(s => s.SaveAsync(It.IsAny<IFormFile>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                       .ReturnsAsync(new StoredFileResult { FileUrl = "/uploads/deliveries/test.txt", OriginalFileName = "test.txt", FileType = ".txt", FileSizeBytes = ms.Length });
-
-            var handler = new DeliverWorkCommandHandler(context, storageMock.Object);
-            var command = new DeliverWorkCommand(contract.Id, "Here is my work", freelancerId, files);
-
-            // Act
-            var result = await handler.Handle(command, CancellationToken.None);
-
-            // Assert
-            result.Succeeded.Should().BeTrue();
-            result.Data.Should().NotBeNull();
-            result.Data.ContractId.Should().Be(contract.Id);
-
-            var delivery = await context.WorkDeliveries
-                .Include(d => d.Attachments)
-                .FirstOrDefaultAsync(d => d.Id == result.Data.Id);
-            delivery.Should().NotBeNull();
-            delivery!.Attachments.Should().HaveCount(1);
-            // Attachment is stored as FileUrl (not FileName)
-            delivery.Attachments.First().FileUrl.Should().Contain("test.txt");
-        }
 
         // ─── SubmitReview ─────────────────────────────────────────────────────
         [Fact]
@@ -206,25 +157,7 @@ namespace UnitTesting.Project
             dbContract!.Status.Should().Be(ContractStatus.Completed);
         }
 
-        // ─── State Guard: DeliverWork on Closed contract ──────────────────────
-        [Fact]
-        public async Task DeliverWork_ShouldReturnAccountDeleted_WhenUserDeleted()
-        {
-            using var context = GetContext();
-            var freelancerId = "f1";
-            context.Users.Add(new Entities.Users.User { Id = freelancerId, FullName = "Deleted User", IsDeleted = true });
-            var contract = new Contract { Id = 30, ClientId = "c1", FreelancerId = freelancerId, Status = ContractStatus.Active };
-            context.Contracts.Add(contract);
-            await context.SaveChangesAsync();
 
-            var storageMock = new Mock<IFileStorageService>();
-            var handler = new DeliverWorkCommandHandler(context, storageMock.Object);
-            var command = new DeliverWorkCommand(30, "note", freelancerId, new List<IFormFile>());
-
-            var result = await handler.Handle(command, CancellationToken.None);
-            result.Succeeded.Should().BeFalse();
-            result.ErrorCode.Should().Be(ServiceImplementation.Helpers.ErrorCodes.AccountDeleted);
-        }
 
         // ─── GetMyContracts Query ─────────────────────────────────────────────
         [Fact]

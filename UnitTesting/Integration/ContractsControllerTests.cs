@@ -206,54 +206,7 @@ public class ContractsControllerTests : IClassFixture<CustomWebApplicationFactor
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
 
-    // ─── POST /api/contracts/{id}/deliver-work — 422 on closed contract ────────
 
-    [Fact]
-    public async Task DeliverWork_Returns422WithProblemDetails_WhenContractIsClosed()
-    {
-        using var scope = _factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var userId = "deliver-closed-user";
-        var flUser = new AppUser { Id = userId, UserName = "dcu", Email = "dcu@e.com", FullName = "F" };
-        var clientUser = new AppUser { Id = "c4", UserName = "client4", Email = "c4@e.com", FullName = "C" };
-        context.Users.AddRange(flUser, clientUser);
-
-        var jp = new JobPost { Title = "Closed Job", Description = "D", Client = clientUser };
-        var freelancer = new Freelancer { UserId = userId, User = flUser, Availability = "Full-time", PortfolioUrl = "https://port.com" };
-        context.Freelancers.Add(freelancer);
-        context.JobPosts.Add(jp);
-        await context.SaveChangesAsync();
-        var p = new Proposal { JobPost = jp, Freelancer = freelancer, CoverLetter = "x", BidRate = 1 };
-        context.Proposals.Add(p);
-        await context.SaveChangesAsync();
-        var closedContract = new Contract
-        {
-            Proposal = p,
-            Freelancer = flUser,
-            Client = clientUser,
-            Status = ContractStatus.Closed,
-            AgreedRate = 1,
-            StartedAt = DateTime.UtcNow,
-            ClosedAt = DateTime.UtcNow
-        };
-        context.Contracts.Add(closedContract);
-        await context.SaveChangesAsync();
-
-        // multipart/form-data POST
-        var form = new MultipartFormDataContent();
-        form.Add(new StringContent("my note"), "note");
-
-        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/contracts/{closedContract.Id}/deliver-work");
-        request.Headers.Add("X-Test-UserId", userId);
-        request.Headers.Add("X-Test-UserRole", "Freelancer");
-        request.Content = form;
-
-        var response = await _client.SendAsync(request);
-
-        response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity); // 422
-        var body = await response.Content.ReadAsStringAsync();
-        body.ToLower().Should().Contain("title"); // ProblemDetails shape
-    }
 
     // ─── POST /api/contracts/{id}/reviews — 409 on duplicate review ──────────
 

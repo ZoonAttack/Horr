@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -5,31 +6,31 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Entities;
 using ServiceContracts.DTOs.Responses;
-using ServiceImplementation.Helpers;
 using ServiceContracts.DTOs.Contract;
 using ServiceContracts.Storage;
+using ServiceImplementation.Helpers;
 
 namespace ServiceImplementation.Implementations.Contracts
 {
-    public class DownloadAttachmentQueryHandler : IRequestHandler<DownloadAttachmentQuery, Result<DownloadFileResult>>
+    public class DownloadDeliveryAttachmentQueryHandler : IRequestHandler<DownloadDeliveryAttachmentQuery, Result<DownloadFileResult>>
     {
         private readonly AppDbContext _context;
         private readonly IFileStorageService _fileStorage;
 
-        public DownloadAttachmentQueryHandler(AppDbContext context, IFileStorageService fileStorage)
+        public DownloadDeliveryAttachmentQueryHandler(AppDbContext context, IFileStorageService fileStorage)
         {
             _context = context;
             _fileStorage = fileStorage;
         }
 
-        public async Task<Result<DownloadFileResult>> Handle(DownloadAttachmentQuery request, CancellationToken cancellationToken)
+        public async Task<Result<DownloadFileResult>> Handle(DownloadDeliveryAttachmentQuery request, CancellationToken cancellationToken)
         {
             var attachment = await _context.DeliveryAttachments
                 .Include(a => a.WorkDelivery)
-                    .ThenInclude(d => d.Contract)
-                .FirstOrDefaultAsync(a =>
-                    a.Id == request.AttachmentId &&
-                    a.WorkDeliveryId == request.DeliveryId, cancellationToken);
+                    .ThenInclude(wd => wd!.Contract)
+                .Include(a => a.Delivery)
+                    .ThenInclude(cd => cd!.Contract)
+                .FirstOrDefaultAsync(a => a.Id == request.AttachmentId, cancellationToken);
 
             if (attachment == null)
             {
@@ -41,14 +42,14 @@ namespace ServiceImplementation.Implementations.Contracts
                 };
             }
 
-            var contract = attachment.WorkDelivery.Contract;
-            if (contract.Id != request.ContractId)
+            var contract = attachment.Delivery?.Contract ?? attachment.WorkDelivery?.Contract;
+            if (contract == null)
             {
                 return new Result<DownloadFileResult>
                 {
                     Succeeded = false,
-                    ErrorCode = ErrorCodes.Unauthorized,
-                    Message = "You do not have access to this file."
+                    ErrorCode = ErrorCodes.FileNotFound,
+                    Message = "Contract for this attachment could not be found."
                 };
             }
 

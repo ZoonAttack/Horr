@@ -74,6 +74,7 @@ namespace Entities.Project
 
         // ── Navigation ────────────────────────────────────────────────────
         public virtual ICollection<WorkDelivery> WorkDeliveries { get; set; } = new List<WorkDelivery>();
+        public virtual ICollection<ContractDelivery> ContractDeliveries { get; set; } = new List<ContractDelivery>();
         public virtual ICollection<ContractReview> ContractReviews { get; set; } = new List<ContractReview>();
         public virtual ICollection<ContractMilestone> ContractMilestones { get; set; } = new List<ContractMilestone>();
     }

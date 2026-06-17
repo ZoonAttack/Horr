@@ -19,7 +19,7 @@ namespace ServiceImplementation.Storage
 
         public LocalFileStorageService(IWebHostEnvironment env)
         {
-            _wwwrootPath = env.WebRootPath;
+            _wwwrootPath = env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot");
         }
 
         public async Task<StoredFileResult> SaveAsync(IFormFile file, string subFolder, CancellationToken ct)

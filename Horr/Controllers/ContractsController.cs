@@ -136,60 +136,6 @@ namespace Horr.Controllers
         }
 
         /// <summary>
-        /// Delivers work for a contract.
-        /// </summary>
-        /// <param name="id">The contract ID.</param>
-        /// <param name="note">Note describing the delivery.</param>
-        /// <param name="files">List of uploaded files.</param>
-        /// <returns>The created work delivery details.</returns>
-        [HttpPost("{id}/deliver-work")]
-        [Consumes("multipart/form-data")]
-        [ProducesResponseType(typeof(WorkDeliveryDto), 201)]
-        [ProducesResponseType(404)]
-        [ProducesResponseType(422)]
-        public async Task<IActionResult> DeliverWork(int id, [FromForm] string note, [FromForm] List<IFormFile> files)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId)) return Unauthorized();
-
-            var result = await _mediator.Send(new DeliverWorkCommand(id, note, userId, files));
-            if (!result.Succeeded)
-            {
-                {
-                    return BadRequest(result);
-                }
-            }
-            return StatusCode(201, result.Data);
-        }
-
-        /// <summary>
-        /// Downloads an attachment for a contract delivery.
-        /// </summary>
-        /// <param name="id">The contract ID.</param>
-        /// <param name="deliveryId">The work delivery ID.</param>
-        /// <param name="attachmentId">The attachment ID.</param>
-        /// <returns>The requested file attachment.</returns>
-        [HttpGet("{id}/deliveries/{deliveryId}/attachments/{attachmentId}/download")]
-        [ProducesResponseType(typeof(FileResult), 200)]
-        [ProducesResponseType(401)]
-        [ProducesResponseType(403)]
-        [ProducesResponseType(404)]
-        public async Task<IActionResult> DownloadAttachment(int id, int deliveryId, Guid attachmentId)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId)) return Unauthorized();
-
-            var result = await _mediator.Send(new DownloadAttachmentQuery(id, deliveryId, attachmentId, userId));
-            if (!result.Succeeded)
-            {
-                if (result.ErrorCode == ErrorCodes.Unauthorized) return Forbid();
-                return NotFound(result);
-            }
-
-            return PhysicalFile(result.Data.PhysicalPath, result.Data.ContentType, result.Data.OriginalFileName);
-        }
-
-        /// <summary>
         /// Marks a contract as completed.
         /// </summary>
         /// <param name="id">The contract ID.</param>
@@ -290,17 +236,6 @@ namespace Horr.Controllers
                 return StatusCode(201, result.Data);
             }
             return BadRequest(result.Errors);
-        }
-        [HttpGet("{id}/deliveries")]
-        [ProducesResponseType(typeof(IEnumerable<ContractDeliveryDto>), 200)]
-        public async Task<IActionResult> GetContractDeliveries(int id)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId)) return Unauthorized();
-
-            // Note: Currently no role-based restriction in command, but logic can be verified.
-            var result = await _mediator.Send(new GetContractDeliveriesQuery(id));
-            return Ok(result);
         }
 
         [HttpGet("{id}/escrow")]

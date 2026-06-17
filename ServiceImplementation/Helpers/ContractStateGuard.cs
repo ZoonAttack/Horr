@@ -57,7 +57,10 @@ namespace ServiceImplementation.Helpers
         // ── Review ────────────────────────────────────────────────────────────
         public static void EnsureCanSubmitReview(Contract contract, string reviewerId)
         {
-            if (contract.WorkDeliveries == null || !contract.WorkDeliveries.Any())
+            var hasDeliveries = (contract.WorkDeliveries != null && contract.WorkDeliveries.Any()) ||
+                                (contract.ContractDeliveries != null && contract.ContractDeliveries.Any());
+
+            if (!hasDeliveries)
             {
                 throw new InvalidStateException("Cannot review a contract with no delivered work.");
             }

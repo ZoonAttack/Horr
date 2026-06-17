@@ -417,7 +417,7 @@ namespace UnitTesting.Integration
             _client.DefaultRequestHeaders.Add("X-Test-UserId", clientGuid.ToString());
             _client.DefaultRequestHeaders.Add("X-Test-UserRole", "Client");
 
-            var response = await _client.GetAsync($"/api/contracts/{contract.Id}/deliveries");
+            var response = await _client.GetAsync($"/api/deliveries?contractId={contract.Id}");
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
             var result = await response.Content.ReadFromJsonAsync<List<ContractDeliveryDto>>(_jsonOptions);

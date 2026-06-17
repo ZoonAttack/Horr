@@ -5,9 +5,7 @@ using ServiceContracts.DTOs.Responses;
 
 namespace ServiceImplementation.Implementations.Contracts
 {
-    public record DownloadAttachmentQuery(
-        int ContractId,
-        int DeliveryId,
+    public record DownloadDeliveryAttachmentQuery(
         Guid AttachmentId,
         string RequestingUserId
     ) : IRequest<Result<DownloadFileResult>>;
