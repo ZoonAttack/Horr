@@ -354,5 +354,18 @@ namespace Entities.Enums
         ResolvedForClient,
         ResolvedForFreelancer
     }
+
+    public enum ReviewerType
+    {
+        AI,
+        Human
+    }
+
+    public enum ReviewVerdict
+    {
+        Satisfactory,
+        Unsatisfactory
+    }
 }
+
 

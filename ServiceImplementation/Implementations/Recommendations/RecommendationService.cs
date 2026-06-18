@@ -74,8 +74,10 @@ namespace ServiceImplementation.Implementations.Recommendations
                 })
                 .ToListAsync();
 
+            var isFallback = false;
             if (!candidateJobs.Any())
             {
+                isFallback = true;
                 // Fallback to recent jobs if no skill overlaps are found
                 candidateJobs = await _db.JobPosts
                     .Include(j => j.Category)
@@ -154,7 +156,8 @@ No explanation. Just the array.
                         ExperienceLevel = j.ExperienceLevel.ToString(),
                         PostedAt = j.PostedAt,
                         Skills = j.JobSkills.Select(js => js.Skill.Name).ToList(),
-                        IsSaved = j.SavedByFreelancers.Any(s => s.FreelancerId == userId)
+                        IsSaved = j.SavedByFreelancers.Any(s => s.FreelancerId == userId),
+                        IsFallback = isFallback
                     })
                     .ToList();
 
@@ -175,7 +178,8 @@ No explanation. Just the array.
                     ExperienceLevel = j.experienceLevel,
                     PostedAt = DateTime.UtcNow,
                     Skills = j.skills,
-                    IsSaved = false
+                    IsSaved = false,
+                    IsFallback = true
                 }).ToList();
             }
         }

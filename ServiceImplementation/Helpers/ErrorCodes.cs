@@ -49,6 +49,7 @@ namespace ServiceImplementation.Helpers
         // ── Generic / State ───────────────────────────────────────────────
         public const string InvalidState         = "INVALID_STATE";
         public const string AlreadyReviewed      = "ALREADY_REVIEWED";
+        public const string ReviewNotFound       = "REVIEW_NOT_FOUND";
 
     }
 }

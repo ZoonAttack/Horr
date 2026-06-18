@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using ServiceContracts.DTOs.Contract;
 using ServiceImplementation.Implementations.Contracts;
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace Horr.Controllers
@@ -27,6 +28,22 @@ namespace Horr.Controllers
         {
             var result = await _mediator.Send(new GetRevisionRequestsQuery());
             return Ok(result);
+        }
+
+        [HttpGet("specialist-queue")]
+        [Authorize(Roles = "Specialist")]
+        [ProducesResponseType(typeof(List<ContractSpecialistReviewReadDto>), 200)]
+        public async Task<IActionResult> GetSpecialistQueue()
+        {
+            var specialistId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+            var result = await _mediator.Send(new GetMyPendingSpecialistReviewsQuery(specialistId));
+
+            if (!result.Succeeded)
+            {
+                return BadRequest(new { message = result.Message, errorCode = result.ErrorCode });
+            }
+
+            return Ok(result.Data);
         }
     }
 }

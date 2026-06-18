@@ -16,5 +16,6 @@ namespace ServiceContracts.DTOs.Recommendations
         public DateTime PostedAt { get; set; }
         public List<string> Skills { get; set; } = new();
         public bool IsSaved { get; set; }
+        public bool IsFallback { get; set; }
     }
 }
