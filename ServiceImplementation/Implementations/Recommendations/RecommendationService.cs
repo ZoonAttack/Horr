@@ -230,26 +230,37 @@ No explanation. Just the array.
                 freelancerQuery = freelancerQuery.Where(f => f.FreelancerSkills.Any(fs => clientSkillsNeeded.Contains(fs.Skill.Name)));
             }
 
-            var candidateFreelancers = await freelancerQuery
+            var rawCandidates = await freelancerQuery
                 .Take(40)
                 .Select(f => new
                 {
                     id = f.UserId,
                     name = f.User != null ? f.User.FullName : "",
                     title = f.Title ?? "",
-                    bio = f.User != null && f.User.Bio != null && f.User.Bio.Length > 150
-                        ? f.User.Bio.Substring(0, 150) + "..."
-                        : (f.User != null ? f.User.Bio ?? "" : ""),
+                    bio = f.User != null ? f.User.Bio : "",
                     skills = f.FreelancerSkills.Select(fs => fs.Skill.Name).ToList(),
                     hourlyRate = f.HourlyRate ?? 0,
                     experienceLevel = f.ExperienceLevel.ToString()
                 })
                 .ToListAsync();
 
+            var candidateFreelancers = rawCandidates.Select(f => new
+            {
+                f.id,
+                f.name,
+                f.title,
+                bio = f.bio != null && f.bio.Length > 150
+                    ? f.bio.Substring(0, 150) + "..."
+                    : (f.bio ?? ""),
+                f.skills,
+                f.hourlyRate,
+                f.experienceLevel
+            }).ToList();
+
             if (!candidateFreelancers.Any())
             {
                 // Fallback to top freelancers overall if no skill overlaps are found
-                candidateFreelancers = await _db.Freelancers
+                var rawFallback = await _db.Freelancers
                     .Include(f => f.User)
                     .Include(f => f.FreelancerSkills).ThenInclude(fs => fs.Skill)
                     .Where(f => !alreadyHiredIds.Contains(f.UserId))
@@ -259,14 +270,25 @@ No explanation. Just the array.
                         id = f.UserId,
                         name = f.User != null ? f.User.FullName : "",
                         title = f.Title ?? "",
-                        bio = f.User != null && f.User.Bio != null && f.User.Bio.Length > 150
-                            ? f.User.Bio.Substring(0, 150) + "..."
-                            : (f.User != null ? f.User.Bio ?? "" : ""),
+                        bio = f.User != null ? f.User.Bio : "",
                         skills = f.FreelancerSkills.Select(fs => fs.Skill.Name).ToList(),
                         hourlyRate = f.HourlyRate ?? 0,
                         experienceLevel = f.ExperienceLevel.ToString()
                     })
                     .ToListAsync();
+
+                candidateFreelancers = rawFallback.Select(f => new
+                {
+                    f.id,
+                    f.name,
+                    f.title,
+                    bio = f.bio != null && f.bio.Length > 150
+                        ? f.bio.Substring(0, 150) + "..."
+                        : (f.bio ?? ""),
+                    f.skills,
+                    f.hourlyRate,
+                    f.experienceLevel
+                }).ToList();
             }
 
             if (!candidateFreelancers.Any()) return new List<RecommendedFreelancerDTO>();
