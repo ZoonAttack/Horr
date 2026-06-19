@@ -137,7 +137,7 @@ namespace UnitTesting.Jobs
         // ─── DeclineInvitationAsync ──────────────────────────────────────────────
 
         [Fact]
-        public async Task DeclineInvitationAsync_ShouldMarkDeclined_WhenPending()
+        public async Task DeclineInvitationAsync_ShouldDeleteInvitation_WhenPending()
         {
             // ARRANGE
             using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
@@ -162,8 +162,7 @@ namespace UnitTesting.Jobs
             // ASSERT
             result.Succeeded.Should().BeTrue();
             var dbInvitation = await context.JobInvitations.FindAsync(invitationId);
-            dbInvitation!.Status.Should().Be(InvitationStatus.Declined);
-            dbInvitation.RespondedAt.Should().NotBeNull();
+            dbInvitation.Should().BeNull();
         }
 
         // ─── Auto-acceptance via CreateProposalCommandHandler ────────────────────

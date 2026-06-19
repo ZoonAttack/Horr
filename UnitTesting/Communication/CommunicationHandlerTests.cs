@@ -335,7 +335,7 @@ namespace UnitTesting.Communication
 
             // Assert
             result.Succeeded.Should().BeFalse();
-            result.ErrorCode.Should().Be("CONVERSATION_NOT_FOUND");
+            result.ErrorCode.Should().Be(ErrorCodes.ChatNotFound);
         }
     }
 }

@@ -50,7 +50,7 @@ namespace ServiceImplementation.Implementations.Communication
                 return new Result<MessageDto>
                 {
                     Succeeded = false,
-                    ErrorCode = "CONVERSATION_NOT_FOUND",
+                    ErrorCode = ErrorCodes.ChatNotFound,
                     Message = $"Chat with ID {request.ChatId} not found."
                 };
             }
@@ -71,7 +71,7 @@ namespace ServiceImplementation.Implementations.Communication
                 return new Result<MessageDto>
                 {
                     Succeeded = false,
-                    ErrorCode = "INVALID_FILE",
+                    ErrorCode = ErrorCodes.InvalidFile,
                     Message = "No file uploaded or file is empty."
                 };
             }
@@ -101,7 +101,7 @@ namespace ServiceImplementation.Implementations.Communication
                 return new Result<MessageDto>
                 {
                     Succeeded = false,
-                    ErrorCode = "INVALID_FILE_TYPE",
+                    ErrorCode = ErrorCodes.InvalidFileType,
                     Message = $"File extension {ext} is not allowed."
                 };
             }
@@ -111,7 +111,7 @@ namespace ServiceImplementation.Implementations.Communication
                 return new Result<MessageDto>
                 {
                     Succeeded = false,
-                    ErrorCode = "FILE_TOO_LARGE",
+                    ErrorCode = ErrorCodes.FileTooLarge,
                     Message = $"File exceeds the allowed limit of {limit / (1024 * 1024)}MB."
                 };
             }

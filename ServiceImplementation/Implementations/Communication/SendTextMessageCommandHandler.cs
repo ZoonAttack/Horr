@@ -45,7 +45,7 @@ namespace ServiceImplementation.Implementations.Communication
                 return new Result<MessageDto>
                 {
                     Succeeded = false,
-                    ErrorCode = "CONVERSATION_NOT_FOUND",
+                    ErrorCode = ErrorCodes.ChatNotFound,
                     Message = $"Chat with ID {request.ChatId} not found."
                 };
             }

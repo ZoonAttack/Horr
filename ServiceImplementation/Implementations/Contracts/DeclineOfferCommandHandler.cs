@@ -68,7 +68,7 @@ namespace ServiceImplementation.Implementations.Contracts
                 return new Result<bool>
                 {
                     Succeeded = false,
-                    ErrorCode = "INVALID_STATE",
+                    ErrorCode = ErrorCodes.InvalidState,
                     Message = "Only draft contracts can be declined."
                 };
             }

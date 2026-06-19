@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using ServiceContracts.DTOs.Wallet;
 using ServiceImplementation.Implementations.Wallet;
 using Entities.Enums;
+using ServiceImplementation.Helpers;
 
 namespace Horr.Controllers.Admin
 {
@@ -37,10 +38,18 @@ namespace Horr.Controllers.Admin
         /// <param name="dto">The review decision status and administrative note.</param>
         /// <returns>The reviewed deposit request details.</returns>
         [HttpPatch("deposit-requests/{id}/review")]
-        public async Task<ActionResult<DepositRequestDto>> ReviewDeposit(string id, [FromBody] ReviewDepositRequestCommandDto dto)
+        public async Task<IActionResult> ReviewDeposit(string id, [FromBody] ReviewDepositRequestCommandDto dto)
         {
             var result = await _mediator.Send(new ReviewDepositRequestCommand(id, dto.Status, dto.AdminNote));
-            return Ok(result);
+            if (!result.Succeeded)
+            {
+                if (result.ErrorCode == ErrorCodes.InvalidState)
+                {
+                    return UnprocessableEntity(result);
+                }
+                return BadRequest(result);
+            }
+            return Ok(result.Data);
         }
 
         /// <summary>
@@ -61,10 +70,18 @@ namespace Horr.Controllers.Admin
         /// <param name="dto">The review decision status and administrative note.</param>
         /// <returns>The reviewed withdrawal request details.</returns>
         [HttpPatch("withdrawal-requests/{id}/review")]
-        public async Task<ActionResult<WithdrawalRequestDto>> ReviewWithdrawal(string id, [FromBody] ReviewWithdrawalRequestCommandDto dto)
+        public async Task<IActionResult> ReviewWithdrawal(string id, [FromBody] ReviewWithdrawalRequestCommandDto dto)
         {
             var result = await _mediator.Send(new ReviewWithdrawalRequestCommand(id, dto.Status, dto.AdminNote));
-            return Ok(result);
+            if (!result.Succeeded)
+            {
+                if (result.ErrorCode == ErrorCodes.InvalidState)
+                {
+                    return UnprocessableEntity(result);
+                }
+                return BadRequest(result);
+            }
+            return Ok(result.Data);
         }
     }
 

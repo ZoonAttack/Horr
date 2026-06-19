@@ -213,8 +213,9 @@ namespace Entities
             });
 
             modelBuilder.Entity<Proposal>()
-                .HasIndex(p => new { p.FreelancerId, p.JobPostId })
-                .IsUnique();
+                .HasIndex(p => new { p.FreelancerId, p.JobPostId });
+                // Not unique — a freelancer can have multiple proposals per job
+                // (e.g. a previous one was rejected or withdrawn).
 
             modelBuilder.Entity<JobInvitation>()
                 .HasIndex(i => new { i.JobPostId, i.FreelancerId })

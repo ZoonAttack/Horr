@@ -53,7 +53,13 @@ namespace ServiceImplementation.Implementations.Wallet
                 // Re-check balance inside transaction
                 if (wallet == null || wallet.BalanceEGP < request.Amount)
                 {
-                    throw new ValidationException("Insufficient wallet balance.");
+                    await transaction.RollbackAsync(cancellationToken);
+                    return new Result<WithdrawalRequestDto>
+                    {
+                        Succeeded = false,
+                        ErrorCode = ErrorCodes.InsufficientBalance,
+                        Message = "Insufficient wallet balance."
+                    };
                 }
 
                 var withdrawalRequest = new WithdrawalRequest
@@ -95,10 +101,16 @@ namespace ServiceImplementation.Implementations.Wallet
                 Data = withdrawalRequest.ToDto()
             };
             }
-            catch
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync(cancellationToken);
-                throw;
+                return new Result<WithdrawalRequestDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.InvalidState,
+                    Message = "An error occurred while submitting the withdrawal request.",
+                    Errors = new List<string> { ex.Message }
+                };
             }
         }
 

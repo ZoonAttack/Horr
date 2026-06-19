@@ -49,7 +49,7 @@ namespace ServiceImplementation.Implementations.ClientImplementation
                 return new Result<JobDetailsDto>
                 {
                     Succeeded = false,
-                    ErrorCode = "INSUFFICIENT_FUNDS",
+                    ErrorCode = ErrorCodes.InsufficientBalance,
                     Message = $"Insufficient wallet balance. You need at least {requiredBalance:C} (budget + 5.5% platform fee) to post this job."
                 };
             }
@@ -300,7 +300,7 @@ namespace ServiceImplementation.Implementations.ClientImplementation
                 {
                     Succeeded = false,
                     ErrorCode = ErrorCodes.InvalidState,
-                    Message = "Invalid State",
+                    Message = "Cannot update job with active contracts.",
                     Errors = new List<string> { "Cannot update a job with active contracts (hired freelancers)." }
                 };
             }
@@ -430,7 +430,7 @@ namespace ServiceImplementation.Implementations.ClientImplementation
                 {
                     Succeeded = false,
                     ErrorCode = ErrorCodes.InvalidState,
-                    Message = "Invalid State",
+                    Message = "Cannot delete job with active contracts.",
                     Errors = new List<string> { "Cannot delete a job with active contracts (hired freelancers)." }
                 };
             }

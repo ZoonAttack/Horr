@@ -23,11 +23,14 @@ namespace ServiceImplementation.Helpers
         public const string MissingReceiptPhoto  = "MISSING_RECEIPT_PHOTO";
         public const string MissingPaymentDetails = "MISSING_PAYMENT_DETAILS";
         public const string PaymentMethodNotFound = "PAYMENT_METHOD_NOT_FOUND";
+        public const string DepositRequestNotFound = "DEPOSIT_REQUEST_NOT_FOUND";
+        public const string WithdrawalRequestNotFound = "WITHDRAWAL_REQUEST_NOT_FOUND";
 
         // ── User / Client / Freelancer ────────────────────────────────────
         public const string UserNotFound         = "USER_NOT_FOUND";
         public const string ClientNotFound       = "CLIENT_NOT_FOUND";
         public const string FreelancerNotFound   = "FREELANCER_NOT_FOUND";
+        public const string SavedFreelancerNotFound = "SAVED_FREELANCER_NOT_FOUND";
         public const string Unauthorized         = "UNAUTHORIZED";
 
         // ── Jobs ──────────────────────────────────────────────────────────
@@ -39,7 +42,22 @@ namespace ServiceImplementation.Helpers
         public const string ContractNotFound     = "CONTRACT_NOT_FOUND";
         public const string AttachmentNotFound   = "ATTACHMENT_NOT_FOUND";
         public const string FileNotFound         = "FILE_NOT_FOUND";
-        
+        public const string MilestoneNotFound    = "MILESTONE_NOT_FOUND";
+        public const string DeliveryNotFound     = "DELIVERY_NOT_FOUND";
+
+        // ── Proposals ─────────────────────────────────────────────────────
+        public const string ProposalNotFound     = "PROPOSAL_NOT_FOUND";
+
+        // ── Chat / Messaging ──────────────────────────────────────────────
+        public const string ChatNotFound         = "CHAT_NOT_FOUND";
+        public const string MessageNotFound      = "MESSAGE_NOT_FOUND";
+        public const string InvalidFile          = "INVALID_FILE";
+        public const string InvalidFileType      = "INVALID_FILE_TYPE";
+        public const string FileTooLarge         = "FILE_TOO_LARGE";
+
+        // ── Invitations ───────────────────────────────────────────────────
+        public const string InvitationAlreadySent = "INVITATION_ALREADY_SENT";
+
         // ── Project / Category / Skill ────────────────────────────────────
         public const string CategoryNotFound     = "CATEGORY_NOT_FOUND";
         public const string CategoryAlreadyExists = "CATEGORY_ALREADY_EXISTS";
@@ -49,6 +67,7 @@ namespace ServiceImplementation.Helpers
         // ── Generic / State ───────────────────────────────────────────────
         public const string InvalidState         = "INVALID_STATE";
         public const string AlreadyReviewed      = "ALREADY_REVIEWED";
+        public const string InvalidRating        = "INVALID_RATING";
         public const string ReviewNotFound       = "REVIEW_NOT_FOUND";
         public const string InvitationNotFound   = "INVITATION_NOT_FOUND";
         public const string ProposalAlreadySubmitted = "PROPOSAL_ALREADY_SUBMITTED";

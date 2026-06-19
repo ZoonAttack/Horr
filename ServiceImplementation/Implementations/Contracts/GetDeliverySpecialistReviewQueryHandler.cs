@@ -29,12 +29,22 @@ namespace ServiceImplementation.Implementations.Contracts
 
             if (delivery == null)
             {
-                throw new NotFoundException($"Contract delivery with ID {request.DeliveryId} not found.");
+                return new Result<ContractSpecialistReviewReadDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.DeliveryNotFound,
+                    Message = $"Contract delivery with ID {request.DeliveryId} not found."
+                };
             }
 
             if (delivery.Contract == null)
             {
-                throw new NotFoundException("Associated contract not found.");
+                return new Result<ContractSpecialistReviewReadDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.ContractNotFound,
+                    Message = "Associated contract not found."
+                };
             }
 
             var review = await _context.ContractSpecialistReviews
@@ -48,7 +58,12 @@ namespace ServiceImplementation.Implementations.Contracts
 
             if (!isAuthorized)
             {
-                throw new ForbiddenException("You are not authorized to view the specialist review for this delivery.");
+                return new Result<ContractSpecialistReviewReadDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.Unauthorized,
+                    Message = "You are not authorized to view the specialist review for this delivery."
+                };
             }
 
             if (review == null)

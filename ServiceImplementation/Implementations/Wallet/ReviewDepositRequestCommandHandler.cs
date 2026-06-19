@@ -8,6 +8,7 @@ using ServiceImplementation.Exceptions;
 using ServiceImplementation.Mappings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using ServiceImplementation.Helpers;
 
 namespace ServiceImplementation.Implementations.Wallet
 {
@@ -27,12 +28,22 @@ namespace ServiceImplementation.Implementations.Wallet
 
             if (depositRequest == null)
             {
-                throw new NotFoundException("Deposit request not found.");
+                return new Result<DepositRequestDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.DepositRequestNotFound,
+                    Message = "Deposit request not found."
+                };
             }
 
             if (depositRequest.Status != DepositStatus.Pending)
             {
-                throw new InvalidStateException("Only pending deposit requests can be reviewed.");
+                return new Result<DepositRequestDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.InvalidState,
+                    Message = "Only pending deposit requests can be reviewed."
+                };
             }
 
             IDbContextTransaction? transaction = null;

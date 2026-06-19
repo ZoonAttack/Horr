@@ -46,7 +46,12 @@ namespace ServiceImplementation.Implementations.Proposals
 
             if (!freelancerExists)
             {
-                throw new NotFoundException("You are not registered as a freelancer. Please complete your freelancer profile first.");
+                return new Result<ProposalReadDTO>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.FreelancerNotFound,
+                    Message = "You are not registered as a freelancer. Please complete your freelancer profile first."
+                };
             }
 
             // 3. Find proposal
@@ -57,17 +62,37 @@ namespace ServiceImplementation.Implementations.Proposals
 
             if (proposal == null)
             {
-                throw new NotFoundException($"Proposal with ID {request.ProposalId} not found or you are not authorized to update it.");
+                return new Result<ProposalReadDTO>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.ProposalNotFound,
+                    Message = $"Proposal with ID {request.ProposalId} not found or you are not authorized to update it."
+                };
             }
 
             // 4. Verify proposal is in Submitted state
             if (proposal.Status != ProposalStatus.Submitted)
             {
-                throw new InvalidStateException("Proposals can only be updated when they are in the Submitted state.");
+                return new Result<ProposalReadDTO>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.InvalidState,
+                    Message = "Proposals can only be updated when they are in the Submitted state."
+                };
             }
 
             // 5. Domain Validation
-            Validate(dto);
+            var validationErrors = Validate(dto);
+            if (validationErrors.Any())
+            {
+                return new Result<ProposalReadDTO>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.InvalidState,
+                    Message = "Validation failed",
+                    Errors = validationErrors
+                };
+            }
 
             // 6. Update proposal rates &cover letter
             proposal.BidRate = dto.BidRate;
@@ -110,7 +135,7 @@ namespace ServiceImplementation.Implementations.Proposals
             };
         }
 
-        private void Validate(ProposalUpdateDTO dto)
+        private List<string> Validate(ProposalUpdateDTO dto)
         {
             var errors = new List<string>();
 
@@ -135,10 +160,7 @@ namespace ServiceImplementation.Implementations.Proposals
                 errors.Add("BidRate must be greater than 0.");
             }
 
-            if (errors.Any())
-            {
-                throw new ValidationException("Validation failed", errors);
-            }
+            return errors;
         }
     }
 }

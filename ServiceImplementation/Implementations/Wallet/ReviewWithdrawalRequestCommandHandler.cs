@@ -7,6 +7,7 @@ using ServiceContracts.DTOs.Responses;
 using ServiceImplementation.Exceptions;
 using ServiceImplementation.Mappings;
 using Microsoft.EntityFrameworkCore;
+using ServiceImplementation.Helpers;
 
 namespace ServiceImplementation.Implementations.Wallet
 {
@@ -26,12 +27,22 @@ namespace ServiceImplementation.Implementations.Wallet
 
             if (withdrawalRequest == null)
             {
-                throw new NotFoundException("Withdrawal request not found.");
+                return new Result<WithdrawalRequestDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.WithdrawalRequestNotFound,
+                    Message = "Withdrawal request not found."
+                };
             }
 
             if (withdrawalRequest.Status != WithdrawalStatus.Pending)
             {
-                throw new InvalidStateException("Only pending withdrawal requests can be reviewed.");
+                return new Result<WithdrawalRequestDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.InvalidState,
+                    Message = "Only pending withdrawal requests can be reviewed."
+                };
             }
 
             using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);

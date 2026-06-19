@@ -186,14 +186,13 @@ namespace ServiceImplementation.Implementations.ClientImplementation
                 };
             }
 
-            invitation.Status = InvitationStatus.Declined;
-            invitation.RespondedAt = DateTime.UtcNow;
+            _db.JobInvitations.Remove(invitation);
             await _db.SaveChangesAsync();
 
             return new Result<bool>
             {
                 Succeeded = true,
-                Message = "Invitation declined successfully.",
+                Message = "Invitation declined and deleted successfully.",
                 Data = true
             };
         }
@@ -263,7 +262,7 @@ namespace ServiceImplementation.Implementations.ClientImplementation
                 .Include(i => i.JobPost)
                 .Include(i => i.Freelancer)
                 .Include(i => i.Client)
-                .Where(i => i.FreelancerId == freelancerId);
+                .Where(i => i.FreelancerId == freelancerId && i.Status == InvitationStatus.Pending);
 
             if (status.HasValue)
             {

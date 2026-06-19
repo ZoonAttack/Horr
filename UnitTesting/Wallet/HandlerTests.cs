@@ -11,6 +11,7 @@ using ServiceImplementation.Exceptions;
 using ServiceImplementation.Implementations.Wallet;
 using Xunit;
 using FluentAssertions;
+using ServiceImplementation.Helpers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -188,7 +189,7 @@ namespace UnitTesting.Wallet
         }
 
         [Fact]
-        public async Task ReviewWithdrawal_AlreadyReviewed_ThrowsInvalidStateException()
+        public async Task ReviewWithdrawal_AlreadyReviewed_ReturnsError()
         {
             // Arrange
             var withdrawal = new WithdrawalRequest { Id = Guid.NewGuid().ToString(), FreelancerId = "u1", Amount = 100, Status = WithdrawalStatus.Rejected };
@@ -198,9 +199,13 @@ namespace UnitTesting.Wallet
             var handler = new ReviewWithdrawalRequestCommandHandler(_context);
             var command = new ReviewWithdrawalRequestCommand(withdrawal.Id, WithdrawalStatus.Approved, "Oops");
 
-            // Act & Assert
-            var ex = await Assert.ThrowsAsync<InvalidStateException>(() => handler.Handle(command, CancellationToken.None));
-            Assert.Equal("Only pending withdrawal requests can be reviewed.", ex.Message);
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Succeeded.Should().BeFalse();
+            result.ErrorCode.Should().Be(ErrorCodes.InvalidState);
+            result.Message.Should().Be("Only pending withdrawal requests can be reviewed.");
         }
 
         [Fact]

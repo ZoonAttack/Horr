@@ -38,13 +38,12 @@ namespace ServiceImplementation.Implementations.Proposals
                 return new Result<bool>
                 {
                     Succeeded = false,
-                    ErrorCode = ErrorCodes.UserNotFound,
+                    ErrorCode = ErrorCodes.ProposalNotFound,
                     Message = $"Proposal with ID {request.ProposalId} not found or you are not authorized to withdraw it."
                 };
             }
 
             proposal.Status = ProposalStatus.Withdrawn;
-            
             await _context.SaveChangesAsync(cancellationToken);
             return new Result<bool> { Succeeded = true, Data = true };
         }

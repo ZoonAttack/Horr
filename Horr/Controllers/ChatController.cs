@@ -105,7 +105,7 @@ namespace Horr.Controllers
                     statusCode = 403;
                     title = "Forbidden";
                 }
-                else if (result.ErrorCode == "CONVERSATION_NOT_FOUND")
+                else if (result.ErrorCode == ErrorCodes.ChatNotFound)
                 {
                     statusCode = 404;
                     title = "Not Found";
@@ -142,7 +142,7 @@ namespace Horr.Controllers
                     statusCode = 403;
                     title = "Forbidden";
                 }
-                else if (result.ErrorCode == "CONVERSATION_NOT_FOUND")
+                else if (result.ErrorCode == ErrorCodes.ChatNotFound)
                 {
                     statusCode = 404;
                     title = "Not Found";
@@ -189,7 +189,7 @@ namespace Horr.Controllers
                     statusCode = 403;
                     title = "Forbidden";
                 }
-                else if (result.ErrorCode == "CONVERSATION_NOT_FOUND")
+                else if (result.ErrorCode == ErrorCodes.ChatNotFound)
                 {
                     statusCode = 404;
                     title = "Not Found";
@@ -237,12 +237,12 @@ namespace Horr.Controllers
                     statusCode = 403;
                     title = "Forbidden";
                 }
-                else if (result.ErrorCode == "CONVERSATION_NOT_FOUND")
+                else if (result.ErrorCode == ErrorCodes.ChatNotFound)
                 {
                     statusCode = 404;
                     title = "Not Found";
                 }
-                else if (result.ErrorCode == "INVALID_FILE_TYPE" || result.ErrorCode == "FILE_TOO_LARGE")
+                else if (result.ErrorCode == ErrorCodes.InvalidFileType || result.ErrorCode == ErrorCodes.FileTooLarge)
                 {
                     statusCode = 400;
                     title = "Invalid File";

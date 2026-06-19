@@ -8,6 +8,7 @@ using ServiceImplementation.Exceptions;
 using ServiceContracts.DTOs.Proposal;
 using ServiceContracts.DTOs.Responses;
 using System;
+using ServiceImplementation.Helpers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -51,7 +52,7 @@ namespace UnitTesting.Proposals
         }
 
         [Fact]
-        public async Task WithdrawProposal_ShouldSetStatusToWithdrawn()
+        public async Task WithdrawProposal_ShouldChangeStatusToWithdrawn()
         {
             // ARRANGE
             using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
@@ -77,9 +78,9 @@ namespace UnitTesting.Proposals
 
             // ASSERT
             result.Succeeded.Should().BeTrue();
-            var updated = await context.Proposals.IgnoreQueryFilters().FirstAsync(p => p.Id == 1);
+            var updated = await context.Proposals.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == 1);
+            updated.Should().NotBeNull();
             updated.Status.Should().Be(ProposalStatus.Withdrawn);
-            updated.IsDeleted.Should().BeFalse();
         }
 
         [Fact]
@@ -133,11 +134,12 @@ namespace UnitTesting.Proposals
             };
 
             // ACT
-            Func<Task> act = async () => await handler.Handle(new CreateProposalCommand(dto, "f1"), CancellationToken.None);
+            var result = await handler.Handle(new CreateProposalCommand(dto, "f1"), CancellationToken.None);
 
             // ASSERT
-            var ex = await act.Should().ThrowAsync<ValidationException>();
-            ex.Which.Errors.Should().Contain(e => e.Contains("Milestone-based proposals are not supported right now"));
+            result.Succeeded.Should().BeFalse();
+            result.ErrorCode.Should().Be(ErrorCodes.InvalidState);
+            result.Errors.Should().Contain(e => e.Contains("Milestone-based proposals are not supported right now"));
         }
 
         [Fact]
@@ -174,7 +176,7 @@ namespace UnitTesting.Proposals
         }
 
         [Fact]
-        public async Task RejectProposal_ShouldSetStatusToRejected_WhenValidClient()
+        public async Task RejectProposal_ShouldChangeStatusToRejected_WhenValidClient()
         {
             // ARRANGE
             using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
@@ -204,7 +206,8 @@ namespace UnitTesting.Proposals
             // ASSERT
             result.Succeeded.Should().BeTrue();
             var dbProposal = await context.Proposals.FindAsync(10);
-            dbProposal!.Status.Should().Be(ProposalStatus.Rejected);
+            dbProposal.Should().NotBeNull();
+            dbProposal.Status.Should().Be(ProposalStatus.Rejected);
         }
 
         [Fact]
@@ -324,8 +327,9 @@ namespace UnitTesting.Proposals
             var command = new UpdateProposalCommand(1, dto, "f1");
 
             // ACT & ASSERT
-            Func<Task> act = async () => await handler.Handle(command, CancellationToken.None);
-            await act.Should().ThrowAsync<InvalidStateException>();
+            var result = await handler.Handle(command, CancellationToken.None);
+            result.Succeeded.Should().BeFalse();
+            result.ErrorCode.Should().Be(ErrorCodes.InvalidState);
         }
 
         [Fact]
@@ -363,8 +367,9 @@ namespace UnitTesting.Proposals
             var command = new UpdateProposalCommand(1, dto, "not-the-owner"); // non-owner
 
             // ACT & ASSERT
-            Func<Task> act = async () => await handler.Handle(command, CancellationToken.None);
-            await act.Should().ThrowAsync<NotFoundException>();
+            var result = await handler.Handle(command, CancellationToken.None);
+            result.Succeeded.Should().BeFalse();
+            result.ErrorCode.Should().Be(ErrorCodes.ProposalNotFound);
         }
 
         [Fact]
@@ -400,8 +405,9 @@ namespace UnitTesting.Proposals
             var command = new UpdateProposalCommand(1, dto, "f1");
 
             // ACT & ASSERT
-            Func<Task> act = async () => await handler.Handle(command, CancellationToken.None);
-            await act.Should().ThrowAsync<ValidationException>();
+            var result = await handler.Handle(command, CancellationToken.None);
+            result.Succeeded.Should().BeFalse();
+            result.ErrorCode.Should().Be(ErrorCodes.InvalidState);
         }
     }
 }

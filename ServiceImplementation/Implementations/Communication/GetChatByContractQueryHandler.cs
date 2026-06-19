@@ -44,7 +44,7 @@ namespace ServiceImplementation.Implementations.Communication
                 return new Result<ChatSummaryDto>
                 {
                     Succeeded = false,
-                    ErrorCode = "CONVERSATION_NOT_FOUND",
+                    ErrorCode = ErrorCodes.ChatNotFound,
                     Message = $"Chat for Contract ID {request.ContractId} was not found."
                 };
             }

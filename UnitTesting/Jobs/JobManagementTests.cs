@@ -386,5 +386,37 @@ namespace UnitTesting.Jobs
             result.Succeeded.Should().BeFalse();
             result.ErrorCode.Should().Be("INVALID_STATE");
         }
+
+        [Fact]
+        public async Task GetJobDetailsQueryHandler_ShouldPopulateHasApplied()
+        {
+            // ARRANGE
+            using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+            
+            var client = new Entities.Users.User { Id = "client1", FullName = "Client One", Bio = "Bio", Address = "Addr", City = "City", StateProvince = "State", ZipCode = "12345", Country = "Egypt" };
+            var freelancer = new Entities.Users.User { Id = "free1", FullName = "Freelancer One", Bio = "Bio", Address = "Addr", City = "City", StateProvince = "State", ZipCode = "12345", Country = "Egypt" };
+            context.Users.AddRange(client, freelancer);
+            context.Categories.Add(new Category { Id = "Test", Name = "Test", Slug = "test" });
+            
+            var job = new JobPost { Id = "job1", Title = "Title", Description = "Desc", CategoryId = "Test", ClientId = "client1" };
+            context.JobPosts.Add(job);
+            await context.SaveChangesAsync();
+
+            var handler = new GetJobDetailsQueryHandler(context);
+
+            // Case 1: Freelancer has not applied yet
+            var resultNotApplied = await handler.Handle(new GetJobDetailsQuery("job1", "free1"), CancellationToken.None);
+            resultNotApplied.Succeeded.Should().BeTrue();
+            resultNotApplied.Data.HasApplied.Should().BeFalse();
+
+            // Case 2: Freelancer submits a proposal
+            var proposal = new Proposal { Id = 1, JobPostId = "job1", FreelancerId = "free1", CoverLetter = "A long enough cover letter to pass constraints if validated" };
+            context.Proposals.Add(proposal);
+            await context.SaveChangesAsync();
+
+            var resultApplied = await handler.Handle(new GetJobDetailsQuery("job1", "free1"), CancellationToken.None);
+            resultApplied.Succeeded.Should().BeTrue();
+            resultApplied.Data.HasApplied.Should().BeTrue();
+        }
     }
 }

@@ -46,6 +46,7 @@ namespace ServiceContracts.DTOs.JobManagement
         public List<ContractMilestoneDto> Milestones { get; set; } = new();
 
         public JobStatsDto? Stats { get; set; }
+        public bool HasApplied { get; set; }
     }
 
     public class SearchJobsQueryResponse

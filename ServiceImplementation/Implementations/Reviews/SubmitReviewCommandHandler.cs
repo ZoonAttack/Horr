@@ -56,7 +56,7 @@ namespace ServiceImplementation.Implementations.Reviews
                 return new Result<ContractReviewReadDTO>
                 {
                     Succeeded = false,
-                    ErrorCode = "INVALID_RATING",
+                    ErrorCode = ErrorCodes.InvalidRating,
                     Message = "Rating must be between 1 and 5."
                 };
             }

@@ -30,7 +30,7 @@ namespace ServiceImplementation.Implementations.Proposals
                 return new Result<bool>
                 {
                     Succeeded = false,
-                    ErrorCode = ErrorCodes.UserNotFound, // Matching Withdraw pattern
+                    ErrorCode = ErrorCodes.ProposalNotFound,
                     Message = $"Proposal with ID {request.ProposalId} not found."
                 };
             }

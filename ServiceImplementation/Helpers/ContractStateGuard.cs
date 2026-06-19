@@ -18,21 +18,21 @@ namespace ServiceImplementation.Helpers
             }
         }
 
-        // ── Accept Offer (Proposal must be Submitted) ─────────────────────────
+        // ── Accept Offer (Proposal must be Submitted or Offer) ─────────────────
         public static void EnsureCanAcceptOffer(Proposal proposal)
         {
-            if (proposal.Status != ProposalStatus.Submitted)
+            if (proposal.Status != ProposalStatus.Submitted && proposal.Status != ProposalStatus.Offer)
             {
-                throw new InvalidStateException("Only submitted proposals can be accepted.");
+                throw new InvalidStateException("Only submitted or offered proposals can be accepted.");
             }
         }
 
         // ── Decline Offer ──────────────────────────────────────────────────────
         public static void EnsureCanDeclineOffer(Proposal proposal)
         {
-            if (proposal.Status != ProposalStatus.Submitted)
+            if (proposal.Status != ProposalStatus.Submitted && proposal.Status != ProposalStatus.Offer)
             {
-                throw new InvalidStateException("Only submitted proposals can be declined.");
+                throw new InvalidStateException("Only submitted or offered proposals can be declined.");
             }
         }
 

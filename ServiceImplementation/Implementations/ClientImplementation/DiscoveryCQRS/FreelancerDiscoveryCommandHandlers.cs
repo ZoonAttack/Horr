@@ -92,7 +92,7 @@ namespace ServiceImplementation.Implementations.ClientImplementation.DiscoveryCQ
                 return new Result<bool>
                 {
                     Succeeded = false,
-                    ErrorCode = "SAVED_FREELANCER_NOT_FOUND",
+                    ErrorCode = ErrorCodes.SavedFreelancerNotFound,
                     Message = "Saved freelancer not found."
                 };
             }

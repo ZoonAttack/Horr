@@ -44,6 +44,28 @@ namespace ServiceImplementation.Implementations.Contracts
                 };
             }
 
+            // Guard: block a new contract if one is already live for this freelancer+job pair.
+            // Terminal statuses (Closed, Rejected, Completed, Terminated) are fine — a new
+            // contract can always be started after those.
+            var activeContractExists = await _context.Contracts.AnyAsync(
+                c => c.FreelancerId == request.FreelancerId
+                  && c.JobPostId    == request.JobPostId
+                  && (c.Status == ContractStatus.Draft
+                   || c.Status == ContractStatus.Active
+                   || c.Status == ContractStatus.Disputed),
+                cancellationToken);
+
+            if (activeContractExists)
+            {
+                return new Result<ContractDto>
+                {
+                    Succeeded  = false,
+                    ErrorCode  = ErrorCodes.InvalidState,
+                    Message    = "A contract is already active or pending for this freelancer and job.",
+                    Errors     = new List<string> { "Resolve or close the existing contract before creating a new one." }
+                };
+            }
+
             Proposal? proposal = null;
             if (request.ProposalId.HasValue)
             {

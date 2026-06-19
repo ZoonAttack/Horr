@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
+using ServiceImplementation.Helpers;
 using Xunit;
 using Entities.Enums;
 
@@ -120,7 +121,7 @@ namespace UnitTesting.Controllers
             var resultData = new Result<PagedResult<MessageDto>>
             {
                 Succeeded = false,
-                ErrorCode = "CONVERSATION_NOT_FOUND",
+                ErrorCode = ErrorCodes.ChatNotFound,
                 Message = "Conversation not found."
             };
 
@@ -229,7 +230,7 @@ namespace UnitTesting.Controllers
             var resultData = new Result<ChatSummaryDto>
             {
                 Succeeded = false,
-                ErrorCode = "CONVERSATION_NOT_FOUND",
+                ErrorCode = ErrorCodes.ChatNotFound,
                 Message = "Not found."
             };
 

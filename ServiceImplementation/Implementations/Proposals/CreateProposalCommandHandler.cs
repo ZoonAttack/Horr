@@ -37,7 +37,17 @@ namespace ServiceImplementation.Implementations.Proposals
             }
 
             // 2. Domain Validation
-            Validate(dto);
+            var validationErrors = Validate(dto);
+            if (validationErrors.Any())
+            {
+                return new Result<ProposalReadDTO>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.InvalidState,
+                    Message = "Validation failed",
+                    Errors = validationErrors
+                };
+            }
 
             // 3. Verify user is a registered freelancer
             var freelancerExists = await _context.Freelancers
@@ -45,12 +55,19 @@ namespace ServiceImplementation.Implementations.Proposals
 
             if (!freelancerExists)
             {
-                throw new NotFoundException("You are not registered as a freelancer. Please complete your freelancer profile first.");
+                return new Result<ProposalReadDTO>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.FreelancerNotFound,
+                    Message = "You are not registered as a freelancer. Please complete your freelancer profile first."
+                };
             }
 
             // 4. Check for duplicate proposal
             var exists = await _context.Proposals
-                .AnyAsync(p => p.FreelancerId == request.FreelancerId && p.Status == ProposalStatus.Submitted && p.JobPostId == dto.JobPostId, cancellationToken);
+                .AnyAsync(p => p.FreelancerId == request.FreelancerId 
+                            && (p.Status == ProposalStatus.Submitted || p.Status == ProposalStatus.Active || p.Status == ProposalStatus.Offer)
+                            && p.JobPostId == dto.JobPostId, cancellationToken);
 
             if (exists)
             {
@@ -58,7 +75,7 @@ namespace ServiceImplementation.Implementations.Proposals
                 {
                     Succeeded = false,
                     ErrorCode = ErrorCodes.ProposalAlreadySubmitted,
-                    Message = "You have already submitted a proposal for this job post."
+                    Message = "You already have a submitted or active proposal/offer for this job post."
                 };
             }
 
@@ -66,13 +83,24 @@ namespace ServiceImplementation.Implementations.Proposals
             var job = await _context.JobPosts.FindAsync(new object[] { dto.JobPostId }, cancellationToken);
             if (job == null)
             {
-                throw new NotFoundException($"Job post with ID {dto.JobPostId} not found.");
+                return new Result<ProposalReadDTO>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.JobNotFound,
+                    Message = $"Job post with ID {dto.JobPostId} not found."
+                };
             }
 
             // Validate job-type specific requirements - Enforce single-payment only
             if (dto.Terms != null && dto.Terms.Any())
             {
-                throw new ValidationException("Validation failed", new List<string> { "Milestone-based proposals are not supported right now. Proposals must be single-payment (do not provide milestone terms)." });
+                return new Result<ProposalReadDTO>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.InvalidState,
+                    Message = "Validation failed",
+                    Errors = new List<string> { "Milestone-based proposals are not supported right now. Proposals must be single-payment (do not provide milestone terms)." }
+                };
             }
 
             // 6. Calculate HORR Fee
@@ -170,7 +198,7 @@ namespace ServiceImplementation.Implementations.Proposals
             };
         }
 
-        private void Validate(ProposalCreateDTO dto)
+        private List<string> Validate(ProposalCreateDTO dto)
         {
             var errors = new List<string>();
 
@@ -195,10 +223,7 @@ namespace ServiceImplementation.Implementations.Proposals
                 errors.Add("BidRate must be greater than 0.");
             }
 
-            if (errors.Any())
-            {
-                throw new ValidationException("Validation failed", errors);
-            }
+            return errors;
         }
     }
 }

@@ -53,6 +53,8 @@ namespace ServiceImplementation.Implementations.JobManagement
             }
 
             var dto = job.ToDetailsDto(request.CurrentUserId);
+            dto.HasApplied = !string.IsNullOrEmpty(request.CurrentUserId) &&
+                             await _context.Proposals.AnyAsync(p => p.JobPostId == job.Id && p.FreelancerId == request.CurrentUserId, cancellationToken);
 
             // If the requester is the owner, populate stats
             if (request.CurrentUserId == job.ClientId)
