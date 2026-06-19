@@ -50,6 +50,8 @@ namespace ServiceImplementation.Helpers
         public const string InvalidState         = "INVALID_STATE";
         public const string AlreadyReviewed      = "ALREADY_REVIEWED";
         public const string ReviewNotFound       = "REVIEW_NOT_FOUND";
-
+        public const string InvitationNotFound   = "INVITATION_NOT_FOUND";
+        public const string ProposalAlreadySubmitted = "PROPOSAL_ALREADY_SUBMITTED";
+        public const string RevisionLimitExceeded = "REVISION_LIMIT_EXCEEDED";
     }
 }

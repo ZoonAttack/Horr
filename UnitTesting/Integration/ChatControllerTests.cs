@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using System;
 using System.Linq;
 using Xunit;
+using ServiceContracts.DTOs.Chat;
 
 namespace UnitTesting.Integration;
 
@@ -261,4 +262,67 @@ public class ChatControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         var response = await _client.SendAsync(request);
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
+
+    [Fact]
+    public async Task InitiateChat_Should_CreateNewChat_Or_ReturnExisting()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var clientId = "init-chat-client";
+        var freelancerId = "init-chat-freelancer";
+        var contractId = 889988;
+
+        // Ensure users exist
+        if (!await context.Users.AnyAsync(u => u.Id == clientId))
+            context.Users.Add(new Entities.Users.User { Id = clientId, UserName = clientId, Email = $"{clientId}@example.com", FullName = clientId });
+        if (!await context.Users.AnyAsync(u => u.Id == freelancerId))
+            context.Users.Add(new Entities.Users.User { Id = freelancerId, UserName = freelancerId, Email = $"{freelancerId}@example.com", FullName = freelancerId });
+        
+        // Ensure client & freelancer profiles exist
+        if (!await context.Clients.AnyAsync(c => c.UserId == clientId))
+            context.Clients.Add(new Client { UserId = clientId });
+        if (!await context.Freelancers.AnyAsync(f => f.UserId == freelancerId))
+            context.Freelancers.Add(new Freelancer { UserId = freelancerId, Availability = "FullTime" });
+
+        // Ensure contract exists
+        if (!await context.Contracts.AnyAsync(c => c.Id == contractId))
+        {
+            context.Contracts.Add(new Contract 
+            { 
+                Id = contractId, 
+                ClientId = clientId, 
+                FreelancerId = freelancerId,
+                Status = ContractStatus.Active 
+            });
+        }
+        await context.SaveChangesAsync();
+
+        // 1. First request should initiate/create a chat
+        var initiateReq1 = new HttpRequestMessage(HttpMethod.Post, "/api/chat/initiate");
+        initiateReq1.Headers.Add("X-Test-UserId", clientId);
+        initiateReq1.Headers.Add("X-Test-UserRole", "Client");
+        initiateReq1.Content = JsonContent.Create(new { ContractId = contractId });
+
+        var res1 = await _client.SendAsync(initiateReq1);
+        var body1 = await res1.Content.ReadAsStringAsync();
+        res1.StatusCode.Should().Be(HttpStatusCode.OK, body1);
+
+        var chatDto1 = await res1.Content.ReadFromJsonAsync<ChatSummaryDto>();
+        chatDto1.Should().NotBeNull();
+        chatDto1!.ContractId.Should().Be(contractId);
+
+        // 2. Second request should return the exact same chat
+        var initiateReq2 = new HttpRequestMessage(HttpMethod.Post, "/api/chat/initiate");
+        initiateReq2.Headers.Add("X-Test-UserId", clientId);
+        initiateReq2.Headers.Add("X-Test-UserRole", "Client");
+        initiateReq2.Content = JsonContent.Create(new { ContractId = contractId });
+
+        var res2 = await _client.SendAsync(initiateReq2);
+        res2.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var chatDto2 = await res2.Content.ReadFromJsonAsync<ChatSummaryDto>();
+        chatDto2.Should().NotBeNull();
+        chatDto2!.ChatId.Should().Be(chatDto1.ChatId);
+    }
 }
+

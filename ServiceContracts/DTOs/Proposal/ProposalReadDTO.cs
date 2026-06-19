@@ -16,6 +16,8 @@ namespace ServiceContracts.DTOs.Proposal
         public ProposalStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
         public int? ContractId { get; set; }
+        public int MaxRevisions { get; set; }
+        public int DurationDays { get; set; }
         public List<ProposalTermReadDTO> Terms { get; set; } = new List<ProposalTermReadDTO>();
     }
 

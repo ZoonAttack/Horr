@@ -7,11 +7,14 @@ using Entities;
 using Entities.Project;
 using Entities.Enums;
 using ServiceContracts.DTOs.Contract;
+using ServiceContracts.DTOs.Responses;
 using ServiceImplementation.Exceptions;
+using ServiceImplementation.Helpers;
+using Services;
 
 namespace ServiceImplementation.Implementations.Contracts
 {
-    public class RequestRevisionCommandHandler : IRequestHandler<RequestRevisionCommand, RevisionRequestDto>
+    public class RequestRevisionCommandHandler : IRequestHandler<RequestRevisionCommand, Result<RevisionRequestDto>>
     {
         private readonly AppDbContext _context;
 
@@ -20,14 +23,19 @@ namespace ServiceImplementation.Implementations.Contracts
             _context = context;
         }
 
-        public async Task<RevisionRequestDto> Handle(RequestRevisionCommand request, CancellationToken cancellationToken)
+        public async Task<Result<RevisionRequestDto>> Handle(RequestRevisionCommand request, CancellationToken cancellationToken)
         {
             var delivery = await _context.ContractDeliveries
                 .FirstOrDefaultAsync(d => d.Id == request.DeliveryId, cancellationToken);
 
             if (delivery == null)
             {
-                throw new NotFoundException($"Delivery with ID {request.DeliveryId} not found.");
+                return new Result<RevisionRequestDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.AttachmentNotFound,
+                    Message = $"Delivery with ID {request.DeliveryId} not found."
+                };
             }
 
             var contract = await _context.Contracts
@@ -35,18 +43,47 @@ namespace ServiceImplementation.Implementations.Contracts
 
             if (contract == null)
             {
-                throw new NotFoundException("Associated contract not found.");
+                return new Result<RevisionRequestDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.ContractNotFound,
+                    Message = "Associated contract not found."
+                };
             }
 
             // Who: Client only
             if (contract.ClientId != request.ClientId)
             {
-                throw new ForbiddenException("Only the contract client can request a revision.");
+                return new Result<RevisionRequestDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.Unauthorized,
+                    Message = "Only the contract client can request a revision."
+                };
             }
 
             if (delivery.Status != DeliveryStatus.Pending)
             {
-                throw new InvalidStateException("Revision can only be requested for pending deliveries.");
+                return new Result<RevisionRequestDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.InvalidState,
+                    Message = "Revision can only be requested for pending deliveries."
+                };
+            }
+
+            // Validation: Count current revisions on this contract
+            var currentRevisionCount = await _context.RevisionRequests
+                .CountAsync(rr => rr.Delivery.ContractId == contract.Id, cancellationToken);
+
+            if (currentRevisionCount >= contract.MaxRevisions)
+            {
+                return new Result<RevisionRequestDto>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.RevisionLimitExceeded,
+                    Message = $"You have reached the maximum allowed revisions ({contract.MaxRevisions}) for this contract. Please request additional revisions from the freelancer."
+                };
             }
 
             // Create revision request
@@ -66,7 +103,11 @@ namespace ServiceImplementation.Implementations.Contracts
 
             await _context.SaveChangesAsync(cancellationToken);
 
-            return revRequest.ToDto();
+            return new Result<RevisionRequestDto>
+            {
+                Succeeded = true,
+                Data = revRequest.ToDto()
+            };
         }
     }
 }

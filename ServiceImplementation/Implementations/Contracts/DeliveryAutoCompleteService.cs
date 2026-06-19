@@ -79,6 +79,9 @@ namespace ServiceImplementation.Implementations.Contracts
                                 // Call escrow service to release funds to freelancer
                                 await escrowService.ReleaseToFreelancerAsync(contractGuid, delivery.ContractMilestoneId);
 
+                                contract.Status = ContractStatus.Completed;
+                                contract.ClosedAt = now;
+
                                 _logger.LogInformation($"Auto-approved delivery {delivery.Id} for Contract #{contract.Id}");
                             }
                         }

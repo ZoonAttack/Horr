@@ -62,6 +62,10 @@ namespace ServiceImplementation.Implementations.Contracts
 
             await _escrowService.ReleaseToFreelancerAsync(contractGuid, delivery.ContractMilestoneId);
 
+            // Auto-complete and close the contract
+            contract.Status = ContractStatus.Completed;
+            contract.ClosedAt = DateTime.UtcNow;
+
             await _context.SaveChangesAsync(cancellationToken);
 
             return delivery.ToDto();

@@ -82,6 +82,8 @@ namespace ServiceImplementation.Implementations.Contracts
 
             contract.Status = ContractStatus.Active;
             contract.AcceptedAt = DateTime.UtcNow;
+            contract.StartedAt = DateTime.UtcNow;
+            contract.DueDate = DateTime.UtcNow.AddDays(contract.DurationDays);
 
             // Automatically create Chat room for the active contract if not exists
             var chatExists = await _context.Chats.AnyAsync(c => c.ContractId == contract.Id, cancellationToken);

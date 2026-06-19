@@ -19,6 +19,12 @@ namespace ServiceContracts.DTOs.Proposal
         [RegularExpression(@"^[\u0600-\u06FFa-zA-Z0-9\s\.,!?]+$", ErrorMessage = "Cover letter contains invalid characters")]
         public string CoverLetter { get; set; } = string.Empty;
 
+        [Range(0, 100, ErrorMessage = "Max revisions must be between 0 and 100")]
+        public int MaxRevisions { get; set; }
+
+        [Range(1, 365, ErrorMessage = "Duration days must be between 1 and 365")]
+        public int DurationDays { get; set; }
+
         public List<ProposalTermDTO> Terms { get; set; } = new List<ProposalTermDTO>();
     }
 

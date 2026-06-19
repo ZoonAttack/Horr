@@ -1,12 +1,14 @@
 using System;
 using MediatR;
 using ServiceContracts.DTOs.Contract;
+using ServiceContracts.DTOs.Responses;
 
 namespace ServiceImplementation.Implementations.Contracts
 {
-    public record RequestRevisionCommand(
+    public record RequestAdditionalRevisionCommand(
         Guid DeliveryId,
         string ClientId,
+        int RequestedCount,
         string Reason
-    ) : IRequest<ServiceContracts.DTOs.Responses.Result<RevisionRequestDto>>;
+    ) : IRequest<Result<AdditionalRevisionRequestDto>>;
 }

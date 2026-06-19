@@ -82,6 +82,7 @@ namespace UnitTesting.Integration
                 FreelancerId = freelancerGuid.ToString(),
                 AgreedRate = 1000m,
                 Status = ContractStatus.Active,
+                MaxRevisions = 3,
                 CreatedAt = DateTime.UtcNow
             };
             db.Contracts.Add(contract);

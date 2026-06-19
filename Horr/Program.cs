@@ -72,6 +72,7 @@ namespace Horr
             builder.Services.AddScoped<IJobService, JobService>();
             builder.Services.AddTransient<IEmailService, EmailService>();
             builder.Services.AddScoped<Services.Client.IJobService, ServiceImplementation.Implementations.ClientImplementation.JobService>();
+            builder.Services.AddScoped<ServiceContracts.Client.IJobInvitationService, ServiceImplementation.Implementations.ClientImplementation.JobInvitationService>();
             builder.Services.AddScoped<IFreelancerService, FreelancerService>();
             builder.Services.AddScoped<ServiceContracts.Client.IClientProfileService, ServiceImplementation.Implementations.ClientImplementation.ClientProfileService>();
             builder.Services.AddScoped<ICategoryService, CategoryService>();
@@ -79,6 +80,7 @@ namespace Horr
             builder.Services.AddScoped<IWalletService, WalletService>();
             builder.Services.AddScoped<IEscrowService, EscrowService>();
             builder.Services.AddHostedService<ServiceImplementation.Implementations.Contracts.DeliveryAutoCompleteService>();
+            builder.Services.AddHostedService<ServiceImplementation.Implementations.Contracts.OfferAutoRevokeService>();
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
             builder.Services.AddHttpClient();
             builder.Services.AddScoped<IGeminiService, GeminiService>();

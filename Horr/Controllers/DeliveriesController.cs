@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ServiceContracts.DTOs.Contract;
+using ServiceContracts.DTOs.Responses;
 using ServiceContracts.Storage;
 using ServiceImplementation.Helpers;
 using ServiceImplementation.Implementations.Contracts;
@@ -129,13 +130,20 @@ namespace Horr.Controllers
 
         [HttpPost("{deliveryId}/revision")]
         [Authorize(Roles = "Client")]
-        [ProducesResponseType(typeof(RevisionRequestDto), 201)]
+        [ProducesResponseType(typeof(RevisionRequestDto), 200)]
+        [ProducesResponseType(typeof(Result<RevisionRequestDto>), 400)]
         public async Task<IActionResult> RequestRevision(Guid deliveryId, [FromBody] RequestRevisionRequest req)
         {
             var clientId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
             var command = new RequestRevisionCommand(deliveryId, clientId, req.Reason);
             var result = await _mediator.Send(command);
-            return StatusCode(201, result);
+
+            if (!result.Succeeded)
+            {
+                return BadRequest(new { message = result.Message, errorCode = result.ErrorCode });
+            }
+
+            return StatusCode(201, result.Data);
         }
 
         public class OpenDisputeRequest

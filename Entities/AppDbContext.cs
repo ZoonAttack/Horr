@@ -83,6 +83,8 @@ namespace Entities
         public DbSet<Dispute> Disputes { get; set; }
         public DbSet<ContractSpecialistReview> ContractSpecialistReviews { get; set; }
 
+        public DbSet<AdditionalRevisionRequest> AdditionalRevisionRequests { get; set; }
+
         // Job Management DbSets
         public DbSet<JobPost> JobPosts { get; set; }
         public DbSet<SavedJob> SavedJobs { get; set; }
@@ -115,6 +117,7 @@ namespace Entities
             modelBuilder.Entity<ContractMilestone>().HasQueryFilter(cm => !cm.IsDeleted);
             modelBuilder.Entity<EscrowTransaction>().HasQueryFilter(et => !et.IsDeleted);
             modelBuilder.Entity<RevisionRequest>().HasQueryFilter(rr => !rr.IsDeleted);
+            modelBuilder.Entity<AdditionalRevisionRequest>().HasQueryFilter(arr => !arr.IsDeleted);
             modelBuilder.Entity<Dispute>().HasQueryFilter(d => !d.IsDeleted);
             modelBuilder.Entity<ContractSpecialistReview>().HasQueryFilter(r => !r.IsDeleted);
 

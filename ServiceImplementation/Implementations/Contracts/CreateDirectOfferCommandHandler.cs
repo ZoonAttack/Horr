@@ -119,6 +119,8 @@ namespace ServiceImplementation.Implementations.Contracts
                 CustomJobDescription = string.IsNullOrWhiteSpace(request.CustomJobDescription) ? job.Description : request.CustomJobDescription,
                 AgreedRate           = totalAmount,
                 Status               = ContractStatus.Draft,
+                MaxRevisions         = proposal?.MaxRevisions ?? 3, // Default to 3 revisions if no proposal
+                DurationDays         = proposal?.DurationDays ?? 14, // Default to 14 days if no proposal
                 StartedAt            = DateTime.UtcNow,
                 CreatedAt            = DateTime.UtcNow
             };

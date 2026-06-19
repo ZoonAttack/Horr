@@ -246,5 +246,70 @@ namespace UnitTesting.Controllers
             problem.Status.Should().Be(404);
             problem.Title.Should().Be("Not Found");
         }
+
+        [Fact]
+        public async Task InitiateChat_ShouldReturnOk_WithChatSummary_WhenInitiationSucceeds()
+        {
+            // Arrange
+            var contractId = 42;
+            var summary = new ChatSummaryDto { ChatId = "conv-1", ContractId = contractId };
+            var resultData = new Result<ChatSummaryDto> { Succeeded = true, Data = summary };
+
+            _mediatorMock.Setup(m => m.Send(It.Is<CreateChatCommand>(c => c.ContractId == contractId && c.ClientId == CurrentUserId), It.IsAny<CancellationToken>()))
+                         .ReturnsAsync(resultData);
+
+            // Act
+            var result = await _controller.InitiateChat(new InitiateChatRequest { ContractId = contractId });
+
+            // Assert
+            var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+            okResult.Value.Should().BeEquivalentTo(summary);
+        }
+
+        [Fact]
+        public async Task InitiateChat_ShouldReturnForbidden_WhenClientNotAuthorized()
+        {
+            // Arrange
+            var contractId = 42;
+            var resultData = new Result<ChatSummaryDto>
+            {
+                Succeeded = false,
+                ErrorCode = ServiceImplementation.Helpers.ErrorCodes.Unauthorized,
+                Message = "Unauthorized client."
+            };
+
+            _mediatorMock.Setup(m => m.Send(It.Is<CreateChatCommand>(c => c.ContractId == contractId), It.IsAny<CancellationToken>()))
+                         .ReturnsAsync(resultData);
+
+            // Act
+            var result = await _controller.InitiateChat(new InitiateChatRequest { ContractId = contractId });
+
+            // Assert
+            var forbiddenResult = result.Should().BeOfType<ObjectResult>().Subject;
+            forbiddenResult.StatusCode.Should().Be(403);
+        }
+
+        [Fact]
+        public async Task InitiateChat_ShouldReturnNotFound_WhenContractDoesNotExist()
+        {
+            // Arrange
+            var contractId = 42;
+            var resultData = new Result<ChatSummaryDto>
+            {
+                Succeeded = false,
+                ErrorCode = ServiceImplementation.Helpers.ErrorCodes.ContractNotFound,
+                Message = "Contract not found."
+            };
+
+            _mediatorMock.Setup(m => m.Send(It.Is<CreateChatCommand>(c => c.ContractId == contractId), It.IsAny<CancellationToken>()))
+                         .ReturnsAsync(resultData);
+
+            // Act
+            var result = await _controller.InitiateChat(new InitiateChatRequest { ContractId = contractId });
+
+            // Assert
+            var notFoundResult = result.Should().BeOfType<ObjectResult>().Subject;
+            notFoundResult.StatusCode.Should().Be(404);
+        }
     }
 }

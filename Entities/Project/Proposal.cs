@@ -40,6 +40,10 @@ namespace Entities.Project
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        public int MaxRevisions { get; set; }
+
+        public int DurationDays { get; set; }
+
         // Soft Delete
         public bool IsDeleted { get; set; }
 

@@ -69,6 +69,12 @@ namespace Entities.Project
         // ── Timestamps ────────────────────────────────────────────────────
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        public int MaxRevisions { get; set; }
+
+        public int DurationDays { get; set; }
+
+        public DateTime? DueDate { get; set; }
+
         // ── Soft Delete (ISoftDeletable) ──────────────────────────────────
         public bool IsDeleted { get; set; } = false;
 

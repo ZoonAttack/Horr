@@ -25,6 +25,45 @@ namespace Horr.Controllers
             _mediator = mediator;
         }
 
+        [HttpPost("initiate")]
+        [Authorize(Policy = "ClientOnly")]
+        [ProducesResponseType(typeof(ChatSummaryDto), 200)]
+        [ProducesResponseType(typeof(ProblemDetails), 400)]
+        [ProducesResponseType(typeof(ProblemDetails), 403)]
+        [ProducesResponseType(typeof(ProblemDetails), 404)]
+        public async Task<IActionResult> InitiateChat([FromBody] InitiateChatRequest request)
+        {
+            string clientId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            if (string.IsNullOrEmpty(clientId)) return Unauthorized();
+
+            var result = await _mediator.Send(new CreateChatCommand(request.ContractId, clientId));
+            if (!result.Succeeded)
+            {
+                int statusCode = 400;
+                string title = "Bad Request";
+
+                if (result.ErrorCode == ServiceImplementation.Helpers.ErrorCodes.Unauthorized)
+                {
+                    statusCode = 403;
+                    title = "Forbidden";
+                }
+                else if (result.ErrorCode == ServiceImplementation.Helpers.ErrorCodes.ContractNotFound)
+                {
+                    statusCode = 404;
+                    title = "Not Found";
+                }
+
+                return StatusCode(statusCode, new ProblemDetails
+                {
+                    Status = statusCode,
+                    Title = title,
+                    Detail = result.Message
+                });
+            }
+
+            return Ok(result.Data);
+        }
+
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<ChatSummaryDto>), 200)]
         [ProducesResponseType(typeof(ProblemDetails), 400)]
@@ -223,5 +262,10 @@ namespace Horr.Controllers
     public class SendTextMessageRequest
     {
         public string Text { get; set; } = string.Empty;
+    }
+
+    public class InitiateChatRequest
+    {
+        public int ContractId { get; set; }
     }
 }

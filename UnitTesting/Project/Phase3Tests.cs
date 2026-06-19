@@ -13,10 +13,12 @@ using Entities.Enums;
 using Entities.Project;
 using Entities.Payment;
 using User = Entities.Users.User;
+using Freelancer = Entities.Users.Freelancer;
 using ServiceContracts.DTOs.Contract;
 using ServiceImplementation.Exceptions;
 using ServiceImplementation.Implementations.Wallet;
 using ServiceImplementation.Implementations.Contracts;
+using ServiceImplementation.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Services.Wallet;
 using UnitTesting;
@@ -41,7 +43,8 @@ namespace UnitTesting.Project
             ClientId = clientId,
             FreelancerId = freelancerId,
             AgreedRate = agreedRate,
-            Status = ContractStatus.Active
+            Status = ContractStatus.Active,
+            MaxRevisions = 3
         };
 
         private static EscrowTransaction CreateEscrow(int contractId, decimal amount, Guid? milestoneId = null)
@@ -247,8 +250,9 @@ namespace UnitTesting.Project
 
             // Assert
             result.Should().NotBeNull();
-            result.Status.Should().Be(RevisionStatus.Pending);
-            result.Reason.Should().Be("Please fix typography");
+            result.Succeeded.Should().BeTrue();
+            result.Data.Status.Should().Be(RevisionStatus.Pending);
+            result.Data.Reason.Should().Be("Please fix typography");
 
             var updatedDelivery = await context.ContractDeliveries.FindAsync(delivery.Id);
             updatedDelivery!.Status.Should().Be(DeliveryStatus.RevisionRequested);
@@ -633,6 +637,256 @@ namespace UnitTesting.Project
             result.TotalRefunded.Should().Be(0m);
             result.PlatformEarned.Should().Be(20.5m); // 5.5 + 15 from escrow1 (which is Released)
             result.CurrentlyHeld.Should().Be(100m); // escrow2 (which is Held)
+        }
+
+        [Fact]
+        public async Task CreateProposal_ShouldStoreRevisionsAndDuration()
+        {
+            // Arrange
+            using var context = GetContext();
+            var job = new JobPost { Id = "job1", Title = "Test Job", ClientId = "client1", Budget = 500m };
+            var freelancer = CreateUser("free1", "free@test.com");
+            context.JobPosts.Add(job);
+            context.Users.Add(freelancer);
+            context.Freelancers.Add(new Freelancer { UserId = "free1", Availability = "Full-Time" });
+            await context.SaveChangesAsync();
+
+            var handler = new ServiceImplementation.Implementations.Proposals.CreateProposalCommandHandler(context);
+            var dto = new ServiceContracts.DTOs.Proposal.ProposalCreateDTO
+            {
+                JobPostId = "job1",
+                BidRate = 450m,
+                CoverLetter = "This is a detailed cover letter to pass the validation constraints.",
+                MaxRevisions = 5,
+                DurationDays = 10
+            };
+            var command = new ServiceImplementation.Implementations.Proposals.CreateProposalCommand(dto, "free1");
+
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Succeeded.Should().BeTrue();
+            result.Data.MaxRevisions.Should().Be(5);
+            result.Data.DurationDays.Should().Be(10);
+
+            var storedProposal = await context.Proposals.FindAsync(result.Data.Id);
+            storedProposal!.MaxRevisions.Should().Be(5);
+            storedProposal.DurationDays.Should().Be(10);
+        }
+
+        [Fact]
+        public async Task AcceptOffer_ShouldUpdateDatesAndSetDueDate()
+        {
+            // Arrange
+            using var context = GetContext();
+            var client = CreateUser("client1", "client@test.com");
+            var freelancer = CreateUser("free1", "free@test.com");
+            var contract = new Contract
+            {
+                Id = 22,
+                ClientId = "client1",
+                FreelancerId = "free1",
+                Status = ContractStatus.Draft,
+                MaxRevisions = 4,
+                DurationDays = 8,
+                CreatedAt = DateTime.UtcNow.AddDays(-1)
+            };
+            context.Users.Add(client);
+            context.Users.Add(freelancer);
+            context.Contracts.Add(contract);
+            await context.SaveChangesAsync();
+
+            var handler = new AcceptOfferCommandHandler(context);
+            var command = new AcceptOfferCommand(22, "free1");
+
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Succeeded.Should().BeTrue();
+            var updatedContract = await context.Contracts.FindAsync(22);
+            updatedContract!.Status.Should().Be(ContractStatus.Active);
+            updatedContract.StartedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+            updatedContract.DueDate.Should().BeCloseTo(DateTime.UtcNow.AddDays(8), TimeSpan.FromSeconds(5));
+        }
+
+        [Fact]
+        public async Task RequestRevision_ShouldEnforceMaxRevisionsCap_AndUnlockWithAdditionalRevision()
+        {
+            // Arrange
+            using var context = GetContext();
+            var client = CreateUser("client1", "client@test.com");
+            var freelancer = CreateUser("free1", "free@test.com");
+            var contract = new Contract
+            {
+                Id = 30,
+                ClientId = "client1",
+                FreelancerId = "free1",
+                Status = ContractStatus.Active,
+                MaxRevisions = 1,
+                DurationDays = 5
+            };
+            var delivery = new ContractDelivery
+            {
+                Id = Guid.NewGuid(),
+                ContractId = 30,
+                Status = DeliveryStatus.Pending
+            };
+            // 1 existing revision already used
+            var existingRevision = new RevisionRequest
+            {
+                DeliveryId = delivery.Id,
+                RequestedByClientId = "client1",
+                Reason = "First revision",
+                Status = RevisionStatus.Pending
+            };
+
+            context.Users.Add(client);
+            context.Users.Add(freelancer);
+            context.Contracts.Add(contract);
+            context.ContractDeliveries.Add(delivery);
+            context.RevisionRequests.Add(existingRevision);
+            await context.SaveChangesAsync();
+
+            var requestRevisionHandler = new RequestRevisionCommandHandler(context);
+
+            // Act: Request revision again (reaches cap of 1)
+            var failCommand = new RequestRevisionCommand(delivery.Id, "client1", "Second revision");
+            var failResult = await requestRevisionHandler.Handle(failCommand, CancellationToken.None);
+
+            // Assert: Rejected by cap
+            failResult.Succeeded.Should().BeFalse();
+            failResult.ErrorCode.Should().Be(ErrorCodes.RevisionLimitExceeded);
+
+            // Act: Client creates request for 2 additional revisions
+            var requestAdditionalHandler = new RequestAdditionalRevisionCommandHandler(context);
+            var reqAddCommand = new RequestAdditionalRevisionCommand(delivery.Id, "client1", 2, "Need more adjustments");
+            var reqAddResult = await requestAdditionalHandler.Handle(reqAddCommand, CancellationToken.None);
+
+            // Assert: Pending additional request created
+            reqAddResult.Succeeded.Should().BeTrue();
+            reqAddResult.Data.Status.Should().Be(RequestStatus.Pending);
+
+            // Act: Freelancer accepts additional revision request
+            var respondHandler = new RespondToAdditionalRevisionCommandHandler(context);
+            var respondCommand = new RespondToAdditionalRevisionCommand(reqAddResult.Data.Id, "free1", true);
+            var respondResult = await respondHandler.Handle(respondCommand, CancellationToken.None);
+
+            // Assert: Succeeded & MaxRevisions increased from 1 to 3
+            respondResult.Succeeded.Should().BeTrue();
+            var updatedContract = await context.Contracts.FindAsync(30);
+            updatedContract!.MaxRevisions.Should().Be(3);
+
+            // Act: Client attempts revision request again
+            var retryCommand = new RequestRevisionCommand(delivery.Id, "client1", "Retry revision");
+            var retryResult = await requestRevisionHandler.Handle(retryCommand, CancellationToken.None);
+
+            // Assert: Revision successfully created
+            retryResult.Succeeded.Should().BeTrue();
+            retryResult.Data.Status.Should().Be(RevisionStatus.Pending);
+        }
+
+        [Fact]
+        public async Task ApproveDelivery_ShouldAutomaticallyCompleteAndCloseContract()
+        {
+            // Arrange
+            using var context = GetContext();
+            var client = CreateUser("client1", "client@test.com");
+            var freelancer = CreateUser("free1", "free@test.com");
+            var contract = new Contract
+            {
+                Id = 40,
+                ClientId = "client1",
+                FreelancerId = "free1",
+                Status = ContractStatus.Active
+            };
+            var delivery = new ContractDelivery
+            {
+                Id = Guid.NewGuid(),
+                ContractId = 40,
+                Status = DeliveryStatus.Pending
+            };
+            context.Users.Add(client);
+            context.Users.Add(freelancer);
+            context.Contracts.Add(contract);
+            context.ContractDeliveries.Add(delivery);
+            await context.SaveChangesAsync();
+
+            var escrowMock = new Mock<Services.Wallet.IEscrowService>();
+            var handler = new ApproveDeliveryCommandHandler(context, escrowMock.Object);
+            var command = new ApproveDeliveryCommand(delivery.Id, "client1");
+
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Status.Should().Be(DeliveryStatus.Approved);
+            var updatedContract = await context.Contracts.FindAsync(40);
+            updatedContract!.Status.Should().Be(ContractStatus.Completed);
+            updatedContract.ClosedAt.Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task OfferAutoRevokeService_ShouldCancelOffersOlderThan3Days()
+        {
+            // Arrange
+            using var context = GetContext();
+            var client = CreateUser("client1", "client@test.com");
+            var freelancer = CreateUser("free1", "free@test.com");
+            
+            // Stale Offer
+            var staleContract = new Contract
+            {
+                Id = 50,
+                ClientId = "client1",
+                FreelancerId = "free1",
+                Status = ContractStatus.Draft,
+                AgreedRate = 200m,
+                CreatedAt = DateTime.UtcNow.AddDays(-4)
+            };
+
+            // Active Offer (not expired)
+            var activeContract = new Contract
+            {
+                Id = 51,
+                ClientId = "client1",
+                FreelancerId = "free1",
+                Status = ContractStatus.Draft,
+                AgreedRate = 250m,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            context.Users.Add(client);
+            context.Users.Add(freelancer);
+            context.Contracts.Add(staleContract);
+            context.Contracts.Add(activeContract);
+            await context.SaveChangesAsync();
+
+            var serviceProviderMock = new Mock<IServiceProvider>();
+            var serviceScopeMock = new Mock<IServiceScope>();
+            var serviceScopeFactoryMock = new Mock<IServiceScopeFactory>();
+
+            serviceProviderMock.Setup(x => x.GetService(typeof(IServiceScopeFactory))).Returns(serviceScopeFactoryMock.Object);
+            serviceScopeFactoryMock.Setup(x => x.CreateScope()).Returns(serviceScopeMock.Object);
+            
+            var escrowMock = new Mock<Services.Wallet.IEscrowService>();
+            serviceScopeMock.Setup(x => x.ServiceProvider.GetService(typeof(AppDbContext))).Returns(context);
+            serviceScopeMock.Setup(x => x.ServiceProvider.GetService(typeof(Services.Wallet.IEscrowService))).Returns(escrowMock.Object);
+
+            var logger = new Mock<ILogger<OfferAutoRevokeService>>().Object;
+            var service = new OfferAutoRevokeService(serviceProviderMock.Object, logger);
+
+            // Act
+            await service.ProcessExpiredOffersAsync(CancellationToken.None);
+
+            // Assert
+            var staleResult = await context.Contracts.FindAsync(50);
+            staleResult!.Status.Should().Be(ContractStatus.Closed);
+            staleResult.ClosedAt.Should().NotBeNull();
+
+            var activeResult = await context.Contracts.FindAsync(51);
+            activeResult!.Status.Should().Be(ContractStatus.Draft); // Untouched
         }
     }
 }

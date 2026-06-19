@@ -59,6 +59,7 @@ namespace Entities.Enums
         Active,
         Submitted,
         Offer,
+        Declined,
         Rejected,
         Withdrawn
     }

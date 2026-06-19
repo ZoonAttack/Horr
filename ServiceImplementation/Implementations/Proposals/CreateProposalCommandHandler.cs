@@ -50,11 +50,16 @@ namespace ServiceImplementation.Implementations.Proposals
 
             // 4. Check for duplicate proposal
             var exists = await _context.Proposals
-                .AnyAsync(p => p.FreelancerId == request.FreelancerId && p.JobPostId == dto.JobPostId, cancellationToken);
+                .AnyAsync(p => p.FreelancerId == request.FreelancerId && p.Status == ProposalStatus.Submitted && p.JobPostId == dto.JobPostId, cancellationToken);
 
             if (exists)
             {
-                throw new ConflictException("You have already submitted a proposal for this job post.");
+                return new Result<ProposalReadDTO>
+                {
+                    Succeeded = false,
+                    ErrorCode = ErrorCodes.ProposalAlreadySubmitted,
+                    Message = "You have already submitted a proposal for this job post."
+                };
             }
 
             // 5. Verify job post exists
@@ -82,6 +87,8 @@ namespace ServiceImplementation.Implementations.Proposals
                 BidRate = dto.BidRate,
                 HORRFee = horrFee,
                 CoverLetter = dto.CoverLetter,
+                MaxRevisions = dto.MaxRevisions,
+                DurationDays = dto.DurationDays,
                 Status = ProposalStatus.Submitted,
                 CreatedAt = DateTime.UtcNow,
                 Terms = new List<ProposalTerm>
@@ -107,7 +114,32 @@ namespace ServiceImplementation.Implementations.Proposals
                 CreatedAt = DateTime.UtcNow
             });
 
+            // 8. Auto-accept any pending invitation for this (freelancer, job) pair.
+            // When a freelancer submits a proposal, it implicitly means they are accepting
+            // the invitation — no separate accept endpoint is needed.
+            var pendingInvitation = await _context.JobInvitations
+                .FirstOrDefaultAsync(
+                    i => i.FreelancerId == request.FreelancerId
+                      && i.JobPostId == dto.JobPostId
+                      && i.Status == InvitationStatus.Pending,
+                    cancellationToken);
+
+            if (pendingInvitation != null)
+            {
+                pendingInvitation.Status = InvitationStatus.Accepted;
+                pendingInvitation.RespondedAt = DateTime.UtcNow;
+                // ProposalId will be set after SaveChangesAsync when EF populates the generated ID
+            }
+
             await _context.SaveChangesAsync(cancellationToken);
+
+            // Link the generated proposal ID to the invitation now that EF has assigned it
+            if (pendingInvitation != null)
+            {
+                pendingInvitation.ProposalId = proposal.Id;
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
 
             return new Result<ProposalReadDTO>
             {
@@ -123,6 +155,8 @@ namespace ServiceImplementation.Implementations.Proposals
                     BidRate = proposal.BidRate,
                     HORRFee = proposal.HORRFee,
                     CoverLetter = proposal.CoverLetter,
+                    MaxRevisions = proposal.MaxRevisions,
+                    DurationDays = proposal.DurationDays,
                     Status = proposal.Status,
                     CreatedAt = proposal.CreatedAt,
                     Terms = proposal.Terms.Select(t => new ProposalTermReadDTO
