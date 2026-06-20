@@ -20,7 +20,7 @@ namespace ServiceContracts.DTOs.Proposal
         public string CoverLetter { get; set; } = string.Empty;
 
         [Range(0, 100, ErrorMessage = "Max revisions must be between 0 and 100")]
-        public int MaxRevisions { get; set; }
+        public int MaxRevisions { get; set; } = 3;
 
         [Range(1, 365, ErrorMessage = "Duration days must be between 1 and 365")]
         public int DurationDays { get; set; }

@@ -35,6 +35,8 @@ namespace ServiceContracts.DTOs.Contract
         public DateTime? ClosedAt { get; set; }
 
         public DateTime CreatedAt { get; set; }
+        public DateTime? DueDate { get; set; }
+        public int MaxRevisions { get; set; }
         public string? LatestDeliverySummary { get; set; }
 
         // New details for milestone deliverables and description

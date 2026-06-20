@@ -18,6 +18,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ServiceContracts.Storage;
 
 namespace UnitTesting.Wallet
 {
@@ -43,7 +44,11 @@ namespace UnitTesting.Wallet
             _context.Users.Add(new Entities.Users.User { Id = userId, UserName = "u1", Email = "u1@t.com", FullName = "U1", Address = "A", City = "C", StateProvince = "S", ZipCode = "Z", Country = "Egypt", Bio = "B" });
             await _context.SaveChangesAsync();
 
-            var handler = new SubmitDepositRequestCommandHandler(_context);
+            var fileStorageMock = new Mock<IFileStorageService>();
+            fileStorageMock.Setup(x => x.SaveAsync(It.IsAny<IFormFile>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new StoredFileResult { FileUrl = "/uploads/receipts/receipt.png" });
+
+            var handler = new SubmitDepositRequestCommandHandler(_context, fileStorageMock.Object);
             var fileMock = new Mock<IFormFile>();
             fileMock.Setup(f => f.FileName).Returns("receipt.png");
             var command = new SubmitDepositRequestCommand(userId, 100, "REC123", fileMock.Object);

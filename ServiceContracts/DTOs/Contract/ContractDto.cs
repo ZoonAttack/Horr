@@ -13,5 +13,7 @@ namespace ServiceContracts.DTOs.Contract
         public ContractStatus Status { get; set; }
         public DateTime StartedAt { get; set; }
         public DateTime? ClosedAt { get; set; }
+        public DateTime? DueDate { get; set; }
+        public int MaxRevisions { get; set; }
     }
 }

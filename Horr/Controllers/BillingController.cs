@@ -60,6 +60,32 @@ namespace Horr.Controllers
         }
 
         /// <summary>
+        /// Downloads the receipt photo for a specific deposit request, verifying authorization.
+        /// </summary>
+        [HttpGet("deposit-requests/{id}/receipt")]
+        [Authorize]
+        [ProducesResponseType(typeof(FileResult), 200)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(403)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> GetDepositReceipt(Guid id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var isAdmin = User.IsInRole("Admin");
+            var result = await _mediator.Send(new GetDepositReceiptQuery(id, userId, isAdmin));
+            if (!result.Succeeded)
+            {
+                if (result.ErrorCode == ServiceImplementation.Helpers.ErrorCodes.Unauthorized) return Forbid();
+                return NotFound(result);
+            }
+
+            var extension = Path.GetExtension(result.Data.PhysicalPath);
+            return PhysicalFile(result.Data.PhysicalPath, result.Data.ContentType, $"receipt_{id}{extension}");
+        }
+
+        /// <summary>
         /// Submits a withdrawal request.
         /// </summary>
         /// <param name="command">The details of the withdrawal request.</param>

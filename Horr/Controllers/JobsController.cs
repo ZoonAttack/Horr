@@ -4,6 +4,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ServiceContracts.DTOs.JobManagement;
+using ServiceImplementation.Helpers;
 using ServiceImplementation.Implementations.JobManagement;
 using Services.Client;
 using System.Security.Claims;
@@ -54,7 +55,7 @@ namespace Horr.Controllers
             {
                 return CreatedAtAction(nameof(GetJob), new { id = result.Data.Id }, result.Data);
             }
-            if (result.ErrorCode == "INSUFFICIENT_FUNDS")
+            if (result.ErrorCode == ErrorCodes.InsufficientBalance)
             {
                 return BadRequest(new ProblemDetails
                 {

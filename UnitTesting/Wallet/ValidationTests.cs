@@ -12,15 +12,22 @@ using System;
 using System.Collections.Generic;
 using FluentAssertions;
 
+using ServiceContracts.Storage;
+
 namespace UnitTesting.Wallet
 {
     public class ValidationTests : IDisposable
     {
         private readonly AppDbContext _context;
+        private readonly Mock<IFileStorageService> _fileStorageMock;
 
         public ValidationTests()
         {
             _context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+            _fileStorageMock = new Mock<IFileStorageService>();
+            _fileStorageMock.Setup(x => x.SaveAsync(It.IsAny<IFormFile>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new StoredFileResult { FileUrl = "/uploads/receipts/receipt.png" });
+
             // Seed a valid user to pass the initial account check
             _context.Users.Add(new Entities.Users.User { Id = "user1", FullName = "Test User", UserName = "user1", Email = "user1@test.com" });
             _context.SaveChanges();
@@ -38,7 +45,7 @@ namespace UnitTesting.Wallet
         public async Task SubmitDeposit_AmountLessThanOrEqualToZero_ReturnsError(decimal amount)
         {
             // Arrange
-            var handler = new SubmitDepositRequestCommandHandler(_context);
+            var handler = new SubmitDepositRequestCommandHandler(_context, _fileStorageMock.Object);
             var fileMock = new Mock<IFormFile>();
             var command = new SubmitDepositRequestCommand("user1", amount, "REC123", fileMock.Object);
 
@@ -54,7 +61,7 @@ namespace UnitTesting.Wallet
         public async Task SubmitDeposit_MissingReceiptNumber_ReturnsError()
         {
             // Arrange
-            var handler = new SubmitDepositRequestCommandHandler(_context);
+            var handler = new SubmitDepositRequestCommandHandler(_context, _fileStorageMock.Object);
             var fileMock = new Mock<IFormFile>();
             var command = new SubmitDepositRequestCommand("user1", 100, "", fileMock.Object);
 
@@ -70,7 +77,7 @@ namespace UnitTesting.Wallet
         public async Task SubmitDeposit_MissingReceiptPhoto_ReturnsError()
         {
             // Arrange
-            var handler = new SubmitDepositRequestCommandHandler(_context);
+            var handler = new SubmitDepositRequestCommandHandler(_context, _fileStorageMock.Object);
             var command = new SubmitDepositRequestCommand("user1", 100, "REC123", null);
 
             // Act

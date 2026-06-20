@@ -33,6 +33,8 @@ namespace ServiceContracts.DTOs.Contract
                 ReviewDeadline = delivery.ReviewDeadline,
                 CompletedAt = delivery.CompletedAt,
                 Attachments = delivery.Attachments?.Select(a => a.ToDto()).ToList() ?? new List<AttachmentDto>(),
+                RevisionRequests = delivery.RevisionRequests?.Select(r => r.ToDto()).ToList() ?? new List<RevisionRequestDto>(),
+                AdditionalRevisionRequests = delivery.AdditionalRevisionRequests?.Select(r => r.ToDto()).ToList() ?? new List<AdditionalRevisionRequestDto>(),
                 IsPaused = hasActiveDispute || hasActiveRevision || hasActiveReview,
                 PauseReason = pauseReason
             };
@@ -72,6 +74,25 @@ namespace ServiceContracts.DTOs.Contract
                 AdminId = dispute.AdminId,
                 AdminDecision = dispute.AdminDecision,
                 ResolvedAt = dispute.ResolvedAt
+            };
+        }
+
+        public static AdditionalRevisionRequestDto ToDto(this AdditionalRevisionRequest request)
+        {
+            if (request == null) return null!;
+
+            return new AdditionalRevisionRequestDto
+            {
+                Id = request.Id,
+                ContractId = request.ContractId,
+                DeliveryId = request.DeliveryId,
+                RequestedCount = request.RequestedCount,
+                ClientId = request.ClientId,
+                ClientName = request.Client?.FullName ?? string.Empty,
+                Reason = request.Reason,
+                Status = request.Status,
+                RequestedAt = request.RequestedAt,
+                RespondedAt = request.RespondedAt
             };
         }
     }

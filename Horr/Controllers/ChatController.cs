@@ -46,6 +46,8 @@ namespace Horr.Controllers
                 {
                     statusCode = 403;
                     title = "Forbidden";
+                    
+                    
                 }
                 else if (result.ErrorCode == ServiceImplementation.Helpers.ErrorCodes.ContractNotFound)
                 {

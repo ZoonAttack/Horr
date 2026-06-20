@@ -15,6 +15,8 @@ namespace ServiceContracts.DTOs.Contract
         public DateTime ReviewDeadline { get; set; }
         public DateTime? CompletedAt { get; set; }
         public List<AttachmentDto> Attachments { get; set; } = new List<AttachmentDto>();
+        public List<RevisionRequestDto> RevisionRequests { get; set; } = new List<RevisionRequestDto>();
+        public List<AdditionalRevisionRequestDto> AdditionalRevisionRequests { get; set; } = new List<AdditionalRevisionRequestDto>();
         public bool IsPaused { get; set; }
         public string? PauseReason { get; set; }
     }

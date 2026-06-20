@@ -45,5 +45,21 @@ namespace Horr.Controllers
 
             return Ok(result.Data);
         }
+
+        [HttpGet("freelancer")]
+        [Authorize(Roles = "Freelancer")]
+        [ProducesResponseType(typeof(List<RevisionRequestDto>), 200)]
+        public async Task<IActionResult> GetFreelancerRevisions([FromQuery] int? contractId)
+        {
+            var freelancerId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+            var result = await _mediator.Send(new GetFreelancerRevisionRequestsQuery(freelancerId, contractId));
+
+            if (!result.Succeeded)
+            {
+                return BadRequest(new { message = result.Message, errorCode = result.ErrorCode });
+            }
+
+            return Ok(result.Data);
+        }
     }
 }

@@ -62,6 +62,8 @@ namespace ServiceImplementation.Implementations.Contracts
                 StartedAt = contract.StartedAt,
                 ClosedAt = contract.ClosedAt,
                 CreatedAt = contract.CreatedAt,
+                DueDate = contract.DueDate,
+                MaxRevisions = contract.MaxRevisions,
                 Description = contract.CustomJobDescription ?? contract.Proposal?.JobPost?.Description ?? string.Empty,
                 Milestones = contract.ContractMilestones?
                     .Where(m => !m.IsDeleted)

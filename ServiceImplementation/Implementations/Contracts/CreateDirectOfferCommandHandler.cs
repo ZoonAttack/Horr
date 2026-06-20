@@ -103,6 +103,16 @@ namespace ServiceImplementation.Implementations.Contracts
                         Errors = new List<string> { "An offer or contract already exists for this proposal." }
                     };
                 }
+
+                if (request.AgreedRate.HasValue && request.AgreedRate.Value > proposal.BidRate)
+                {
+                    return new Result<ContractDto>
+                    {
+                        Succeeded = false,
+                        ErrorCode = ErrorCodes.InvalidOfferRate,
+                        Message = "Agreed rate cannot exceed the freelancer's proposed bid rate."
+                    };
+                }
             }
 
             var totalAmount = request.AgreedRate ?? proposal?.BidRate ?? job.Budget;

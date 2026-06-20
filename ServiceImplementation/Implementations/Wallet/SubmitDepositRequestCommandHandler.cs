@@ -9,16 +9,19 @@ using ServiceImplementation.Exceptions;
 using ServiceImplementation.Mappings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
+using ServiceContracts.Storage;
 
 namespace ServiceImplementation.Implementations.Wallet
 {
     public class SubmitDepositRequestCommandHandler : IRequestHandler<SubmitDepositRequestCommand, Result<DepositRequestDto>>
     {
         private readonly AppDbContext _context;
+        private readonly IFileStorageService _fileStorage;
 
-        public SubmitDepositRequestCommandHandler(AppDbContext context)
+        public SubmitDepositRequestCommandHandler(AppDbContext context, IFileStorageService fileStorage)
         {
             _context = context;
+            _fileStorage = fileStorage;
         }
 
         public async Task<Result<DepositRequestDto>> Handle(SubmitDepositRequestCommand request, CancellationToken cancellationToken)
@@ -40,9 +43,8 @@ namespace ServiceImplementation.Implementations.Wallet
                 return validationResult;
             }
 
-            // Mock file upload since no existing convention was found
-            // In a real scenario, this would use a dedicated IFileService
-            string photoUrl = await MockUploadAsync(request.ReceiptPhoto!);
+            var stored = await _fileStorage.SaveAsync(request.ReceiptPhoto!, "receipts", cancellationToken);
+            string photoUrl = stored.FileUrl;
 
             var depositRequest = new DepositRequest
             {

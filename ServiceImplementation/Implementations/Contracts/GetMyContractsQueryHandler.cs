@@ -72,6 +72,8 @@ namespace ServiceImplementation.Implementations.Contracts
                     StartedAt = c.StartedAt,
                     ClosedAt = c.ClosedAt,
                     CreatedAt = c.CreatedAt,
+                    DueDate = c.DueDate,
+                    MaxRevisions = c.MaxRevisions,
                     LatestDeliverySummary = c.ContractDeliveries
                         .OrderByDescending(d => d.SubmittedAt)
                         .Select(d => d.DeliveryNote)

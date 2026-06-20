@@ -24,7 +24,9 @@ namespace ServiceContracts.DTOs.Contract
                 Status = contract.Status,
                 StartedAt = contract.StartedAt,
                 ClosedAt = contract.ClosedAt,
-                CreatedAt = contract.CreatedAt
+                CreatedAt = contract.CreatedAt,
+                DueDate = contract.DueDate,
+                MaxRevisions = contract.MaxRevisions
             };
         }
 
@@ -88,7 +90,9 @@ namespace ServiceContracts.DTOs.Contract
                 AgreedRate = contract.AgreedRate,
                 Status = contract.Status,
                 StartedAt = contract.StartedAt,
-                ClosedAt = contract.ClosedAt
+                ClosedAt = contract.ClosedAt,
+                DueDate = contract.DueDate,
+                MaxRevisions = contract.MaxRevisions
             };
         }
     }

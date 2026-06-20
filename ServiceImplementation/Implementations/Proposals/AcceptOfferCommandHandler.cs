@@ -51,9 +51,19 @@ namespace ServiceImplementation.Implementations.Proposals
                 FreelancerId = proposal.FreelancerId,
                 AgreedRate = proposal.BidRate,
                 Status = ContractStatus.Active,
-                StartedAt = DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                Proposal = proposal
             };
+
+            // Set StartedAt to now (overwrite Draft placeholder)
+            contract.StartedAt = DateTime.UtcNow;
+
+            // Compute DueDate from proposal's DurationDays
+            // contract.Proposal is already loaded via Include
+            if (contract.Proposal != null)
+            {
+                contract.DueDate = contract.StartedAt.AddDays(contract.Proposal.DurationDays);
+            }
 
             using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
@@ -96,7 +106,9 @@ namespace ServiceImplementation.Implementations.Proposals
                 AgreedRate = contract.AgreedRate,
                 Status = contract.Status,
                 StartedAt = contract.StartedAt,
-                CreatedAt = contract.CreatedAt
+                CreatedAt = contract.CreatedAt,
+                DueDate = contract.DueDate,
+                MaxRevisions = contract.MaxRevisions
             };
         }
     }

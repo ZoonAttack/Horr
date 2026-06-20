@@ -7,6 +7,8 @@ namespace ServiceImplementation.Implementations.Contracts
 {
     public record DownloadDeliveryAttachmentQuery(
         Guid AttachmentId,
-        string RequestingUserId
+        string RequestingUserId,
+        bool IsAdmin = false,
+        bool IsSpecialist = false
     ) : IRequest<Result<DownloadFileResult>>;
 }

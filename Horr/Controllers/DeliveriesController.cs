@@ -123,6 +123,7 @@ namespace Horr.Controllers
             return Ok(result);
         }
 
+
         public class RequestRevisionRequest
         {
             public string Reason { get; set; } = string.Empty;
@@ -173,7 +174,10 @@ namespace Horr.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            var result = await _mediator.Send(new DownloadDeliveryAttachmentQuery(attachmentId, userId));
+            var isAdmin = User.IsInRole("Admin");
+            var isSpecialist = User.IsInRole("Specialist");
+
+            var result = await _mediator.Send(new DownloadDeliveryAttachmentQuery(attachmentId, userId, isAdmin, isSpecialist));
             if (!result.Succeeded)
             {
                 if (result.ErrorCode == ErrorCodes.Unauthorized) return Forbid();

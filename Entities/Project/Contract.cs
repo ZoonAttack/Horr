@@ -69,7 +69,7 @@ namespace Entities.Project
         // ── Timestamps ────────────────────────────────────────────────────
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        public int MaxRevisions { get; set; }
+        public int MaxRevisions { get; set; } = 3;
 
         public int DurationDays { get; set; }
 

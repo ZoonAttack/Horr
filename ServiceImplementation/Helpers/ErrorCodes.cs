@@ -44,6 +44,7 @@ namespace ServiceImplementation.Helpers
         public const string FileNotFound         = "FILE_NOT_FOUND";
         public const string MilestoneNotFound    = "MILESTONE_NOT_FOUND";
         public const string DeliveryNotFound     = "DELIVERY_NOT_FOUND";
+        public const string InvalidOfferRate     = "INVALID_OFFER_RATE";
 
         // ── Proposals ─────────────────────────────────────────────────────
         public const string ProposalNotFound     = "PROPOSAL_NOT_FOUND";

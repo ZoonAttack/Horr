@@ -42,6 +42,7 @@ namespace Entities.Project
 
         public virtual ICollection<DeliveryAttachment> Attachments { get; set; } = new List<DeliveryAttachment>();
         public virtual ICollection<RevisionRequest> RevisionRequests { get; set; } = new List<RevisionRequest>();
+        public virtual ICollection<AdditionalRevisionRequest> AdditionalRevisionRequests { get; set; } = new List<AdditionalRevisionRequest>();
         public virtual ICollection<Dispute> Disputes { get; set; } = new List<Dispute>();
         public virtual ICollection<ContractSpecialistReview> SpecialistReviews { get; set; } = new List<ContractSpecialistReview>();
     }

@@ -7,6 +7,8 @@ using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
+using Services;
+
 namespace Horr.Controllers
 {
     [Authorize]
@@ -19,6 +21,16 @@ namespace Horr.Controllers
         public DisputesController(IMediator mediator)
         {
             _mediator = mediator;
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(PagedResult<DisputeAdminDto>), 200)]
+        public async Task<IActionResult> GetDisputes([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            var result = await _mediator.Send(new GetDisputesQuery(page, pageSize));
+            if (!result.Succeeded) return BadRequest(result);
+            return Ok(result.Data);
         }
 
         public class ResolveDisputeRequest

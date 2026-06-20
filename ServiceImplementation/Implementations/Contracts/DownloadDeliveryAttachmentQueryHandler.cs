@@ -53,7 +53,28 @@ namespace ServiceImplementation.Implementations.Contracts
                 };
             }
 
-            if (contract.ClientId != request.RequestingUserId && contract.FreelancerId != request.RequestingUserId)
+            bool isAuthorized = contract.ClientId == request.RequestingUserId || contract.FreelancerId == request.RequestingUserId;
+
+            if (!isAuthorized && request.IsAdmin)
+            {
+                isAuthorized = true;
+            }
+
+            if (!isAuthorized && request.IsSpecialist && attachment.DeliveryId.HasValue)
+            {
+                var deliveryId = attachment.DeliveryId.Value;
+                var isAssignedToReview = await _context.ContractSpecialistReviews
+                    .AnyAsync(r => r.DeliveryId == deliveryId && r.AssignedSpecialistId == request.RequestingUserId, cancellationToken);
+                var isAssignedToRevision = await _context.RevisionRequests
+                    .AnyAsync(r => r.DeliveryId == deliveryId && r.SpecialistId == request.RequestingUserId, cancellationToken);
+
+                if (isAssignedToReview || isAssignedToRevision)
+                {
+                    isAuthorized = true;
+                }
+            }
+
+            if (!isAuthorized)
             {
                 return new Result<DownloadFileResult>
                 {

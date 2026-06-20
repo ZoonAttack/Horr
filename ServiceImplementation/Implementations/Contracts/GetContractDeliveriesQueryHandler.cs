@@ -24,6 +24,9 @@ namespace ServiceImplementation.Implementations.Contracts
         {
             var deliveries = await _context.ContractDeliveries
                 .Include(d => d.Attachments)
+                .Include(d => d.RevisionRequests)
+                .Include(d => d.AdditionalRevisionRequests)
+                    .ThenInclude(arr => arr.Client)
                 .Where(d => d.ContractId == request.ContractId)
                 .OrderByDescending(d => d.SubmittedAt)
                 .ToListAsync(cancellationToken);

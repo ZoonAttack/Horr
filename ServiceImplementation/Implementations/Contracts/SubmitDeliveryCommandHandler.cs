@@ -78,11 +78,25 @@ namespace ServiceImplementation.Implementations.Contracts
                 }
             }
 
+            // Automatically resolve any pending revision requests on this contract
+            var pendingRevisions = await _context.RevisionRequests
+                .Where(r => r.Delivery.ContractId == contract.Id && r.Status == RevisionStatus.Pending)
+                .ToListAsync(cancellationToken);
+
+            foreach (var rev in pendingRevisions)
+            {
+                rev.Status = RevisionStatus.Resolved;
+                rev.ResolvedAt = DateTime.UtcNow;
+            }
+
             await _context.SaveChangesAsync(cancellationToken);
 
             // Re-fetch with attachments to map fully
             var deliveryWithAttachments = await _context.ContractDeliveries
                 .Include(d => d.Attachments)
+                .Include(d => d.RevisionRequests)
+                .Include(d => d.AdditionalRevisionRequests)
+                    .ThenInclude(arr => arr.Client)
                 .FirstAsync(d => d.Id == delivery.Id, cancellationToken);
 
             return deliveryWithAttachments.ToDto();
