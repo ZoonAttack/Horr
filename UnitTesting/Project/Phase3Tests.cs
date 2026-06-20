@@ -563,6 +563,79 @@ namespace UnitTesting.Project
         }
 
         [Fact]
+        public async Task DeliveryAutoCompleteService_ShouldNotAutoApproveIfBlocked()
+        {
+            // Arrange
+            using var context = GetContext();
+            var client = CreateUser("client2", "client2@test.com");
+            var freelancer = CreateUser("free2", "free2@test.com");
+            var contract = CreateActiveContract(22, "client2", "free2", 200m);
+            var escrow = CreateEscrow(22, 200m);
+
+            context.WalletBalances.Add(new WalletBalance { UserId = "free2", BalanceEGP = 0, LastUpdatedAt = DateTime.UtcNow });
+
+            // Create three deliveries that are past deadline but have active blockers
+            var deliveryDispute = new ContractDelivery { ContractId = 22, Status = DeliveryStatus.Pending, ReviewDeadline = DateTime.UtcNow.AddHours(-1) };
+            var deliveryRevision = new ContractDelivery { ContractId = 22, Status = DeliveryStatus.Pending, ReviewDeadline = DateTime.UtcNow.AddHours(-1) };
+            var deliveryReview = new ContractDelivery { ContractId = 22, Status = DeliveryStatus.Pending, ReviewDeadline = DateTime.UtcNow.AddHours(-1) };
+
+            context.Users.Add(client);
+            context.Users.Add(freelancer);
+            context.Contracts.Add(contract);
+            context.EscrowTransactions.Add(escrow);
+            context.ContractDeliveries.AddRange(deliveryDispute, deliveryRevision, deliveryReview);
+            await context.SaveChangesAsync();
+
+            // Add blockers
+            context.Disputes.Add(new Dispute { ContractId = 22, ContractDeliveryId = deliveryDispute.Id, OpenedByUserId = "client2", Reason = "Disputed", Status = DisputeStatus.Open });
+            context.RevisionRequests.Add(new RevisionRequest { DeliveryId = deliveryRevision.Id, RequestedByClientId = "client2", Reason = "Revision needed", Status = RevisionStatus.Pending });
+            context.ContractSpecialistReviews.Add(new ContractSpecialistReview { DeliveryId = deliveryReview.Id, RequestedByClientId = "client2", RequirementsSummary = "Expected a doc", Status = SpecialistReviewStatus.InProgress });
+            await context.SaveChangesAsync();
+
+            // Mock IServiceProvider
+            var serviceProviderMock = new Mock<IServiceProvider>();
+            var serviceScopeMock = new Mock<IServiceScope>();
+            var serviceScopeFactoryMock = new Mock<IServiceScopeFactory>();
+
+            serviceProviderMock.Setup(x => x.GetService(typeof(IServiceScopeFactory))).Returns(serviceScopeFactoryMock.Object);
+            serviceScopeFactoryMock.Setup(x => x.CreateScope()).Returns(serviceScopeMock.Object);
+            serviceScopeMock.Setup(x => x.ServiceProvider.GetService(typeof(AppDbContext))).Returns(context);
+
+            var walletService = new WalletService(context);
+            var escrowService = new EscrowService(context, walletService);
+            serviceScopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IEscrowService))).Returns(escrowService);
+
+            var logger = new Mock<ILogger<DeliveryAutoCompleteService>>().Object;
+            var bgService = new DeliveryAutoCompleteService(serviceProviderMock.Object, logger);
+
+            // Act
+            await bgService.ProcessPendingDeliveriesAsync(CancellationToken.None);
+
+            // Assert: Status should remain Pending
+            var dbDispute = await context.ContractDeliveries.FindAsync(deliveryDispute.Id);
+            var dbRevision = await context.ContractDeliveries.FindAsync(deliveryRevision.Id);
+            var dbReview = await context.ContractDeliveries.FindAsync(deliveryReview.Id);
+
+            dbDispute!.Status.Should().Be(DeliveryStatus.Pending);
+            dbRevision!.Status.Should().Be(DeliveryStatus.Pending);
+            dbReview!.Status.Should().Be(DeliveryStatus.Pending);
+
+            // Assert DTO mappings have correct properties
+            var dtoDispute = ServiceContracts.DTOs.Contract.ContractDeliveryExtensions.ToDto(dbDispute);
+            var dtoRevision = ServiceContracts.DTOs.Contract.ContractDeliveryExtensions.ToDto(dbRevision);
+            var dtoReview = ServiceContracts.DTOs.Contract.ContractDeliveryExtensions.ToDto(dbReview);
+
+            dtoDispute.IsPaused.Should().BeTrue();
+            dtoDispute.PauseReason.Should().Be("Dispute");
+
+            dtoRevision.IsPaused.Should().BeTrue();
+            dtoRevision.PauseReason.Should().Be("RevisionRequest");
+
+            dtoReview.IsPaused.Should().BeTrue();
+            dtoReview.PauseReason.Should().Be("SpecialistReview");
+        }
+
+        [Fact]
         public async Task GetContractDeliveries_ShouldReturnMappedDtos()
         {
             // Arrange

@@ -22,8 +22,43 @@ namespace ServiceImplementation.Implementations.AI
 
         public async Task<string> AskAsync(string prompt)
         {
+            // Default response schema (array of strings) for backward compatibility
+            var defaultSchema = new
+            {
+                type = "ARRAY",
+                items = new
+                {
+                    type = "STRING"
+                }
+            };
+            return await AskAsync(prompt, defaultSchema);
+        }
+
+        public async Task<string> AskAsync(string prompt, object? responseSchema)
+        {
             var client = _httpClientFactory.CreateClient();
             client.Timeout = TimeSpan.FromSeconds(8); // Fail fast (8s timeout)
+
+            object generationConfig;
+            if (responseSchema != null)
+            {
+                generationConfig = new
+                {
+                    temperature = 0.1, // Highly predictable
+                    maxOutputTokens = 300,
+                    responseMimeType = "application/json",
+                    responseSchema = responseSchema
+                };
+            }
+            else
+            {
+                generationConfig = new
+                {
+                    temperature = 0.1,
+                    maxOutputTokens = 300,
+                    responseMimeType = "text/plain"
+                };
+            }
 
             var body = new
             {
@@ -34,20 +69,7 @@ namespace ServiceImplementation.Implementations.AI
                         parts = new[] { new { text = prompt } }
                     }
                 },
-                generationConfig = new
-                {
-                    temperature = 0.1, // Highly predictable
-                    maxOutputTokens = 300,
-                    responseMimeType = "application/json",
-                    responseSchema = new
-                    {
-                        type = "ARRAY",
-                        items = new
-                        {
-                            type = "STRING"
-                        }
-                    }
-                }
+                generationConfig = generationConfig
             };
 
             var response = await client.PostAsync(

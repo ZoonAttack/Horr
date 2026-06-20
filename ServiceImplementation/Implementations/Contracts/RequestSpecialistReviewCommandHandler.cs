@@ -1,5 +1,8 @@
 using System;
 using System.IO;
+using System.IO.Compression;
+using System.Xml.Linq;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -86,7 +89,7 @@ namespace ServiceImplementation.Implementations.Contracts
 
             if (request.ReviewerType == ReviewerType.AI)
             {
-                var allowedExtensions = new[] { ".txt", ".csv", ".pdf", ".md" };
+                var allowedExtensions = new[] { ".txt", ".csv", ".pdf", ".md", ".docx" };
                 var eligibleAttachments = delivery.Attachments
                     .Where(a => a.Type == AttachmentType.File && !a.IsDeleted)
                     .Where(a => {
@@ -106,16 +109,30 @@ namespace ServiceImplementation.Implementations.Contracts
                     .Where(a => !eligibleAttachments.Contains(a))
                     .ToList();
 
+                var keywords = ExtractKeywords(request.RequirementsSummary);
+
                 foreach (var attachment in eligibleAttachments)
                 {
                     try
-                     {
+                    {
                         var physicalPath = _fileStorageService.GetPhysicalPath(attachment.FileUrl);
                         if (!string.IsNullOrEmpty(physicalPath) && File.Exists(physicalPath))
                         {
-                            var fileContent = File.ReadAllText(physicalPath);
+                            var ext = Path.GetExtension(attachment.OriginalFileName ?? "")?.ToLowerInvariant() ?? "";
+                            string rawContent;
+                            if (ext == ".docx")
+                            {
+                                rawContent = ExtractTextFromDocx(physicalPath);
+                            }
+                            else
+                            {
+                                rawContent = File.ReadAllText(physicalPath);
+                            }
+
+                            string filteredContent = FilterContentByKeywords(rawContent, keywords);
+
                             eligibleFilesContext.AppendLine($"--- File: {attachment.OriginalFileName} ---");
-                            eligibleFilesContext.AppendLine(fileContent);
+                            eligibleFilesContext.AppendLine(filteredContent);
                             eligibleFilesContext.AppendLine();
                         }
                         else
@@ -159,6 +176,7 @@ FILES NOT INCLUDED (non-text or too large):
 TASK:
 Based on the job context, client requirements summary, delivery note, and any readable file contents,
 determine whether the delivery satisfies the client's stated requirements.
+If the client requirements summary is empty, generic, or unrelated, evaluate the delivery against general best practices for a freelance project of this type.
 
 RESPOND with ONLY a valid JSON object in this exact format:
 {{
@@ -167,10 +185,21 @@ RESPOND with ONLY a valid JSON object in this exact format:
 }}
 No explanation. Just the JSON object.";
 
+                var specialistReviewSchema = new
+                {
+                    type = "OBJECT",
+                    properties = new
+                    {
+                        verdict = new { type = "STRING" },
+                        note = new { type = "STRING" }
+                    },
+                    required = new[] { "verdict", "note" }
+                };
+
                 string responseText = string.Empty;
                 try
                 {
-                    responseText = await _geminiService.AskAsync(prompt);
+                    responseText = await _geminiService.AskAsync(prompt, specialistReviewSchema);
                 }
                 catch
                 {
@@ -285,6 +314,86 @@ No explanation. Just the JSON object.";
             await _context.SaveChangesAsync(cancellationToken);
 
             return review.ToReadDto();
+        }
+        private static List<string> ExtractKeywords(string summary)
+        {
+            if (string.IsNullOrWhiteSpace(summary)) return new List<string>();
+
+            var stopWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "the", "a", "an", "and", "or", "but", "if", "then", "else", "when", "at", "by", "for", "with", "about", 
+                "against", "between", "into", "through", "during", "before", "after", "above", "below", "to", "from", 
+                "up", "down", "in", "out", "on", "off", "over", "under", "again", "further", "then", "once", "here", 
+                "there", "all", "any", "both", "each", "few", "more", "most", "other", "some", "such", "no", "nor", 
+                "not", "only", "own", "same", "so", "than", "too", "very", "s", "t", "can", "will", "just", "don", 
+                "should", "now", "i", "me", "my", "myself", "we", "our", "ours", "ourselves", "you", "your", "yours",
+                "yourself", "yourselves", "he", "him", "his", "himself", "she", "her", "hers", "herself", "it", "its",
+                "itself", "they", "them", "their", "theirs", "themselves", "what", "which", "who", "whom", "this", 
+                "that", "these", "those", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", 
+                "having", "do", "does", "did", "doing", "please", "need", "should", "must", "want", "require", "requirements"
+            };
+
+            return summary
+                .Split(new[] { ' ', '.', ',', ';', ':', '?', '!', '\r', '\n', '(', ')', '[', ']', '{', '}' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(w => w.Trim().ToLowerInvariant())
+                .Where(w => w.Length > 2 && !stopWords.Contains(w))
+                .Distinct()
+                .ToList();
+        }
+
+        private static string FilterContentByKeywords(string fullText, List<string> keywords)
+        {
+            if (string.IsNullOrWhiteSpace(fullText)) return string.Empty;
+            if (keywords == null || !keywords.Any())
+            {
+                return fullText.Length > 5000 ? fullText.Substring(0, 5000) + "..." : fullText;
+            }
+
+            var segments = fullText.Split(new[] { "\r\n\r\n", "\n\n", "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+            var matchedSegments = new List<string>();
+
+            foreach (var segment in segments)
+            {
+                var lowerSegment = segment.ToLowerInvariant();
+                if (keywords.Any(k => lowerSegment.Contains(k)))
+                {
+                    matchedSegments.Add(segment.Trim());
+                }
+            }
+
+            if (!matchedSegments.Any())
+            {
+                return fullText.Length > 5000 ? fullText.Substring(0, 5000) + "..." : fullText;
+            }
+
+            var merged = string.Join("\n\n", matchedSegments);
+            return merged.Length > 8000 ? merged.Substring(0, 8000) + "..." : merged;
+        }
+
+        private static string ExtractTextFromDocx(string filePath)
+        {
+            try
+            {
+                using (var archive = ZipFile.OpenRead(filePath))
+                {
+                    var entry = archive.GetEntry("word/document.xml");
+                    if (entry == null) return string.Empty;
+
+                    using (var stream = entry.Open())
+                    {
+                        var doc = XDocument.Load(stream);
+                        if (doc.Root == null) return string.Empty;
+
+                        XNamespace w = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+                        var textElements = doc.Descendants(w + "t");
+                        return string.Join(" ", textElements.Select(e => e.Value));
+                    }
+                }
+            }
+            catch
+            {
+                return string.Empty;
+            }
         }
     }
 }

@@ -66,6 +66,27 @@ namespace ServiceImplementation.Implementations.Contracts
                     {
                         try
                         {
+                            var hasDispute = await context.Disputes.AnyAsync(
+                                d => d.ContractDeliveryId == delivery.Id && 
+                                (d.Status == DisputeStatus.Open || d.Status == DisputeStatus.UnderReview), 
+                                cancellationToken);
+
+                            var hasActiveRevision = await context.RevisionRequests.AnyAsync(
+                                r => r.DeliveryId == delivery.Id && 
+                                (r.Status == RevisionStatus.Pending || r.Status == RevisionStatus.AcceptedBySpecialist), 
+                                cancellationToken);
+
+                            var hasActiveSpecialistReview = await context.ContractSpecialistReviews.AnyAsync(
+                                r => r.DeliveryId == delivery.Id && 
+                                (r.Status == SpecialistReviewStatus.Pending || r.Status == SpecialistReviewStatus.InProgress), 
+                                cancellationToken);
+
+                            if (hasDispute || hasActiveRevision || hasActiveSpecialistReview)
+                            {
+                                _logger.LogInformation($"Skipping auto-approval for delivery {delivery.Id} due to active blocker (Dispute: {hasDispute}, Revision: {hasActiveRevision}, Review: {hasActiveSpecialistReview})");
+                                continue;
+                            }
+
                             var contract = await context.Contracts
                                 .FirstOrDefaultAsync(c => c.Id == delivery.ContractId, cancellationToken);
 
