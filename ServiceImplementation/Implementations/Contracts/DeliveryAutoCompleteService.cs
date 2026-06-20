@@ -98,7 +98,12 @@ namespace ServiceImplementation.Implementations.Contracts
                                 var contractGuid = Guid.Parse($"00000000-0000-0000-0000-{contract.Id:x12}");
 
                                 // Call escrow service to release funds to freelancer
-                                await escrowService.ReleaseToFreelancerAsync(contractGuid, delivery.ContractMilestoneId);
+                                var releaseResult = await escrowService.ReleaseToFreelancerAsync(contractGuid, delivery.ContractMilestoneId);
+                                if (!releaseResult.Succeeded)
+                                {
+                                    _logger.LogError($"Failed to release escrow during auto-approval: {releaseResult.Message}");
+                                    continue;
+                                }
 
                                 contract.Status = ContractStatus.Completed;
                                 contract.ClosedAt = now;

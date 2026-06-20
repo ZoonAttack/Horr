@@ -116,11 +116,16 @@ namespace Horr.Controllers
         [HttpPost("{deliveryId}/approve")]
         [Authorize(Roles = "Client")]
         [ProducesResponseType(typeof(ContractDeliveryDto), 200)]
+        [ProducesResponseType(typeof(Result<ContractDeliveryDto>), 400)]
         public async Task<IActionResult> Approve(Guid deliveryId)
         {
             var clientId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
             var result = await _mediator.Send(new ApproveDeliveryCommand(deliveryId, clientId));
-            return Ok(result);
+            if (!result.Succeeded)
+            {
+                return BadRequest(new { message = result.Message, errors = result.Errors });
+            }
+            return Ok(result.Data);
         }
 
 

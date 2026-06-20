@@ -35,7 +35,9 @@ namespace Horr.Controllers
 
         public class ResolveDisputeRequest
         {
-            public DisputeDecision Decision { get; set; }
+            public DisputeDecision? Decision { get; set; }
+            public decimal? ClientPercentage { get; set; }
+            public decimal? FreelancerPercentage { get; set; }
             public string AdminDecision { get; set; } = string.Empty;
         }
 
@@ -45,7 +47,7 @@ namespace Horr.Controllers
         public async Task<IActionResult> Resolve(Guid disputeId, [FromBody] ResolveDisputeRequest req)
         {
             var adminId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
-            var command = new ResolveDisputeCommand(disputeId, req.Decision, req.AdminDecision, adminId);
+            var command = new ResolveDisputeCommand(disputeId, req.Decision, req.AdminDecision, adminId, req.ClientPercentage, req.FreelancerPercentage);
             var result = await _mediator.Send(command);
             return Ok(result);
         }

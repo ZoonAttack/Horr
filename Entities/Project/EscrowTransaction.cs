@@ -46,6 +46,12 @@ namespace Entities.Project
         [Required]
         public EscrowStatus Status { get; set; } = EscrowStatus.Held;
 
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? ClientPercentage { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? FreelancerPercentage { get; set; }
+
         public bool IsDeleted { get; set; } = false;
     }
 }

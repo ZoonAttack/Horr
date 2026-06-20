@@ -105,6 +105,15 @@ namespace ServiceImplementation.Implementations.Settings
                 hasNotifications: hasNotifications);
             profileDto.IsVerified = isVerified;
 
+            if (user.Role == UserRole.Freelancer)
+            {
+                var stats = await GetFreelancerStatsAndReviewsAsync(userId);
+                profileDto.AverageRating = stats.AverageRating;
+                profileDto.TotalReviews = stats.TotalReviews;
+                profileDto.JobSuccessPercentage = stats.JobSuccessPercentage;
+                profileDto.Reviews = stats.Reviews;
+            }
+
             return new Result<UserProfileDto>
             {
                 Succeeded = true,
@@ -207,6 +216,12 @@ namespace ServiceImplementation.Implementations.Settings
 
                 EmploymentHistory = workHistory
             };
+
+            var stats = await GetFreelancerStatsAndReviewsAsync(user.Id);
+            publicProfile.AverageRating = stats.AverageRating;
+            publicProfile.TotalReviews = stats.TotalReviews;
+            publicProfile.JobSuccessPercentage = stats.JobSuccessPercentage;
+            publicProfile.Reviews = stats.Reviews;
 
             return new Result<PublicProfileDto>
             {
@@ -327,6 +342,40 @@ namespace ServiceImplementation.Implementations.Settings
                 Errors = { },
                 Message = "Bio updated successfully.",
                 Data = user.Bio
+            };
+        }
+
+        public async Task<Result<string>> UpdatePreferredCurrencyAsync(string userId, string preferredCurrency)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null || user.IsDeleted) return new Result<string>
+            {
+                Succeeded = false,
+                Errors = { "User not found." },
+                Message = "Failed to update preferred currency.",
+                Data = null
+            };
+
+            if (string.IsNullOrWhiteSpace(preferredCurrency) || preferredCurrency.Length != 3)
+            {
+                return new Result<string>
+                {
+                    Succeeded = false,
+                    Errors = { "Invalid currency code. It must be a 3-letter code." },
+                    Message = "Failed to update preferred currency.",
+                    Data = null
+                };
+            }
+
+            user.PreferredCurrency = preferredCurrency.ToUpperInvariant();
+            await _userManager.UpdateAsync(user);
+
+            return new Result<string>
+            {
+                Succeeded = true,
+                Errors = { },
+                Message = "Preferred currency updated successfully.",
+                Data = user.PreferredCurrency
             };
         }
 
@@ -603,14 +652,60 @@ namespace ServiceImplementation.Implementations.Settings
                 .Include(f => f.EmploymentHistory)
                 .FirstOrDefaultAsync(f => f.UserId == userId);
 
+            var profileDto = user.ToUserProfileDto(freelancer: freelancer);
+            var stats = await GetFreelancerStatsAndReviewsAsync(userId);
+            profileDto.AverageRating = stats.AverageRating;
+            profileDto.TotalReviews = stats.TotalReviews;
+            profileDto.JobSuccessPercentage = stats.JobSuccessPercentage;
+            profileDto.Reviews = stats.Reviews;
+
             return new Result<UserProfileDto>
             {
                 Succeeded = true,
                 Message = "Freelancer details retrieved successfully.",
                 Errors = { },
-                Data = user.ToUserProfileDto(freelancer: freelancer)
+                Data = profileDto
             };
         }
 
+        private async Task<(double AverageRating, int TotalReviews, int JobSuccessPercentage, List<FreelancerReviewDto> Reviews)> GetFreelancerStatsAndReviewsAsync(string userId)
+        {
+            var clientReviews = await _context.ContractReviews
+                .Include(cr => cr.Contract)
+                    .ThenInclude(c => c.Client)
+                .Include(cr => cr.Contract)
+                    .ThenInclude(c => c.JobPost)
+                .Where(cr => cr.Contract.FreelancerId == userId && cr.ReviewerId == cr.Contract.ClientId)
+                .OrderByDescending(cr => cr.CreatedAt)
+                .ToListAsync();
+
+            var totalReviews = clientReviews.Count;
+            var averageRating = totalReviews > 0 ? Math.Round(clientReviews.Average(r => r.Rating), 1) : 0.0;
+
+            var contracts = await _context.Contracts
+                .Where(c => c.FreelancerId == userId && !c.IsDeleted)
+                .Select(c => c.Status)
+                .ToListAsync();
+
+            var completedCount = contracts.Count(s => s == ContractStatus.Completed);
+            var closedCount = contracts.Count(s => s == ContractStatus.Closed);
+            var terminatedCount = contracts.Count(s => s == ContractStatus.Terminated);
+            var totalEnded = completedCount + closedCount + terminatedCount;
+            var jobSuccessPercentage = totalEnded > 0 
+                ? (int)Math.Round((double)completedCount / totalEnded * 100) 
+                : 100;
+
+            var reviews = clientReviews.Select(cr => new FreelancerReviewDto
+            {
+                Id = cr.Id,
+                ClientName = cr.Contract.Client?.FullName ?? "Client",
+                Rating = cr.Rating,
+                Comment = cr.Comment,
+                CreatedAt = cr.CreatedAt,
+                ProjectTitle = cr.Contract.JobPost?.Title ?? cr.Contract.CustomJobDescription ?? "Contract"
+            }).ToList();
+
+            return (averageRating, totalReviews, jobSuccessPercentage, reviews);
+        }
     }
 }

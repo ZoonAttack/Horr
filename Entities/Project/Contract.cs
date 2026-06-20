@@ -53,6 +53,15 @@ namespace Entities.Project
         [Column(TypeName = "decimal(18,2)")]
         public decimal AgreedRate { get; set; }
 
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal TotalAmount { get; set; }
+
+        [MaxLength(3)]
+        public string OriginalCurrency { get; set; } = "USD";
+
+        [Column(TypeName = "decimal(18,4)")]
+        public decimal LockedExchangeRate { get; set; } = 1.0m;
+
         public string? CustomJobDescription { get; set; }
 
         // ── State ─────────────────────────────────────────────────────────

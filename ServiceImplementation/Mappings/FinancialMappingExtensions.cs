@@ -32,6 +32,7 @@ namespace ServiceImplementation.Mappings
             {
                 Id = withdrawalRequest.Id,
                 FreelancerId = withdrawalRequest.FreelancerId,
+                FreelancerName = withdrawalRequest.Freelancer?.FullName ?? withdrawalRequest.Freelancer?.UserName,
                 Amount = withdrawalRequest.Amount,
                 Method = withdrawalRequest.Method,
                 Status = withdrawalRequest.Status,

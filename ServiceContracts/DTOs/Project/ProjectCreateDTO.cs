@@ -19,6 +19,7 @@ namespace ServiceContracts.DTOs.Project
 
         [Required]
         public decimal Budget { get; set; }
+        public string BudgetCurrency { get; set; } = "USD";
 
         public ContractCreateDTO Contract{ get; set; }
     }

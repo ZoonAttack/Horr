@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Entities;
 using Entities.Project;
+using Entities.Enums;
 using ServiceContracts.DTOs.Contract;
 using ServiceImplementation.Exceptions;
 using ServiceContracts.DTOs.Responses;
@@ -37,9 +38,20 @@ namespace ServiceImplementation.Implementations.Contracts
 
             if (contract == null)
             {
-                {
-                    return new Result<ContractReadDTO> { Succeeded = false, ErrorCode = ErrorCodes.ContractNotFound, Message = "Contract not found." };
-                }
+                contract = await _context.Contracts
+                    .Include(c => c.Proposal)
+                        .ThenInclude(p => p.JobPost)
+                    .Include(c => c.Client)
+                    .Include(c => c.Freelancer)
+                    .Include(c => c.WorkDeliveries)
+                    .Include(c => c.ContractDeliveries)
+                    .Include(c => c.ContractMilestones)
+                    .FirstOrDefaultAsync(c => c.ProposalId == request.ContractId, cancellationToken);
+            }
+
+            if (contract == null)
+            {
+                return new Result<ContractReadDTO> { Succeeded = false, ErrorCode = ErrorCodes.ContractNotFound, Message = "Contract not found." };
             }
 
             // Check if user is part of the contract
@@ -47,6 +59,9 @@ namespace ServiceImplementation.Implementations.Contracts
             {
                 return new Result<ContractReadDTO> { Succeeded = false, ErrorCode = ErrorCodes.Unauthorized, Message = "Unauthorized." };
             }
+
+            var hasActiveDispute = await _context.Disputes
+                .AnyAsync(d => d.ContractId == contract.Id && (d.Status == DisputeStatus.Open || d.Status == DisputeStatus.UnderReview), cancellationToken);
 
             var dto = new ContractReadDTO
             {
@@ -82,7 +97,8 @@ namespace ServiceImplementation.Implementations.Contracts
                     .FirstOrDefault() ?? contract.WorkDeliveries
                     .OrderByDescending(d => d.SubmittedAt)
                     .Select(d => d.Note)
-                    .FirstOrDefault()
+                    .FirstOrDefault(),
+                InDispute = hasActiveDispute
             };
 
             return new Result<ContractReadDTO> { Succeeded = true, Data = dto };

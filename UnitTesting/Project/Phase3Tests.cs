@@ -206,8 +206,9 @@ namespace UnitTesting.Project
 
             // Assert
             result.Should().NotBeNull();
-            result.Status.Should().Be(DeliveryStatus.Approved);
-            result.CompletedAt.Should().NotBeNull();
+            result.Succeeded.Should().BeTrue();
+            result.Data.Status.Should().Be(DeliveryStatus.Approved);
+            result.Data.CompletedAt.Should().NotBeNull();
 
             // Verify escrow was released (amount is 100, NetToFreelancer is 85 per 15% commission)
             var freelancerWallet = await context.WalletBalances.FirstAsync(w => w.UserId == "free1");
@@ -414,6 +415,169 @@ namespace UnitTesting.Project
         }
 
         [Fact]
+        public async Task ResolveDispute_Split50_50_ShouldRefundAndReleaseEscrow()
+        {
+            // Arrange
+            using var context = GetContext();
+            var client = CreateUser("client1", "client@test.com");
+            var freelancer = CreateUser("free1", "free@test.com");
+            var admin = CreateUser("admin1", "admin@test.com");
+            
+            var proposal = new Proposal
+            {
+                Id = 101,
+                JobPostId = "job1",
+                FreelancerId = "free1",
+                CoverLetter = "Cover letter",
+                BidRate = 200m,
+                Status = ProposalStatus.Active
+            };
+            context.Proposals.Add(proposal);
+
+            var contract = CreateActiveContract(9, "client1", "free1", 200m);
+            contract.ProposalId = 101;
+            var escrow = CreateEscrow(9, 200m);
+
+            context.WalletBalances.Add(new WalletBalance { UserId = "client1", BalanceEGP = 0, LastUpdatedAt = DateTime.UtcNow });
+            context.WalletBalances.Add(new WalletBalance { UserId = "free1", BalanceEGP = 0, LastUpdatedAt = DateTime.UtcNow });
+
+            var delivery = new ContractDelivery
+            {
+                ContractId = 9,
+                Status = DeliveryStatus.Disputed,
+                ReviewDeadline = DateTime.UtcNow.AddDays(3)
+            };
+
+            var dispute = new Dispute
+            {
+                ContractId = 9,
+                ContractDeliveryId = delivery.Id,
+                OpenedByUserId = "client1",
+                Reason = "Dispute",
+                Status = DisputeStatus.Open
+            };
+
+            context.Users.Add(client);
+            context.Users.Add(freelancer);
+            context.Users.Add(admin);
+            context.Contracts.Add(contract);
+            context.EscrowTransactions.Add(escrow);
+            context.ContractDeliveries.Add(delivery);
+            context.Disputes.Add(dispute);
+            await context.SaveChangesAsync();
+
+            var walletService = new WalletService(context);
+            var escrowService = new EscrowService(context, walletService);
+            var handler = new ResolveDisputeCommandHandler(context, escrowService);
+
+            // 50/50 split resolution
+            var command = new ResolveDisputeCommand(
+                dispute.Id,
+                null,
+                "50/50 split resolution",
+                "admin1",
+                50m,
+                50m
+            );
+
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Status.Should().Be(DisputeStatus.ResolvedSplit);
+            result.ClientPercentage.Should().Be(50m);
+            result.FreelancerPercentage.Should().Be(50m);
+
+            // Verify wallet balances:
+            // Client gets 50% of 200 = 100
+            var clientWallet = await context.WalletBalances.FirstAsync(w => w.UserId == "client1");
+            clientWallet.BalanceEGP.Should().Be(100.00m);
+
+            // Freelancer gets 50% of 200 = 100 minus 15% platform commission = 85
+            var freelancerWallet = await context.WalletBalances.FirstAsync(w => w.UserId == "free1");
+            freelancerWallet.BalanceEGP.Should().Be(85.00m);
+
+            // Verify contract is terminated
+            var closedContract = await context.Contracts.FirstAsync(c => c.Id == 9);
+            closedContract.Status.Should().Be(ContractStatus.Terminated);
+            closedContract.ClosedAt.Should().NotBeNull();
+
+            // Verify proposal is closed
+            var closedProposal = await context.Proposals.FirstAsync(p => p.Id == 101);
+            closedProposal.Status.Should().Be(ProposalStatus.Rejected);
+        }
+
+        [Fact]
+        public async Task ResolveDispute_Percentages_100_0_ShouldRefundClient()
+        {
+            // Arrange
+            using var context = GetContext();
+            var client = CreateUser("client1", "client@test.com");
+            var freelancer = CreateUser("free1", "free@test.com");
+            var admin = CreateUser("admin1", "admin@test.com");
+            var contract = CreateActiveContract(10, "client1", "free1", 200m);
+            var escrow = CreateEscrow(10, 200m);
+
+            context.WalletBalances.Add(new WalletBalance { UserId = "client1", BalanceEGP = 0, LastUpdatedAt = DateTime.UtcNow });
+            context.WalletBalances.Add(new WalletBalance { UserId = "free1", BalanceEGP = 0, LastUpdatedAt = DateTime.UtcNow });
+
+            var delivery = new ContractDelivery
+            {
+                ContractId = 10,
+                Status = DeliveryStatus.Disputed,
+                ReviewDeadline = DateTime.UtcNow.AddDays(3)
+            };
+
+            var dispute = new Dispute
+            {
+                ContractId = 10,
+                ContractDeliveryId = delivery.Id,
+                OpenedByUserId = "free1",
+                Reason = "Dispute",
+                Status = DisputeStatus.Open
+            };
+
+            context.Users.Add(client);
+            context.Users.Add(freelancer);
+            context.Users.Add(admin);
+            context.Contracts.Add(contract);
+            context.EscrowTransactions.Add(escrow);
+            context.ContractDeliveries.Add(delivery);
+            context.Disputes.Add(dispute);
+            await context.SaveChangesAsync();
+
+            var walletService = new WalletService(context);
+            var escrowService = new EscrowService(context, walletService);
+            var handler = new ResolveDisputeCommandHandler(context, escrowService);
+
+            // 100% Client / 0% Freelancer split resolution
+            var command = new ResolveDisputeCommand(
+                dispute.Id,
+                null,
+                "100/0 resolution",
+                "admin1",
+                100m,
+                0m
+            );
+
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Status.Should().Be(DisputeStatus.ResolvedForClient);
+
+            // Client gets 100% of 200 = 200
+            var clientWallet = await context.WalletBalances.FirstAsync(w => w.UserId == "client1");
+            clientWallet.BalanceEGP.Should().Be(200.00m);
+
+            // Freelancer gets 0
+            var freelancerWallet = await context.WalletBalances.FirstAsync(w => w.UserId == "free1");
+            freelancerWallet.BalanceEGP.Should().Be(0m);
+        }
+
+        [Fact]
         public async Task FundMilestone_ShouldDebitClientWallet_AndCreateEscrowHeld()
         {
             // Arrange
@@ -450,7 +614,7 @@ namespace UnitTesting.Project
             var result = await handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().BeTrue();
+            result.Succeeded.Should().BeTrue();
 
             // Client wallet balance decreased by 200 + 5.5% client fee = 211.00 EGP
             var clientWallet = await context.WalletBalances.FirstAsync(w => w.UserId == client.Id);
@@ -499,8 +663,12 @@ namespace UnitTesting.Project
             var handler = new FundMilestoneCommandHandler(context, escrowService);
             var command = new FundMilestoneCommand(milestone.Id, clientGuid);
 
-            // Act & Assert
-            await Assert.ThrowsAsync<ValidationException>(() => handler.Handle(command, CancellationToken.None));
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Succeeded.Should().BeFalse();
+            result.Message.Should().Be("Insufficient wallet balance.");
         }
 
         [Fact]
@@ -884,9 +1052,21 @@ namespace UnitTesting.Project
             context.Users.Add(freelancer);
             context.Contracts.Add(contract);
             context.ContractDeliveries.Add(delivery);
+            context.EscrowTransactions.Add(new EscrowTransaction
+            {
+                Id = Guid.NewGuid(),
+                ContractId = 40,
+                ContractMilestoneId = null,
+                Amount = 100m,
+                Status = EscrowStatus.Held,
+                Type = EscrowTransactionType.ClientFunded,
+                CreatedAt = DateTime.UtcNow
+            });
             await context.SaveChangesAsync();
 
             var escrowMock = new Mock<Services.Wallet.IEscrowService>();
+            escrowMock.Setup(e => e.ReleaseToFreelancerAsync(It.IsAny<Guid>(), It.IsAny<Guid?>()))
+                .ReturnsAsync(new ServiceContracts.DTOs.Responses.Result<bool> { Succeeded = true, Data = true });
             var handler = new ApproveDeliveryCommandHandler(context, escrowMock.Object);
             var command = new ApproveDeliveryCommand(delivery.Id, "client1");
 
@@ -894,7 +1074,9 @@ namespace UnitTesting.Project
             var result = await handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Status.Should().Be(DeliveryStatus.Approved);
+            result.Should().NotBeNull();
+            result.Succeeded.Should().BeTrue();
+            result.Data.Status.Should().Be(DeliveryStatus.Approved);
             var updatedContract = await context.Contracts.FindAsync(40);
             updatedContract!.Status.Should().Be(ContractStatus.Completed);
             updatedContract.ClosedAt.Should().NotBeNull();
@@ -944,6 +1126,8 @@ namespace UnitTesting.Project
             serviceScopeFactoryMock.Setup(x => x.CreateScope()).Returns(serviceScopeMock.Object);
             
             var escrowMock = new Mock<Services.Wallet.IEscrowService>();
+            escrowMock.Setup(e => e.RefundToClientAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<string>()))
+                .ReturnsAsync(new ServiceContracts.DTOs.Responses.Result<bool> { Succeeded = true, Data = true });
             serviceScopeMock.Setup(x => x.ServiceProvider.GetService(typeof(AppDbContext))).Returns(context);
             serviceScopeMock.Setup(x => x.ServiceProvider.GetService(typeof(Services.Wallet.IEscrowService))).Returns(escrowMock.Object);
 
@@ -960,6 +1144,151 @@ namespace UnitTesting.Project
 
             var activeResult = await context.Contracts.FindAsync(51);
             activeResult!.Status.Should().Be(ContractStatus.Draft); // Untouched
+        }
+
+        [Fact]
+        public async Task GetDeliverySpecialistReview_ShouldWorkForSpecialistAndIncludeDetails()
+        {
+            // Arrange
+            using var context = GetContext();
+            var client = new Entities.Users.User { Id = "client_spec", FullName = "Client User" };
+            var freelancer = new Entities.Users.User { Id = "free_spec", FullName = "Freelancer User" };
+            var specialist = new Entities.Users.User { Id = "spec_user", FullName = "Specialist User" };
+            context.Users.AddRange(client, freelancer, specialist);
+
+            var jobPost = new JobPost { Id = Guid.NewGuid().ToString(), Title = "Build anti-gravity device", ClientId = "client_spec" };
+            context.JobPosts.Add(jobPost);
+
+            var contract = new Contract
+            {
+                Id = 101,
+                ClientId = "client_spec",
+                FreelancerId = "free_spec",
+                JobPostId = jobPost.Id,
+                Status = ContractStatus.Active,
+                AgreedRate = 1000m,
+                CreatedAt = DateTime.UtcNow
+            };
+            context.Contracts.Add(contract);
+
+            var delivery = new ContractDelivery
+            {
+                Id = Guid.NewGuid(),
+                ContractId = 101,
+                Status = DeliveryStatus.Pending,
+                DeliveryNote = "Finished the device core",
+                ReviewDeadline = DateTime.UtcNow.AddDays(3)
+            };
+            context.ContractDeliveries.Add(delivery);
+
+            var attachment = new DeliveryAttachment
+            {
+                Id = Guid.NewGuid(),
+                DeliveryId = delivery.Id,
+                Type = AttachmentType.File,
+                FileName = "schematics.pdf",
+                OriginalFileName = "schematics.pdf",
+                FileUrl = "uploads/schematics.pdf"
+            };
+            context.DeliveryAttachments.Add(attachment);
+
+            var review = new ContractSpecialistReview
+            {
+                Id = Guid.NewGuid(),
+                DeliveryId = delivery.Id,
+                RequestedByClientId = "client_spec",
+                ReviewerType = ReviewerType.Human,
+                RequirementsSummary = "Check anti-gravity equations",
+                Status = SpecialistReviewStatus.InProgress,
+                AssignedSpecialistId = "spec_user",
+                RequestedAt = DateTime.UtcNow
+            };
+            context.ContractSpecialistReviews.Add(review);
+            await context.SaveChangesAsync();
+
+            var handler = new GetDeliverySpecialistReviewQueryHandler(context);
+            var query = new GetDeliverySpecialistReviewQuery(delivery.Id, "spec_user");
+
+            // Act
+            var result = await handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            result.Succeeded.Should().BeTrue();
+            result.Data.Should().NotBeNull();
+            result.Data!.ContractTitle.Should().Be("Build anti-gravity device");
+            result.Data.DeliveryNote.Should().Be("Finished the device core");
+            result.Data.Attachments.Should().HaveCount(1);
+            result.Data.Attachments[0].FileName.Should().Be("schematics.pdf");
+        }
+
+        [Fact]
+        public async Task DownloadDeliveryAttachment_ShouldAuthorizeSpecialist()
+        {
+            // Arrange
+            using var context = GetContext();
+            var client = new Entities.Users.User { Id = "client_dl", FullName = "Client User" };
+            var freelancer = new Entities.Users.User { Id = "free_dl", FullName = "Freelancer User" };
+            var specialist = new Entities.Users.User { Id = "spec_dl", FullName = "Specialist User" };
+            context.Users.AddRange(client, freelancer, specialist);
+
+            var contract = new Contract
+            {
+                Id = 102,
+                ClientId = "client_dl",
+                FreelancerId = "free_dl",
+                Status = ContractStatus.Active,
+                AgreedRate = 1000m,
+                CreatedAt = DateTime.UtcNow
+            };
+            context.Contracts.Add(contract);
+
+            var delivery = new ContractDelivery
+            {
+                Id = Guid.NewGuid(),
+                ContractId = 102,
+                Status = DeliveryStatus.Pending,
+                ReviewDeadline = DateTime.UtcNow.AddDays(3)
+            };
+            context.ContractDeliveries.Add(delivery);
+
+            var attachment = new DeliveryAttachment
+            {
+                Id = Guid.NewGuid(),
+                DeliveryId = delivery.Id,
+                Type = AttachmentType.File,
+                FileName = "design.pdf",
+                OriginalFileName = "design.pdf",
+                FileUrl = "uploads/design.pdf"
+            };
+            context.DeliveryAttachments.Add(attachment);
+
+            var review = new ContractSpecialistReview
+            {
+                Id = Guid.NewGuid(),
+                DeliveryId = delivery.Id,
+                RequestedByClientId = "client_dl",
+                ReviewerType = ReviewerType.Human,
+                RequirementsSummary = "Check Design",
+                Status = SpecialistReviewStatus.InProgress,
+                AssignedSpecialistId = "spec_dl",
+                RequestedAt = DateTime.UtcNow
+            };
+            context.ContractSpecialistReviews.Add(review);
+            await context.SaveChangesAsync();
+
+            var storageMock = new Mock<ServiceContracts.Storage.IFileStorageService>();
+            storageMock.Setup(s => s.GetPhysicalPath(It.IsAny<string>())).Returns("C:\\mock\\design.pdf");
+
+            var handler = new DownloadDeliveryAttachmentQueryHandler(context, storageMock.Object);
+            var query = new DownloadDeliveryAttachmentQuery(attachment.Id, "spec_dl", false, true);
+
+            // Act
+            var result = await handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            result.Succeeded.Should().BeTrue();
+            result.Data.Should().NotBeNull();
+            result.Data!.OriginalFileName.Should().Be("design.pdf");
         }
     }
 }

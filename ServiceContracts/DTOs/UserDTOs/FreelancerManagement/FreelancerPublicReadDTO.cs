@@ -13,6 +13,7 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
         public decimal TrustScore { get; set; }
         public double AverageRating { get; set; }
         public int TotalReviews { get; set; }
+        public int JobSuccessPercentage { get; set; }
 
         // --- Freelancer Profile Properties ---
         public string? Title { get; set; }

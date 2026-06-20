@@ -3,6 +3,7 @@ using Entities.Users;
 using Services;
 using ServiceImplementation.Authentication.Helpers;
 using Entities;
+using Entities.Enums;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using Mappers;
@@ -353,15 +354,34 @@ namespace ServiceImplementation.Implementations.FreelancerImplementation
                 .Include(f => f.Education)
                 .Include(f => f.ExperienceDetails)
                 .Include(f => f.EmploymentHistory)
-        .       FirstOrDefaultAsync(f =>
+                .FirstOrDefaultAsync(f =>
                     f.UserId == idString &&
                     f.User != null &&
                     !f.User.IsDeleted);
 
-            if (freelancer == null)
+            if (freelancer == null || freelancer.User == null)
                 return null;
 
-            return freelancer.User.Freelancer_To_FreelancerRead();
+            var clientReviews = await _db.ContractReviews
+                .Where(cr => cr.Contract.FreelancerId == idString && cr.ReviewerId == cr.Contract.ClientId)
+                .ToListAsync();
+            var totalReviews = clientReviews.Count;
+            var averageRating = totalReviews > 0 ? Math.Round(clientReviews.Average(r => r.Rating), 1) : 0.0;
+
+            var contracts = await _db.Contracts
+                .Where(c => c.FreelancerId == idString && !c.IsDeleted)
+                .Select(c => c.Status)
+                .ToListAsync();
+
+            var completedCount = contracts.Count(s => s == ContractStatus.Completed);
+            var closedCount = contracts.Count(s => s == ContractStatus.Closed);
+            var terminatedCount = contracts.Count(s => s == ContractStatus.Terminated);
+            var totalEnded = completedCount + closedCount + terminatedCount;
+            var jobSuccessPercentage = totalEnded > 0 
+                ? (int)Math.Round((double)completedCount / totalEnded * 100) 
+                : 100;
+
+            return freelancer.User.Freelancer_To_FreelancerRead(false, averageRating, totalReviews, jobSuccessPercentage);
         }
 
         public async Task<FreelancerPublicReadDTO?> GetFreelancerPublicProfileByIdAsync(string freelancerId)
@@ -383,13 +403,29 @@ namespace ServiceImplementation.Implementations.FreelancerImplementation
                     f.User != null &&
                     !f.User.IsDeleted);
 
-            if (freelancer == null)
+            if (freelancer == null || freelancer.User == null)
                 return null;
 
-            if (freelancer.User == null)
-                return null; 
+            var clientReviews = await _db.ContractReviews
+                .Where(cr => cr.Contract.FreelancerId == idString && cr.ReviewerId == cr.Contract.ClientId)
+                .ToListAsync();
+            var totalReviews = clientReviews.Count;
+            var averageRating = totalReviews > 0 ? Math.Round(clientReviews.Average(r => r.Rating), 1) : 0.0;
 
-            return freelancer.User.ToPublicReadDto();
+            var contracts = await _db.Contracts
+                .Where(c => c.FreelancerId == idString && !c.IsDeleted)
+                .Select(c => c.Status)
+                .ToListAsync();
+
+            var completedCount = contracts.Count(s => s == ContractStatus.Completed);
+            var closedCount = contracts.Count(s => s == ContractStatus.Closed);
+            var terminatedCount = contracts.Count(s => s == ContractStatus.Terminated);
+            var totalEnded = completedCount + closedCount + terminatedCount;
+            var jobSuccessPercentage = totalEnded > 0 
+                ? (int)Math.Round((double)completedCount / totalEnded * 100) 
+                : 100;
+
+            return freelancer.User.ToPublicReadDto(averageRating, totalReviews, jobSuccessPercentage);
         }
 
         public async Task<Services.PagedResult<FreelancerReadDTO>> SearchFreelancersAsync(string searchQuery, List<string>? skillIds = null, decimal? minHourlyRate = null, decimal? maxHourlyRate = null, int? minYearsExperience = null, decimal? minTrustScore = null, bool? isVerified = null, string? sortBy = "TrustScore", bool sortDescending = true, int page = 1, int pageSize = 10)

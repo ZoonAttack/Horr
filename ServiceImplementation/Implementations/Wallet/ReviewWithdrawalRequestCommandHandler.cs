@@ -23,6 +23,7 @@ namespace ServiceImplementation.Implementations.Wallet
         public async Task<Result<WithdrawalRequestDto>> Handle(ReviewWithdrawalRequestCommand request, CancellationToken cancellationToken)
         {
             var withdrawalRequest = await _context.WithdrawalRequests
+                .Include(r => r.Freelancer)
                 .FirstOrDefaultAsync(r => r.Id == request.RequestId, cancellationToken);
 
             if (withdrawalRequest == null)

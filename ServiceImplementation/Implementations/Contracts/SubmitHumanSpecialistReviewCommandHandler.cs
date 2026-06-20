@@ -23,6 +23,15 @@ namespace ServiceImplementation.Implementations.Contracts
         public async Task<ContractSpecialistReviewReadDto> Handle(SubmitHumanSpecialistReviewCommand request, CancellationToken cancellationToken)
         {
             var review = await _context.ContractSpecialistReviews
+                .Include(r => r.Delivery)
+                    .ThenInclude(d => d.Contract)
+                        .ThenInclude(c => c.Proposal)
+                            .ThenInclude(p => p.JobPost)
+                .Include(r => r.Delivery)
+                    .ThenInclude(d => d.Contract)
+                        .ThenInclude(c => c.JobPost)
+                .Include(r => r.Delivery)
+                    .ThenInclude(d => d.Attachments)
                 .FirstOrDefaultAsync(r => r.Id == request.ReviewId, cancellationToken);
 
             if (review == null)

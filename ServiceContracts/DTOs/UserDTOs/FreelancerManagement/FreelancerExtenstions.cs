@@ -11,7 +11,7 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
 
         public static FreelancerReadDTO Freelancer_To_FreelancerRead(this Entities.Users.User user)
         {
-            return Freelancer_To_FreelancerRead(user, false, 0.0, 0);
+            return Freelancer_To_FreelancerRead(user, false, 0.0, 0, 100);
         }
 
         public static FreelancerReadDTO Freelancer_To_FreelancerRead(
@@ -19,6 +19,16 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
             bool isSaved, 
             double averageRating, 
             int totalReviews)
+        {
+            return Freelancer_To_FreelancerRead(user, isSaved, averageRating, totalReviews, 100);
+        }
+
+        public static FreelancerReadDTO Freelancer_To_FreelancerRead(
+            this Entities.Users.User user, 
+            bool isSaved, 
+            double averageRating, 
+            int totalReviews,
+            int jobSuccessPercentage)
         {
             if (user == null)
             {
@@ -38,6 +48,7 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
                 TrustScore = user.TrustScore,
                 AverageRating = averageRating,
                 TotalReviews = totalReviews,
+                JobSuccessPercentage = jobSuccessPercentage,
                 IsSaved = isSaved,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt,
@@ -87,7 +98,7 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
 
         public static FreelancerSearchResultDTO Freelancer_To_FreelancerSearchResult(this Entities.Users.User user)
         {
-            return Freelancer_To_FreelancerSearchResult(user, false, 0.0, 0);
+            return Freelancer_To_FreelancerSearchResult(user, false, 0.0, 0, 100);
         }
 
         public static FreelancerSearchResultDTO Freelancer_To_FreelancerSearchResult(
@@ -95,6 +106,16 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
             bool isSaved, 
             double averageRating, 
             int totalReviews)
+        {
+            return Freelancer_To_FreelancerSearchResult(user, isSaved, averageRating, totalReviews, 100);
+        }
+
+        public static FreelancerSearchResultDTO Freelancer_To_FreelancerSearchResult(
+            this Entities.Users.User user, 
+            bool isSaved, 
+            double averageRating, 
+            int totalReviews,
+            int jobSuccessPercentage)
         {
             if (user == null)
             {
@@ -109,6 +130,7 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
                 ProfilePicturePath = user.ProfilePicturePath,
                 AverageRating = averageRating,
                 TotalReviews = totalReviews,
+                JobSuccessPercentage = jobSuccessPercentage,
                 HourlyRate = user.Freelancer?.HourlyRate,
                 TrustScore = user.TrustScore,
                 Availability = user.Freelancer?.Availability ?? string.Empty,
@@ -229,13 +251,22 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
         // Inside FreelancerExtensions static class
         public static FreelancerPublicReadDTO ToPublicReadDto(this Entities.Users.User user)
         {
-            return ToPublicReadDto(user, 0.0, 0);
+            return ToPublicReadDto(user, 0.0, 0, 100);
         }
 
         public static FreelancerPublicReadDTO ToPublicReadDto(
             this Entities.Users.User user,
             double averageRating,
             int totalReviews)
+        {
+            return ToPublicReadDto(user, averageRating, totalReviews, 100);
+        }
+
+        public static FreelancerPublicReadDTO ToPublicReadDto(
+            this Entities.Users.User user,
+            double averageRating,
+            int totalReviews,
+            int jobSuccessPercentage)
         {
             if (user == null) return null;
 
@@ -250,6 +281,7 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
                 TrustScore = user.TrustScore,
                 AverageRating = averageRating,
                 TotalReviews = totalReviews,
+                JobSuccessPercentage = jobSuccessPercentage,
                 City = user.City,
                 Country = user.Country,
 

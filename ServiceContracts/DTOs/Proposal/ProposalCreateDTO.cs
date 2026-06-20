@@ -12,6 +12,7 @@ namespace ServiceContracts.DTOs.Proposal
 
         [Range(0.01, double.MaxValue, ErrorMessage = "Bid rate must be greater than 0")]
         public decimal BidRate { get; set; }
+        public string BidCurrency { get; set; } = "USD";
 
         [Required]
         [MinLength(50, ErrorMessage = "Cover letter must be at least 50 characters")]

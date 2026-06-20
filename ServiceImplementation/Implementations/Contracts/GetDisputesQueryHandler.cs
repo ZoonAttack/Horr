@@ -44,6 +44,8 @@ namespace ServiceImplementation.Implementations.Contracts
                     OpenedByUserFullName = d.OpenedByUser.FullName,
                     AdminDecision = d.AdminDecision,
                     ResolvedAt = d.ResolvedAt,
+                    ClientPercentage = d.ClientPercentage,
+                    FreelancerPercentage = d.FreelancerPercentage,
                     ContractId = d.ContractId,
                     ClientId = d.Contract.ClientId,
                     ClientFullName = d.Contract.Client.FullName,

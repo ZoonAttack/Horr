@@ -42,6 +42,9 @@ public class User : IdentityUser
     [MaxLength(50)]
     public string? TimeZone { get; set; } = "UTC+02:00";
 
+    [MaxLength(3)]
+    public string PreferredCurrency { get; set; } = "USD";
+
     [Column(TypeName = "text")]
     public string? Bio { get; set; }
 

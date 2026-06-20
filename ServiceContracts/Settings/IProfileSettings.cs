@@ -17,6 +17,7 @@ namespace ServiceContracts.Settings
         Task<Result<string>> UpdateEmailAsync(string userId, string newEmail);
         Task<Result<string>> UpdateTitleAsync(string userId, string newTitle);
         Task<Result<string?>> UpdateBioAsync(string userId, string? newBio);
+        Task<Result<string>> UpdatePreferredCurrencyAsync(string userId, string preferredCurrency);
         Task<Result<ExperienceUpdateDto>> UpdateExperienceAsync(string userId, ExperienceUpdateDto dto);
         Task<Result<PaymentMethodReadDTO>> CreateBillingAsync(string userId, PaymentMethodCreateDTO dto);
         Task<Result<PaymentMethodReadDTO>> UpdateBillingAsync(string userId, string billingId, PaymentMethodUpdateDTO dto);

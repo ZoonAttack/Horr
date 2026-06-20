@@ -37,7 +37,6 @@ namespace ServiceImplementation.Implementations.ClientImplementation.DiscoveryCQ
                 }
             }
             var query = _context.Users
-                .Include(u => u.ReviewsReceived)
                 .Include(u => u.Freelancer)
                     .ThenInclude(f => f.FreelancerSkills)
                         .ThenInclude(fs => fs.Skill)
@@ -115,14 +114,52 @@ namespace ServiceImplementation.Implementations.ClientImplementation.DiscoveryCQ
                     .ToHashSet();
             }
 
+            var freelancerIds = items.Select(u => u.Id).ToList();
+
+            var reviewsData = await _context.ContractReviews
+                .Where(r => freelancerIds.Contains(r.Contract.FreelancerId) && r.ReviewerId == r.Contract.ClientId)
+                .GroupBy(r => r.Contract.FreelancerId)
+                .Select(g => new {
+                    FreelancerId = g.Key,
+                    AverageRating = g.Average(r => r.Rating),
+                    TotalReviews = g.Count()
+                })
+                .ToDictionaryAsync(x => x.FreelancerId, x => x, cancellationToken);
+
+            var contractsData = await _context.Contracts
+                .Where(c => freelancerIds.Contains(c.FreelancerId) && !c.IsDeleted)
+                .GroupBy(c => c.FreelancerId)
+                .Select(g => new {
+                    FreelancerId = g.Key,
+                    CompletedCount = g.Count(c => c.Status == Entities.Enums.ContractStatus.Completed),
+                    ClosedCount = g.Count(c => c.Status == Entities.Enums.ContractStatus.Closed),
+                    TerminatedCount = g.Count(c => c.Status == Entities.Enums.ContractStatus.Terminated)
+                })
+                .ToDictionaryAsync(x => x.FreelancerId, x => x, cancellationToken);
+
             var dtos = items.Select(u =>
             {
-                var validReviews = u.ReviewsReceived?.Where(r => !r.IsDeleted).ToList() ?? new List<Entities.Review.Review>();
-                double avgRating = validReviews.Any() ? Math.Round(validReviews.Average(r => r.Rating), 1) : 0.0;
-                int totalReviews = validReviews.Count;
+                double avgRating = 0.0;
+                int totalReviews = 0;
+                if (reviewsData.TryGetValue(u.Id, out var reviewStats))
+                {
+                    avgRating = Math.Round(reviewStats.AverageRating, 1);
+                    totalReviews = reviewStats.TotalReviews;
+                }
+
+                int jobSuccessPercentage = 100;
+                if (contractsData.TryGetValue(u.Id, out var contractStats))
+                {
+                    var totalEnded = contractStats.CompletedCount + contractStats.ClosedCount + contractStats.TerminatedCount;
+                    if (totalEnded > 0)
+                    {
+                        jobSuccessPercentage = (int)Math.Round((double)contractStats.CompletedCount / totalEnded * 100);
+                    }
+                }
+
                 bool isSaved = savedFreelancerIds.Contains(u.Id);
 
-                return u.Freelancer_To_FreelancerSearchResult(isSaved, avgRating, totalReviews);
+                return u.Freelancer_To_FreelancerSearchResult(isSaved, avgRating, totalReviews, jobSuccessPercentage);
             }).ToList();
 
             return new Result<PagedResult<FreelancerSearchResultDTO>>
@@ -163,7 +200,6 @@ namespace ServiceImplementation.Implementations.ClientImplementation.DiscoveryCQ
             var query = _context.SavedFreelancers
                 .Include(sf => sf.Freelancer)
                     .ThenInclude(f => f.User)
-                        .ThenInclude(u => u.ReviewsReceived)
                 .Include(sf => sf.Freelancer)
                     .ThenInclude(f => f.FreelancerSkills)
                         .ThenInclude(fs => fs.Skill)
@@ -177,17 +213,57 @@ namespace ServiceImplementation.Implementations.ClientImplementation.DiscoveryCQ
                 .Take(request.PageSize)
                 .ToListAsync(cancellationToken);
 
+            var freelancerIds = savedItems
+                .Where(sf => sf.Freelancer != null && sf.Freelancer.User != null)
+                .Select(sf => sf.Freelancer.User.Id)
+                .ToList();
+
+            var reviewsData = await _context.ContractReviews
+                .Where(r => freelancerIds.Contains(r.Contract.FreelancerId) && r.ReviewerId == r.Contract.ClientId)
+                .GroupBy(r => r.Contract.FreelancerId)
+                .Select(g => new {
+                    FreelancerId = g.Key,
+                    AverageRating = g.Average(r => r.Rating),
+                    TotalReviews = g.Count()
+                })
+                .ToDictionaryAsync(x => x.FreelancerId, x => x, cancellationToken);
+
+            var contractsData = await _context.Contracts
+                .Where(c => freelancerIds.Contains(c.FreelancerId) && !c.IsDeleted)
+                .GroupBy(c => c.FreelancerId)
+                .Select(g => new {
+                    FreelancerId = g.Key,
+                    CompletedCount = g.Count(c => c.Status == Entities.Enums.ContractStatus.Completed),
+                    ClosedCount = g.Count(c => c.Status == Entities.Enums.ContractStatus.Closed),
+                    TerminatedCount = g.Count(c => c.Status == Entities.Enums.ContractStatus.Terminated)
+                })
+                .ToDictionaryAsync(x => x.FreelancerId, x => x, cancellationToken);
+
             // Note: f.User is the Entities.Users.User object that contains Freelancer_To_FreelancerSearchResult()
             var dtos = savedItems
                 .Where(sf => sf.Freelancer != null && sf.Freelancer.User != null)
                 .Select(sf =>
                 {
                     var u = sf.Freelancer.User;
-                    var validReviews = u.ReviewsReceived?.Where(r => !r.IsDeleted).ToList() ?? new List<Entities.Review.Review>();
-                    double avgRating = validReviews.Any() ? Math.Round(validReviews.Average(r => r.Rating), 1) : 0.0;
-                    int totalReviews = validReviews.Count;
+                    double avgRating = 0.0;
+                    int totalReviews = 0;
+                    if (reviewsData.TryGetValue(u.Id, out var reviewStats))
+                    {
+                        avgRating = Math.Round(reviewStats.AverageRating, 1);
+                        totalReviews = reviewStats.TotalReviews;
+                    }
 
-                    return u.Freelancer_To_FreelancerSearchResult(isSaved: true, averageRating: avgRating, totalReviews: totalReviews);
+                    int jobSuccessPercentage = 100;
+                    if (contractsData.TryGetValue(u.Id, out var contractStats))
+                    {
+                        var totalEnded = contractStats.CompletedCount + contractStats.ClosedCount + contractStats.TerminatedCount;
+                        if (totalEnded > 0)
+                        {
+                            jobSuccessPercentage = (int)Math.Round((double)contractStats.CompletedCount / totalEnded * 100);
+                        }
+                    }
+
+                    return u.Freelancer_To_FreelancerSearchResult(isSaved: true, averageRating: avgRating, totalReviews: totalReviews, jobSuccessPercentage: jobSuccessPercentage);
                 })
                 .ToList();
 

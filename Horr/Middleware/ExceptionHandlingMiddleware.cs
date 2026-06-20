@@ -36,7 +36,9 @@ namespace Horr.Middleware
             var problemDetails = new ProblemDetails
             {
                 Instance = context.Request.Path,
-                Detail = exception.ToString()
+                Detail = exception is NotFoundException || exception is ValidationException || exception is InvalidStateException || exception is ForbiddenException || exception is UnauthorizedAccessException || exception is ConflictException
+                    ? exception.Message
+                    : exception.ToString()
             };
 
             switch (exception)

@@ -29,6 +29,12 @@ namespace ServiceImplementation.Implementations.Communication
 
             if (contract == null)
             {
+                contract = await _context.Contracts
+                    .FirstOrDefaultAsync(c => c.ProposalId == request.ContractId && !c.IsDeleted, cancellationToken);
+            }
+
+            if (contract == null)
+            {
                 return new Result<ChatSummaryDto>
                 {
                     Succeeded = false,
@@ -37,14 +43,14 @@ namespace ServiceImplementation.Implementations.Communication
                 };
             }
 
-            // 2. Authorize: Only the client of the contract can initiate the chat
-            if (contract.ClientId != request.ClientId)
+            // 2. Authorize: Only the client or freelancer of the contract can initiate the chat
+            if (contract.ClientId != request.RequestingUserId && contract.FreelancerId != request.RequestingUserId)
             {
                 return new Result<ChatSummaryDto>
                 {
                     Succeeded = false,
                     ErrorCode = ErrorCodes.Unauthorized,
-                    Message = "Only the contract client can initiate a chat for this contract."
+                    Message = "Only the contract client or freelancer can initiate a chat for this contract."
                 };
             }
 
@@ -61,7 +67,7 @@ namespace ServiceImplementation.Implementations.Communication
                 {
                     Succeeded = true,
                     Message = "Retrieved existing conversation.",
-                    Data = existingChat.ToSummaryDto(request.ClientId)
+                    Data = existingChat.ToSummaryDto(request.RequestingUserId)
                 };
             }
 
@@ -89,7 +95,7 @@ namespace ServiceImplementation.Implementations.Communication
             {
                 Succeeded = true,
                 Message = "New conversation initiated successfully.",
-                Data = createdChat.ToSummaryDto(request.ClientId)
+                Data = createdChat.ToSummaryDto(request.RequestingUserId)
             };
         }
     }

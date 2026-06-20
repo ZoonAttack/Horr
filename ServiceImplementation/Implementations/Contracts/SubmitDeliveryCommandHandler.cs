@@ -43,6 +43,15 @@ namespace ServiceImplementation.Implementations.Contracts
                 throw new ForbiddenException("Cannot submit delivery on a contract that is not active.");
             }
 
+            // Guard: If the contract has any active disputes, prevent submission
+            var hasActiveDispute = await _context.Disputes
+                .AnyAsync(d => d.ContractId == contract.Id && (d.Status == DisputeStatus.Open || d.Status == DisputeStatus.UnderReview), cancellationToken);
+
+            if (hasActiveDispute)
+            {
+                throw new ForbiddenException("Cannot submit delivery while the contract is in dispute.");
+            }
+
             // EARS (guard): If the contract's escrow is not in Held status, the system shall prevent submission and return 400 Bad Request
             var hasHeldEscrow = await _context.EscrowTransactions
                 .AnyAsync(e => e.ContractId == contract.Id 
@@ -97,6 +106,7 @@ namespace ServiceImplementation.Implementations.Contracts
                 .Include(d => d.RevisionRequests)
                 .Include(d => d.AdditionalRevisionRequests)
                     .ThenInclude(arr => arr.Client)
+                .Include(d => d.SpecialistReviews)
                 .FirstAsync(d => d.Id == delivery.Id, cancellationToken);
 
             return deliveryWithAttachments.ToDto();

@@ -256,7 +256,7 @@ namespace UnitTesting.Controllers
             var summary = new ChatSummaryDto { ChatId = "conv-1", ContractId = contractId };
             var resultData = new Result<ChatSummaryDto> { Succeeded = true, Data = summary };
 
-            _mediatorMock.Setup(m => m.Send(It.Is<CreateChatCommand>(c => c.ContractId == contractId && c.ClientId == CurrentUserId), It.IsAny<CancellationToken>()))
+            _mediatorMock.Setup(m => m.Send(It.Is<CreateChatCommand>(c => c.ContractId == contractId && c.RequestingUserId == CurrentUserId), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(resultData);
 
             // Act

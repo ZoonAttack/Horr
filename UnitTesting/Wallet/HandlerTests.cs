@@ -174,6 +174,7 @@ namespace UnitTesting.Wallet
         {
             // Arrange
             var userId = "u1";
+            _context.Users.Add(new Entities.Users.User { Id = userId, UserName = "u1", Email = "u1@t.com", FullName = "U1", Address = "A", City = "C", StateProvince = "S", ZipCode = "Z", Country = "Egypt", Bio = "B" });
             var withdrawal = new WithdrawalRequest { Id = Guid.NewGuid().ToString(), FreelancerId = userId, Amount = 100, Method = WithdrawalMethod.InstaPay, InstapayUsername = "user_insta", Status = WithdrawalStatus.Pending };
             _context.WithdrawalRequests.Add(withdrawal);
             _context.WalletBalances.Add(new WalletBalance { UserId = userId, BalanceEGP = 500 });
@@ -198,6 +199,7 @@ namespace UnitTesting.Wallet
         {
             // Arrange
             var withdrawal = new WithdrawalRequest { Id = Guid.NewGuid().ToString(), FreelancerId = "u1", Amount = 100, Status = WithdrawalStatus.Rejected };
+            _context.Users.Add(new Entities.Users.User { Id = "u1", UserName = "u1", Email = "u1@t.com", FullName = "U1", Address = "A", City = "C", StateProvince = "S", ZipCode = "Z", Country = "Egypt", Bio = "B" });
             _context.WithdrawalRequests.Add(withdrawal);
             await _context.SaveChangesAsync();
 

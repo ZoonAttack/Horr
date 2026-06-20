@@ -63,10 +63,12 @@ namespace Entities
         // Payment, Wallet, and Transaction DbSets
         public DbSet<Payment.Payment> Payments { get; set; }
         public DbSet<PaymentMethod> PaymentMethods { get; set; }
-        public DbSet<WalletBalance> WalletBalances { get; set; }
-        public DbSet<Transaction> Transactions { get; set; }
-        public DbSet<DepositRequest> DepositRequests { get; set; }
-        public DbSet<WithdrawalRequest> WithdrawalRequests { get; set; }
+        public virtual DbSet<WalletBalance> WalletBalances { get; set; }
+        public virtual DbSet<DepositRequest> DepositRequests { get; set; }
+        public virtual DbSet<WithdrawalRequest> WithdrawalRequests { get; set; }
+        public virtual DbSet<Transaction> Transactions { get; set; }
+        public virtual DbSet<EscrowTransaction> EscrowTransactions { get; set; }
+        public virtual DbSet<ExchangeRate> ExchangeRates { get; set; }
         public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
 
         // Review and Contract DbSets
@@ -78,7 +80,7 @@ namespace Entities
         public DbSet<DeliveryAttachment> DeliveryAttachments { get; set; }
         public DbSet<ContractMilestone> ContractMilestones { get; set; }
         public DbSet<ContractDelivery> ContractDeliveries { get; set; }
-        public DbSet<EscrowTransaction> EscrowTransactions { get; set; }
+
         public DbSet<RevisionRequest> RevisionRequests { get; set; }
         public DbSet<Dispute> Disputes { get; set; }
         public DbSet<ContractSpecialistReview> ContractSpecialistReviews { get; set; }

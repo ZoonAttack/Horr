@@ -19,6 +19,7 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
         public decimal TrustScore { get; set; }
         public double AverageRating { get; set; }
         public int TotalReviews { get; set; }
+        public int JobSuccessPercentage { get; set; }
         public bool IsSaved { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }

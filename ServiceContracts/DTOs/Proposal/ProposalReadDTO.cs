@@ -11,6 +11,7 @@ namespace ServiceContracts.DTOs.Proposal
         public string FreelancerName { get; set; } = string.Empty;
         public SubmitAsType SubmitAsType { get; set; }
         public decimal BidRate { get; set; }
+        public string BidCurrency { get; set; } = "USD";
         public decimal HORRFee { get; set; }
         public string CoverLetter { get; set; } = string.Empty;
         public ProposalStatus Status { get; set; }

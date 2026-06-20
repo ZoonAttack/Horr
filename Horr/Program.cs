@@ -26,6 +26,8 @@ using ServiceContracts.Storage;
 using ServiceImplementation.Storage;
 using Services.Wallet;
 using ServiceImplementation.Implementations.Wallet;
+using ServiceContracts.Currency;
+using ServiceImplementation.Implementations.Currency;
 
 namespace Horr
 {
@@ -81,6 +83,8 @@ namespace Horr
             builder.Services.AddScoped<IEscrowService, EscrowService>();
             builder.Services.AddHostedService<ServiceImplementation.Implementations.Contracts.DeliveryAutoCompleteService>();
             builder.Services.AddHostedService<ServiceImplementation.Implementations.Contracts.OfferAutoRevokeService>();
+            builder.Services.AddHostedService<ExchangeRateSyncWorker>();
+            builder.Services.AddScoped<ICurrencyConverterService, CurrencyConverterService>();
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
             builder.Services.AddHttpClient();
             builder.Services.AddScoped<IGeminiService, GeminiService>();

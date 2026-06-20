@@ -12,8 +12,10 @@ namespace ServiceImplementation.Implementations.Contracts
 
     public record ResolveDisputeCommand(
         Guid DisputeId,
-        DisputeDecision Decision,
+        DisputeDecision? Decision,
         string AdminDecision,
-        string AdminId
+        string AdminId,
+        decimal? ClientPercentage = null,
+        decimal? FreelancerPercentage = null
     ) : IRequest<DisputeDto>;
 }

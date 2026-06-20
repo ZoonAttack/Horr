@@ -7,12 +7,12 @@ namespace ServiceImplementation.Implementations.Communication
     public class CreateChatCommand : IRequest<Result<ChatSummaryDto>>
     {
         public int ContractId { get; }
-        public string ClientId { get; }
+        public string RequestingUserId { get; }
 
-        public CreateChatCommand(int contractId, string clientId)
+        public CreateChatCommand(int contractId, string requestingUserId)
         {
             ContractId = contractId;
-            ClientId = clientId;
+            RequestingUserId = requestingUserId;
         }
     }
 }

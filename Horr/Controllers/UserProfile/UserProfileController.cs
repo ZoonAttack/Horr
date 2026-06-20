@@ -122,6 +122,20 @@ namespace Horr.Controllers.UserProfile
         }
 
         /// <summary>
+        /// Updates the preferred currency of the logged-in user.
+        /// </summary>
+        /// <param name="preferredCurrency">The new preferred currency.</param>
+        /// <returns>A status indicating success and the updated preferred currency.</returns>
+        [HttpPatch("preferred-currency")]
+        public async Task<IActionResult> UpdatePreferredCurrency([FromBody] string preferredCurrency)
+        {
+            var userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            var response = await _profileSettingsService.UpdatePreferredCurrencyAsync(userId, preferredCurrency);
+            if (!response.Succeeded) return BadRequest(response.Errors);
+            return Ok(new { message = "Preferred currency updated successfully.", data = response.Data });
+        }
+
+        /// <summary>
         /// Updates the experience level of the logged-in freelancer.
         /// </summary>
         /// <param name="dto">The updated experience level details.</param>

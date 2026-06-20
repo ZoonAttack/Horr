@@ -26,6 +26,12 @@ namespace Entities.Project
 
         public SubmitAsType SubmitAsType { get; set; }
 
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal BidAmount { get; set; }
+
+        [MaxLength(3)]
+        public string BidCurrency { get; set; } = "USD";
+
         [Column(TypeName = "decimal(10,2)")]
         public decimal BidRate { get; set; }
 

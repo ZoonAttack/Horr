@@ -95,9 +95,12 @@ namespace UnitTesting.Project
             var walletService = new WalletService(context);
             var escrowService = new EscrowService(context, walletService);
 
-            // Act & Assert
-            Func<Task> act = async () => await escrowService.FundFixedContractAsync(Guid.Parse("00000000-0000-0000-0000-000000000002"), clientId);
-            await act.Should().ThrowAsync<ValidationException>().WithMessage("Insufficient wallet balance.");
+            // Act
+            var result = await escrowService.FundFixedContractAsync(Guid.Parse("00000000-0000-0000-0000-000000000002"), clientId);
+
+            // Assert
+            result.Succeeded.Should().BeFalse();
+            result.Message.Should().Be("Insufficient wallet balance.");
         }
 
         [Fact]

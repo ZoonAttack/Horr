@@ -29,6 +29,9 @@ namespace Entities.Project
         [Column(TypeName = "decimal(18,2)")]
         public decimal Budget { get; set; }
 
+        [MaxLength(3)]
+        public string BudgetCurrency { get; set; } = "USD";
+
         public JobType JobType { get; set; }
         public ProjectComplexity Scope { get; set; }
         public ExperienceLevel ExperienceLevel { get; set; }

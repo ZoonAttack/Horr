@@ -40,7 +40,10 @@ namespace ServiceImplementation.Implementations.Contracts
 
             var platformEarned = txs
                 .Where(t => t.Type == EscrowTransactionType.ClientFunded && t.Status == EscrowStatus.Released)
-                .Sum(t => t.PlatformFeeFromClient + t.PlatformFeeFromFreelancer);
+                .Sum(t => t.PlatformFeeFromClient + t.PlatformFeeFromFreelancer)
+                + txs
+                .Where(t => t.Type == EscrowTransactionType.ClientFunded && t.Status == EscrowStatus.Split)
+                .Sum(t => t.PlatformFeeFromClient + (t.PlatformFeeFromFreelancer * ((t.FreelancerPercentage ?? 0m) / 100m)));
 
             var currentlyHeld = txs
                 .Where(t => t.Type == EscrowTransactionType.ClientFunded && t.Status == EscrowStatus.Held)

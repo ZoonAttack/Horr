@@ -7,6 +7,7 @@ namespace ServiceContracts.DTOs.Wallet
     {
         public string Id { get; set; }
         public string FreelancerId { get; set; }
+        public string? FreelancerName { get; set; }
         public decimal Amount { get; set; }
         public WithdrawalMethod Method { get; set; }
         public string? InstapayUsername { get; set; }

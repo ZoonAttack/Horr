@@ -15,5 +15,7 @@ namespace ServiceContracts.DTOs.Contract
         public string? AdminId { get; set; }
         public string? AdminDecision { get; set; }
         public DateTime? ResolvedAt { get; set; }
+        public decimal? ClientPercentage { get; set; }
+        public decimal? FreelancerPercentage { get; set; }
     }
 }

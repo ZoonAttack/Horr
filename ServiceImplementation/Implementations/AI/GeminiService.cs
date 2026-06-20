@@ -73,7 +73,7 @@ namespace ServiceImplementation.Implementations.AI
             };
 
             var response = await client.PostAsync(
-                $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={_apiKey}",
+                $"https://generativelanguage.googleapis.com/v1beta/models/gemma-4-31b-it:generateContent?key={_apiKey}",
                 new StringContent(
                     JsonSerializer.Serialize(body),
                     Encoding.UTF8,

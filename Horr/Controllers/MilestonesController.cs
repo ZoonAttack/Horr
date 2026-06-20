@@ -33,8 +33,11 @@ namespace Horr.Controllers
 
             var command = new FundMilestoneCommand(milestoneId, clientId);
             var result = await _mediator.Send(command);
-            if (result) return Ok();
-            return BadRequest();
+            if (!result.Succeeded)
+            {
+                return BadRequest(new { message = result.Message, errors = result.Errors });
+            }
+            return Ok();
         }
     }
 }

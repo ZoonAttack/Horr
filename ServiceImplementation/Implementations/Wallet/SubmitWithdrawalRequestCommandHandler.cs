@@ -95,11 +95,13 @@ namespace ServiceImplementation.Implementations.Wallet
                 await _context.SaveChangesAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
 
-                 return new Result<WithdrawalRequestDto>
-            {
-                Succeeded = true,
-                Data = withdrawalRequest.ToDto()
-            };
+                withdrawalRequest.Freelancer = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.FreelancerId, cancellationToken);
+
+                return new Result<WithdrawalRequestDto>
+                {
+                    Succeeded = true,
+                    Data = withdrawalRequest.ToDto()
+                };
             }
             catch (Exception ex)
             {

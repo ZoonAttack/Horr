@@ -5,6 +5,7 @@ namespace ServiceContracts.DTOs.UserDTOs
         string FirstName,
         string LastName,
         string? AvatarUrl,
-        bool HasNotifications
+        bool HasNotifications,
+        string Role = "Client"
     );
 }

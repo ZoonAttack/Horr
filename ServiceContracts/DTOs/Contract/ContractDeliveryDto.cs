@@ -19,5 +19,6 @@ namespace ServiceContracts.DTOs.Contract
         public List<AdditionalRevisionRequestDto> AdditionalRevisionRequests { get; set; } = new List<AdditionalRevisionRequestDto>();
         public bool IsPaused { get; set; }
         public string? PauseReason { get; set; }
+        public ContractSpecialistReviewReadDto? SpecialistReview { get; set; }
     }
 }

@@ -44,6 +44,13 @@ namespace ServiceImplementation.Implementations.Contracts
 
             if (contract == null)
             {
+                contract = await _context.Contracts
+                    .Include(c => c.Proposal)
+                    .FirstOrDefaultAsync(c => c.ProposalId == request.ContractId, cancellationToken);
+            }
+
+            if (contract == null)
+            {
                 return new Result<bool>
                 {
                     Succeeded = false,

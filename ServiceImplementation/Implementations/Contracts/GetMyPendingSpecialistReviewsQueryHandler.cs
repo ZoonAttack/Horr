@@ -23,6 +23,15 @@ namespace ServiceImplementation.Implementations.Contracts
         public async Task<Result<List<ContractSpecialistReviewReadDto>>> Handle(GetMyPendingSpecialistReviewsQuery request, CancellationToken cancellationToken)
         {
             var reviews = await _context.ContractSpecialistReviews
+                .Include(r => r.Delivery)
+                    .ThenInclude(d => d.Contract)
+                        .ThenInclude(c => c.Proposal)
+                            .ThenInclude(p => p.JobPost)
+                .Include(r => r.Delivery)
+                    .ThenInclude(d => d.Contract)
+                        .ThenInclude(c => c.JobPost)
+                .Include(r => r.Delivery)
+                    .ThenInclude(d => d.Attachments)
                 .Where(r => r.AssignedSpecialistId == request.SpecialistId &&
                             r.Status == SpecialistReviewStatus.InProgress)
                 .OrderBy(r => r.RequestedAt)

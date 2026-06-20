@@ -38,6 +38,7 @@ namespace ServiceContracts.DTOs.Contract
         public DateTime? DueDate { get; set; }
         public int MaxRevisions { get; set; }
         public string? LatestDeliverySummary { get; set; }
+        public bool InDispute { get; set; }
 
         // New details for milestone deliverables and description
         public string? Description { get; set; }

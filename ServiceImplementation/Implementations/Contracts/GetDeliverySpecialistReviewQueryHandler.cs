@@ -25,6 +25,11 @@ namespace ServiceImplementation.Implementations.Contracts
         {
             var delivery = await _context.ContractDeliveries
                 .Include(d => d.Contract)
+                    .ThenInclude(c => c.Proposal)
+                        .ThenInclude(p => p.JobPost)
+                .Include(d => d.Contract)
+                    .ThenInclude(c => c.JobPost)
+                .Include(d => d.Attachments)
                 .FirstOrDefaultAsync(d => d.Id == request.DeliveryId, cancellationToken);
 
             if (delivery == null)
@@ -48,6 +53,15 @@ namespace ServiceImplementation.Implementations.Contracts
             }
 
             var review = await _context.ContractSpecialistReviews
+                .Include(r => r.Delivery)
+                    .ThenInclude(d => d.Contract)
+                        .ThenInclude(c => c.Proposal)
+                            .ThenInclude(p => p.JobPost)
+                .Include(r => r.Delivery)
+                    .ThenInclude(d => d.Contract)
+                        .ThenInclude(c => c.JobPost)
+                .Include(r => r.Delivery)
+                    .ThenInclude(d => d.Attachments)
                 .Where(r => r.DeliveryId == request.DeliveryId)
                 .OrderByDescending(r => r.RequestedAt)
                 .FirstOrDefaultAsync(cancellationToken);

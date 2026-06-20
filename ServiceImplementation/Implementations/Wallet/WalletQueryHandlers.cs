@@ -74,6 +74,7 @@ namespace ServiceImplementation.Implementations.Wallet
             }
 
             var query = _context.WithdrawalRequests
+                .Include(r => r.Freelancer)
                 .Where(r => r.FreelancerId == request.UserId)
                 .OrderByDescending(r => r.SubmittedAt);
 
@@ -112,6 +113,7 @@ namespace ServiceImplementation.Implementations.Wallet
         public async Task<Result<IEnumerable<WithdrawalRequestDto>>> Handle(GetPendingWithdrawalRequestsQuery request, CancellationToken cancellationToken)
         {
             var items = await _context.WithdrawalRequests
+                .Include(r => r.Freelancer)
                 .Where(r => r.Status == WithdrawalStatus.Pending)
                 .ToListAsync(cancellationToken);
 

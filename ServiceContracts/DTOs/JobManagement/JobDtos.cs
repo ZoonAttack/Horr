@@ -28,6 +28,7 @@ namespace ServiceContracts.DTOs.JobManagement
         public ProjectComplexity Scope { get; set; }
         public ExperienceLevel ExperienceLevel { get; set; }
         public decimal Budget { get; set; }
+        public string BudgetCurrency { get; set; } = "USD";
         public JobType JobType { get; set; }
         public DateTime PostedAt { get; set; }
         public string ClientName { get; set; } = string.Empty;

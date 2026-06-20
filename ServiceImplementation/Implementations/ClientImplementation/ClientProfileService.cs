@@ -46,7 +46,8 @@ namespace ServiceImplementation.Implementations.ClientImplementation
                 user.FullName.Split(" ")[0],
                 user.FullName.Split(" ")[1],
                 user.ProfilePicturePath,
-                hasUnreadMessages || hasPendingProposals
+                hasUnreadMessages || hasPendingProposals,
+                user.Role.ToString()
             );
 
             return new Result<ClientMeDto>

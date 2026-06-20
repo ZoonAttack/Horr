@@ -27,6 +27,7 @@ namespace ServiceImplementation.Implementations.Contracts
                 .Include(d => d.RevisionRequests)
                 .Include(d => d.AdditionalRevisionRequests)
                     .ThenInclude(arr => arr.Client)
+                .Include(d => d.SpecialistReviews)
                 .Where(d => d.ContractId == request.ContractId)
                 .OrderByDescending(d => d.SubmittedAt)
                 .ToListAsync(cancellationToken);

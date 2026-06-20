@@ -26,17 +26,16 @@ namespace Horr.Controllers
         }
 
         [HttpPost("initiate")]
-        [Authorize(Policy = "ClientOnly")]
         [ProducesResponseType(typeof(ChatSummaryDto), 200)]
         [ProducesResponseType(typeof(ProblemDetails), 400)]
         [ProducesResponseType(typeof(ProblemDetails), 403)]
         [ProducesResponseType(typeof(ProblemDetails), 404)]
         public async Task<IActionResult> InitiateChat([FromBody] InitiateChatRequest request)
         {
-            string clientId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
-            if (string.IsNullOrEmpty(clientId)) return Unauthorized();
+            string userId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            var result = await _mediator.Send(new CreateChatCommand(request.ContractId, clientId));
+            var result = await _mediator.Send(new CreateChatCommand(request.ContractId, userId));
             if (!result.Succeeded)
             {
                 int statusCode = 400;

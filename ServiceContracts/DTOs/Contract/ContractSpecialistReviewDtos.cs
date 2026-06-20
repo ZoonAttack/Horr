@@ -30,6 +30,10 @@ namespace ServiceContracts.DTOs.Contract
         public string? ReviewNote { get; set; }
         public DateTime RequestedAt { get; set; }
         public DateTime? CompletedAt { get; set; }
+        public string? ContractTitle { get; set; }
+        public int? ContractId { get; set; }
+        public string? DeliveryNote { get; set; }
+        public List<AttachmentDto> Attachments { get; set; } = new();
     }
 
     // Request body — human specialist submits their verdict
@@ -57,7 +61,11 @@ namespace ServiceContracts.DTOs.Contract
             Verdict = review.Verdict,
             ReviewNote = review.ReviewNote,
             RequestedAt = review.RequestedAt,
-            CompletedAt = review.CompletedAt
+            CompletedAt = review.CompletedAt,
+            ContractTitle = review.Delivery?.Contract?.Proposal?.JobPost?.Title ?? review.Delivery?.Contract?.JobPost?.Title ?? "Direct Offer",
+            ContractId = review.Delivery?.ContractId,
+            DeliveryNote = review.Delivery?.DeliveryNote,
+            Attachments = review.Delivery?.Attachments?.Select(a => a.ToDto()).ToList() ?? new List<AttachmentDto>()
         };
     }
 }

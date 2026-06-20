@@ -178,7 +178,16 @@ namespace ServiceImplementation.Implementations.Contracts
             // 4. Fund the milestone/escrow immediately
             if (Guid.TryParse(request.ClientId, out Guid clientGuid))
             {
-                await _escrowService.FundMilestoneAsync(milestone.Id, clientGuid);
+                var fundResult = await _escrowService.FundMilestoneAsync(milestone.Id, clientGuid);
+                if (!fundResult.Succeeded)
+                {
+                    return new Result<ContractDto>
+                    {
+                        Succeeded = false,
+                        Message = fundResult.Message,
+                        Errors = fundResult.Errors
+                    };
+                }
             }
             else
             {

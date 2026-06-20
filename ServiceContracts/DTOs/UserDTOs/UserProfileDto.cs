@@ -23,6 +23,7 @@ namespace ServiceContracts.DTOs.UserDTOs
         public string? ZipCode { get; set; }
         public string? Country { get; set; }
         public string? TimeZone { get; set; }
+        public string PreferredCurrency { get; set; } = string.Empty;
         
         // Profile Info
         public string? Title { get; set; }
@@ -46,6 +47,11 @@ namespace ServiceContracts.DTOs.UserDTOs
         public List<EducationReadDto> Education { get; set; } = new List<EducationReadDto>();
         public List<ExperienceDetailReadDto> ExperienceDetails { get; set; } = new List<ExperienceDetailReadDto>();
         public List<EmploymentReadDto> EmploymentHistory { get; set; } = new List<EmploymentReadDto>();
+
+        public double AverageRating { get; set; }
+        public int TotalReviews { get; set; }
+        public int JobSuccessPercentage { get; set; }
+        public List<FreelancerReviewDto> Reviews { get; set; } = new List<FreelancerReviewDto>();
     }
 
     public static class UserProfileDtoExtensions
@@ -76,6 +82,7 @@ namespace ServiceContracts.DTOs.UserDTOs
                 ZipCode = user.ZipCode,
                 Country = user.Country,
                 TimeZone = user.TimeZone,
+                PreferredCurrency = user.PreferredCurrency,
                 Title = freelancer?.Title,
                 Bio = user.Bio,
                 TrustScore = user.TrustScore,

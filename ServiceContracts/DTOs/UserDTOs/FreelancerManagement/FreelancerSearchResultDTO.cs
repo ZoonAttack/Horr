@@ -11,6 +11,7 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
         public string? ProfilePicturePath { get; set; }
         public double AverageRating { get; set; }
         public int TotalReviews { get; set; }
+        public int JobSuccessPercentage { get; set; }
         public decimal? HourlyRate { get; set; }
         public decimal TrustScore { get; set; }
         public string Availability { get; set; } = string.Empty;

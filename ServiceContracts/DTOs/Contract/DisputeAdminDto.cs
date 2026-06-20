@@ -14,6 +14,8 @@ namespace ServiceContracts.DTOs.Contract
         public string OpenedByUserFullName { get; set; } = string.Empty;
         public string? AdminDecision { get; set; }
         public DateTime? ResolvedAt { get; set; }
+        public decimal? ClientPercentage { get; set; }
+        public decimal? FreelancerPercentage { get; set; }
 
         // Contract summary
         public int ContractId { get; set; }

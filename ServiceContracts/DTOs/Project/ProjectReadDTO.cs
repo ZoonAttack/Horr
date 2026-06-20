@@ -16,6 +16,7 @@ namespace ServiceContracts.DTOs.Project
         public string Description { get; set; }
 
         public decimal Budget { get; set; }
+        public string BudgetCurrency { get; set; } = "USD";
 
         public DateTime Deadline { get; set; }
         public DateTime CreatedAt { get; set; }

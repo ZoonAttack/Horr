@@ -338,7 +338,8 @@ namespace Entities.Enums
     {
         Held,
         Released,
-        Refunded
+        Refunded,
+        Split
     }
 
     public enum RevisionStatus
@@ -353,7 +354,8 @@ namespace Entities.Enums
         Open,
         UnderReview,
         ResolvedForClient,
-        ResolvedForFreelancer
+        ResolvedForFreelancer,
+        ResolvedSplit
     }
 
     public enum ReviewerType

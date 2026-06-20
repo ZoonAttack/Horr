@@ -9,6 +9,7 @@ namespace ServiceContracts.DTOs.Proposal
         public string FreelancerId { get; set; } = string.Empty;
         public string FreelancerName { get; set; } = string.Empty;
         public decimal BidRate { get; set; }
+        public string BidCurrency { get; set; } = "USD";
         public string CoverLetter { get; set; } = string.Empty;
         public ProposalStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }

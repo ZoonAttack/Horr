@@ -22,6 +22,11 @@ namespace ServiceContracts.DTOs.Contract
             else if (hasActiveRevision) pauseReason = "RevisionRequest";
             else if (hasActiveReview) pauseReason = "SpecialistReview";
 
+            var latestReview = delivery.SpecialistReviews?
+                .Where(r => !r.IsDeleted)
+                .OrderByDescending(r => r.RequestedAt)
+                .FirstOrDefault();
+
             return new ContractDeliveryDto
             {
                 Id = delivery.Id,
@@ -36,7 +41,8 @@ namespace ServiceContracts.DTOs.Contract
                 RevisionRequests = delivery.RevisionRequests?.Select(r => r.ToDto()).ToList() ?? new List<RevisionRequestDto>(),
                 AdditionalRevisionRequests = delivery.AdditionalRevisionRequests?.Select(r => r.ToDto()).ToList() ?? new List<AdditionalRevisionRequestDto>(),
                 IsPaused = hasActiveDispute || hasActiveRevision || hasActiveReview,
-                PauseReason = pauseReason
+                PauseReason = pauseReason,
+                SpecialistReview = latestReview?.ToReadDto()
             };
         }
 
@@ -73,7 +79,9 @@ namespace ServiceContracts.DTOs.Contract
                 Status = dispute.Status,
                 AdminId = dispute.AdminId,
                 AdminDecision = dispute.AdminDecision,
-                ResolvedAt = dispute.ResolvedAt
+                ResolvedAt = dispute.ResolvedAt,
+                ClientPercentage = dispute.ClientPercentage,
+                FreelancerPercentage = dispute.FreelancerPercentage
             };
         }
 

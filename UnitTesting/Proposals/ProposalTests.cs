@@ -409,5 +409,58 @@ namespace UnitTesting.Proposals
             result.Succeeded.Should().BeFalse();
             result.ErrorCode.Should().Be(ErrorCodes.InvalidState);
         }
+
+        [Fact]
+        public async Task GetMyProposals_ShouldIncludeContractId_WhenContractExists()
+        {
+            // ARRANGE
+            using var context = DbContextUtility.CreateDbContext(Guid.NewGuid().ToString());
+            
+            context.Users.Add(new Entities.Users.User { Id = "f1", UserName = "f1", Email = "f1@t.com", FullName = "F 1" });
+            context.Users.Add(new Entities.Users.User { Id = "c1", UserName = "c1", Email = "c1@t.com", FullName = "C 1" });
+            context.Freelancers.Add(new Entities.Users.Freelancer { UserId = "f1", Availability = "Full-time" });
+            context.Clients.Add(new Entities.Users.Client { UserId = "c1" });
+            context.Categories.Add(new Category { Id = "1", Name = "1", Slug = "1" });
+            var job = new JobPost { Id = "1", Title = "Job", Description = "Desc", ClientId = "c1", CategoryId = "1", JobType = JobType.Hourly };
+            context.JobPosts.Add(job);
+
+            var proposal = new Proposal
+            {
+                Id = 1,
+                JobPostId = "1",
+                FreelancerId = "f1",
+                Status = ProposalStatus.Offer,
+                BidRate = 100,
+                HORRFee = 10,
+                CoverLetter = new string('a', 60)
+            };
+            context.Proposals.Add(proposal);
+
+            var contract = new Contract
+            {
+                Id = 42,
+                ProposalId = 1,
+                ClientId = "c1",
+                FreelancerId = "f1",
+                Status = ContractStatus.Draft,
+                AgreedRate = 100,
+                StartedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow
+            };
+            context.Contracts.Add(contract);
+
+            await context.SaveChangesAsync();
+
+            var handler = new GetMyProposalsQueryHandler(context);
+            var query = new GetMyProposalsQuery("f1");
+
+            // ACT
+            var result = await handler.Handle(query, CancellationToken.None);
+
+            // ASSERT
+            result.Succeeded.Should().BeTrue();
+            result.Data.Offers.Should().HaveCount(1);
+            result.Data.Offers[0].ContractId.Should().Be(42);
+        }
     }
 }

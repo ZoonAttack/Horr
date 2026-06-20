@@ -21,6 +21,11 @@ namespace ServiceContracts.DTOs.UserDTOs
         public int TotalJobs { get; set; } = 0;
         public int TotalHours { get; set; } = 0;
 
+        public double AverageRating { get; set; }
+        public int TotalReviews { get; set; }
+        public int JobSuccessPercentage { get; set; }
+        public List<FreelancerReviewDto> Reviews { get; set; } = new List<FreelancerReviewDto>();
+
         public List<string> Skills { get; set; } = new List<string>();          // skill names only
         public List<PortfolioItemDto> Portfolio { get; set; } = new List<PortfolioItemDto>();
         public List<LanguageDto> Languages { get; set; } = new List<LanguageDto>();
