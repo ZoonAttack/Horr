@@ -17,6 +17,9 @@ namespace ServiceImplementation.Implementations.Currency
 
         public async Task<decimal> ConvertAsync(decimal amount, string fromCurrency, string toCurrency)
         {
+            if (string.IsNullOrWhiteSpace(fromCurrency)) fromCurrency = "USD";
+            if (string.IsNullOrWhiteSpace(toCurrency)) toCurrency = "USD";
+
             if (string.Equals(fromCurrency, toCurrency, StringComparison.OrdinalIgnoreCase))
                 return amount;
 
@@ -26,6 +29,9 @@ namespace ServiceImplementation.Implementations.Currency
 
         public async Task<decimal> GetExchangeRateAsync(string fromCurrency, string toCurrency)
         {
+            if (string.IsNullOrWhiteSpace(fromCurrency)) fromCurrency = "USD";
+            if (string.IsNullOrWhiteSpace(toCurrency)) toCurrency = "USD";
+
             if (string.Equals(fromCurrency, toCurrency, StringComparison.OrdinalIgnoreCase))
                 return 1.0m;
 

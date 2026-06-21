@@ -29,13 +29,15 @@ namespace ServiceImplementation.Implementations.Settings
         private readonly UserManager<User> _userManager;
         private readonly IEmailService _emailService;
         private readonly IFreelancerService _freelancerService;
+        private readonly ServiceContracts.Currency.ICurrencyConverterService _currencyConverter;
 
-        public ProfileSettings(UserManager<User> userManager, IEmailService emailService, AppDbContext context, IFreelancerService freelancerService)
+        public ProfileSettings(UserManager<User> userManager, IEmailService emailService, AppDbContext context, IFreelancerService freelancerService, ServiceContracts.Currency.ICurrencyConverterService currencyConverter)
         {
             _userManager  = userManager;
             _emailService = emailService;
             _context      = context;
             _freelancerService = freelancerService;
+            _currencyConverter = currencyConverter;
         }
 
         private async Task<bool> ResolveAndSyncVerificationAsync(User user)
@@ -112,6 +114,13 @@ namespace ServiceImplementation.Implementations.Settings
                 profileDto.TotalReviews = stats.TotalReviews;
                 profileDto.JobSuccessPercentage = stats.JobSuccessPercentage;
                 profileDto.Reviews = stats.Reviews;
+
+                if (profileDto.HourlyRate.HasValue)
+                {
+                    profileDto.OriginalCurrency = user.PreferredCurrency ?? "USD";
+                    profileDto.ConvertedHourlyRate = profileDto.HourlyRate;
+                    profileDto.ConvertedCurrency = profileDto.OriginalCurrency;
+                }
             }
 
             return new Result<UserProfileDto>
@@ -123,7 +132,7 @@ namespace ServiceImplementation.Implementations.Settings
             };
         }
 
-        public async Task<Result<PublicProfileDto>> GetPublicProfileAsync(string userIdHash)
+        public async Task<Result<PublicProfileDto>> GetPublicProfileAsync(string userIdHash, string targetCurrency = "USD")
         {
             var user = await _context.Users
                 .Include(u => u.Freelancer)
@@ -179,8 +188,10 @@ namespace ServiceImplementation.Implementations.Settings
                 YearsOfExperience = freelancer?.YearsOfExperience,
 
                 TotalEarnings = "$0", 
-                TotalJobs = workHistory.Count,
                 TotalHours = 0,
+                
+                HourlyRate = freelancer?.HourlyRate,
+                OriginalCurrency = user.PreferredCurrency ?? "USD",
 
                 Skills = freelancer?.FreelancerSkills.Select(s => s.Skill.Name).ToList() ?? new List<string>(),
                 Portfolio = freelancer?.PortfolioItems.Where(pi => !pi.IsDeleted).Select(pi => new PortfolioItemDto
@@ -222,6 +233,28 @@ namespace ServiceImplementation.Implementations.Settings
             publicProfile.TotalReviews = stats.TotalReviews;
             publicProfile.JobSuccessPercentage = stats.JobSuccessPercentage;
             publicProfile.Reviews = stats.Reviews;
+
+            if (publicProfile.HourlyRate.HasValue)
+            {
+                if (string.Equals(publicProfile.OriginalCurrency, targetCurrency, StringComparison.OrdinalIgnoreCase))
+                {
+                    publicProfile.ConvertedHourlyRate = publicProfile.HourlyRate;
+                    publicProfile.ConvertedCurrency = publicProfile.OriginalCurrency;
+                }
+                else
+                {
+                    try
+                    {
+                        publicProfile.ConvertedHourlyRate = await _currencyConverter.ConvertAsync(publicProfile.HourlyRate.Value, publicProfile.OriginalCurrency, targetCurrency);
+                        publicProfile.ConvertedCurrency = targetCurrency;
+                    }
+                    catch
+                    {
+                        publicProfile.ConvertedHourlyRate = publicProfile.HourlyRate;
+                        publicProfile.ConvertedCurrency = publicProfile.OriginalCurrency;
+                    }
+                }
+            }
 
             return new Result<PublicProfileDto>
             {
@@ -658,6 +691,13 @@ namespace ServiceImplementation.Implementations.Settings
             profileDto.TotalReviews = stats.TotalReviews;
             profileDto.JobSuccessPercentage = stats.JobSuccessPercentage;
             profileDto.Reviews = stats.Reviews;
+
+            if (profileDto.HourlyRate.HasValue)
+            {
+                profileDto.OriginalCurrency = user.PreferredCurrency ?? "USD";
+                profileDto.ConvertedHourlyRate = profileDto.HourlyRate;
+                profileDto.ConvertedCurrency = profileDto.OriginalCurrency;
+            }
 
             return new Result<UserProfileDto>
             {

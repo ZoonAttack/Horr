@@ -57,7 +57,18 @@ namespace Horr.Controllers.UserProfile
         [AllowAnonymous]
         public async Task<IActionResult> GetPublicProfile(string userIdHash)
         {
-            var response = await _profileSettingsService.GetPublicProfileAsync(userIdHash);
+            string targetCurrency = "USD";
+            if (User.Identity != null && User.Identity.IsAuthenticated)
+            {
+                var viewerId = ClaimsPrincipalExtensions.GetLoggedInUserId<string>(User);
+                var viewerResponse = await _profileSettingsService.GetProfileAsync(viewerId);
+                if (viewerResponse.Succeeded && viewerResponse.Data != null)
+                {
+                    targetCurrency = viewerResponse.Data.PreferredCurrency ?? "USD";
+                }
+            }
+
+            var response = await _profileSettingsService.GetPublicProfileAsync(userIdHash, targetCurrency);
             if (!response.Succeeded) return NotFound(response.Errors);
             return Ok(response);
         }

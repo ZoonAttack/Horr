@@ -120,6 +120,7 @@ namespace ServiceImplementation.Implementations.Proposals
                     FreelancerId = proposal.FreelancerId,
                     SubmitAsType = proposal.SubmitAsType,
                     BidRate = proposal.BidRate,
+                    BidCurrency = proposal.BidCurrency ?? "USD",
                     HORRFee = proposal.HORRFee,
                     CoverLetter = proposal.CoverLetter,
                     Status = proposal.Status,

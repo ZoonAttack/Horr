@@ -11,10 +11,12 @@ namespace ServiceImplementation.Implementations.Proposals
     public class GetMyProposalsQueryHandler : IRequestHandler<GetMyProposalsQuery, Result<MyProposalsResponseDto>>
     {
         private readonly AppDbContext _context;
+        private readonly ServiceContracts.Currency.ICurrencyConverterService _currencyConverter;
 
-        public GetMyProposalsQueryHandler(AppDbContext context)
+        public GetMyProposalsQueryHandler(AppDbContext context, ServiceContracts.Currency.ICurrencyConverterService currencyConverter)
         {
             _context = context;
+            _currencyConverter = currencyConverter;
         }
 
         public async Task<Result<MyProposalsResponseDto>> Handle(GetMyProposalsQuery request, CancellationToken cancellationToken)
@@ -42,10 +44,11 @@ namespace ServiceImplementation.Implementations.Proposals
                 .ToDictionaryAsync(c => c.ProposalId!.Value, c => c.Id, cancellationToken);
 
             var response = new MyProposalsResponseDto();
+            var preferredCurrency = user.PreferredCurrency ?? "USD";
 
             foreach (var p in proposals)
             {
-                var dto = MapToDto(p);
+                var dto = await MapToDtoAsync(p, preferredCurrency);
                 if (proposalContracts.TryGetValue(p.Id, out int contractId))
                 {
                     dto.ContractId = contractId;
@@ -68,8 +71,22 @@ namespace ServiceImplementation.Implementations.Proposals
             return new Result<MyProposalsResponseDto> { Succeeded = true, Data = response };
         }
 
-        private ProposalReadDTO MapToDto(Entities.Project.Proposal p)
+        private async Task<ProposalReadDTO> MapToDtoAsync(Entities.Project.Proposal p, string preferredCurrency)
         {
+            decimal? convertedBidRate = null;
+            string? convertedCurrency = null;
+
+            try
+            {
+                convertedBidRate = await _currencyConverter.ConvertAsync(p.BidRate, p.BidCurrency ?? "USD", preferredCurrency);
+                convertedCurrency = preferredCurrency;
+            }
+            catch
+            {
+                convertedBidRate = p.BidRate;
+                convertedCurrency = p.BidCurrency ?? "USD";
+            }
+
             return new ProposalReadDTO
             {
                 Id = p.Id,
@@ -78,6 +95,9 @@ namespace ServiceImplementation.Implementations.Proposals
                 FreelancerId = p.FreelancerId,
                 SubmitAsType = p.SubmitAsType,
                 BidRate = p.BidRate,
+                BidCurrency = p.BidCurrency ?? "USD",
+                ConvertedBidRate = convertedBidRate,
+                ConvertedCurrency = convertedCurrency,
                 HORRFee = p.HORRFee,
                 CoverLetter = p.CoverLetter,
                 Status = p.Status,

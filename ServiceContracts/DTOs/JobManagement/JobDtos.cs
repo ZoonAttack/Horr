@@ -29,6 +29,8 @@ namespace ServiceContracts.DTOs.JobManagement
         public ExperienceLevel ExperienceLevel { get; set; }
         public decimal Budget { get; set; }
         public string BudgetCurrency { get; set; } = "USD";
+        public decimal? ConvertedBudget { get; set; }
+        public string? ConvertedCurrency { get; set; }
         public JobType JobType { get; set; }
         public DateTime PostedAt { get; set; }
         public string ClientName { get; set; } = string.Empty;

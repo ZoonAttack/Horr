@@ -16,10 +16,12 @@ namespace ServiceImplementation.Implementations.Proposals
     public class GetProposalsForJobQueryHandler : IRequestHandler<GetProposalsForJobQuery, Result<PagedResult<ProposalSummaryForClientDto>>>
     {
         private readonly AppDbContext _context;
+        private readonly ServiceContracts.Currency.ICurrencyConverterService _currencyConverter;
 
-        public GetProposalsForJobQueryHandler(AppDbContext context)
+        public GetProposalsForJobQueryHandler(AppDbContext context, ServiceContracts.Currency.ICurrencyConverterService currencyConverter)
         {
             _context = context;
+            _currencyConverter = currencyConverter;
         }
 
         public async Task<Result<PagedResult<ProposalSummaryForClientDto>>> Handle(GetProposalsForJobQuery request, CancellationToken cancellationToken)
@@ -63,21 +65,45 @@ namespace ServiceImplementation.Implementations.Proposals
 
             var totalCount = await query.CountAsync(cancellationToken);
 
-            var items = await query
+            var proposals = await query
                 .OrderByDescending(p => p.CreatedAt)
                 .Skip((request.Page - 1) * request.PageSize)
                 .Take(request.PageSize)
-                .Select(p => new ProposalSummaryForClientDto
+                .ToListAsync(cancellationToken);
+
+            var preferredCurrency = user.PreferredCurrency ?? "USD";
+            var items = new List<ProposalSummaryForClientDto>();
+
+            foreach (var p in proposals)
+            {
+                decimal? convertedBidRate = null;
+                string? convertedCurrency = null;
+
+                try
+                {
+                    convertedBidRate = await _currencyConverter.ConvertAsync(p.BidRate, p.BidCurrency ?? "USD", preferredCurrency);
+                    convertedCurrency = preferredCurrency;
+                }
+                catch
+                {
+                    convertedBidRate = p.BidRate;
+                    convertedCurrency = p.BidCurrency ?? "USD";
+                }
+
+                items.Add(new ProposalSummaryForClientDto
                 {
                     Id = p.Id,
                     FreelancerId = p.FreelancerId,
                     FreelancerName = p.Freelancer.User.FullName,
                     BidRate = p.BidRate,
+                    BidCurrency = p.BidCurrency ?? "USD",
+                    ConvertedBidRate = convertedBidRate,
+                    ConvertedCurrency = convertedCurrency,
                     CoverLetter = p.CoverLetter,
                     Status = p.Status,
                     CreatedAt = p.CreatedAt
-                })
-                .ToListAsync(cancellationToken);
+                });
+            }
 
             var response = new PagedResult<ProposalSummaryForClientDto>
             {

@@ -10,6 +10,9 @@ namespace ServiceContracts.DTOs.Contract
         public string ClientId { get; set; } = string.Empty;
         public string FreelancerId { get; set; } = string.Empty;
         public decimal AgreedRate { get; set; }
+        public string OriginalCurrency { get; set; } = "USD";
+        public decimal? ConvertedAgreedRate { get; set; }
+        public string? ConvertedCurrency { get; set; }
         public ContractStatus Status { get; set; }
         public DateTime StartedAt { get; set; }
         public DateTime? ClosedAt { get; set; }

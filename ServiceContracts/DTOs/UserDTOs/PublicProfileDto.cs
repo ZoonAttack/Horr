@@ -20,6 +20,11 @@ namespace ServiceContracts.DTOs.UserDTOs
         public string TotalEarnings { get; set; } = "$0";
         public int TotalJobs { get; set; } = 0;
         public int TotalHours { get; set; } = 0;
+        
+        public decimal? HourlyRate { get; set; }
+        public decimal? ConvertedHourlyRate { get; set; }
+        public string? ConvertedCurrency { get; set; }
+        public string? OriginalCurrency { get; set; }
 
         public double AverageRating { get; set; }
         public int TotalReviews { get; set; }

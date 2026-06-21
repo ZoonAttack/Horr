@@ -27,6 +27,9 @@ namespace ServiceContracts.DTOs.Contract
 
         // Contract details
         public decimal AgreedRate { get; set; }
+        public string OriginalCurrency { get; set; } = "USD";
+        public decimal? ConvertedAgreedRate { get; set; }
+        public string? ConvertedCurrency { get; set; }
 
         public ContractStatus Status { get; set; }
 

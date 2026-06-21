@@ -12,6 +12,8 @@ namespace ServiceContracts.DTOs.Proposal
         public SubmitAsType SubmitAsType { get; set; }
         public decimal BidRate { get; set; }
         public string BidCurrency { get; set; } = "USD";
+        public decimal? ConvertedBidRate { get; set; }
+        public string? ConvertedCurrency { get; set; }
         public decimal HORRFee { get; set; }
         public string CoverLetter { get; set; } = string.Empty;
         public ProposalStatus Status { get; set; }

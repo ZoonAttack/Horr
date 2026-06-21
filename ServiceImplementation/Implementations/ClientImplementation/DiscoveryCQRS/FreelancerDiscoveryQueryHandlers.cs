@@ -9,23 +9,27 @@ using System.Threading;
 using System.Threading.Tasks;
 using ServiceContracts.DTOs.Responses;
 using ServiceImplementation.Helpers;
+using ServiceContracts.Currency;
 
 namespace ServiceImplementation.Implementations.ClientImplementation.DiscoveryCQRS
 {
     public class SearchFreelancersQueryHandler : IRequestHandler<SearchFreelancersQuery, Result<PagedResult<FreelancerSearchResultDTO>>>
     {
         private readonly AppDbContext _context;
+        private readonly ICurrencyConverterService _currencyConverter;
 
-        public SearchFreelancersQueryHandler(AppDbContext context)
+        public SearchFreelancersQueryHandler(AppDbContext context, ICurrencyConverterService currencyConverter)
         {
             _context = context;
+            _currencyConverter = currencyConverter;
         }
 
         public async Task<Result<PagedResult<FreelancerSearchResultDTO>>> Handle(SearchFreelancersQuery request, CancellationToken cancellationToken)
         {
+            User? requestingUser = null;
             if (!string.IsNullOrEmpty(request.ClientId))
             {
-                var requestingUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.ClientId, cancellationToken);
+                requestingUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.ClientId, cancellationToken);
                 if (requestingUser == null || requestingUser.IsDeleted)
                 {
                     return new Result<PagedResult<FreelancerSearchResultDTO>>
@@ -137,7 +141,10 @@ namespace ServiceImplementation.Implementations.ClientImplementation.DiscoveryCQ
                 })
                 .ToDictionaryAsync(x => x.FreelancerId, x => x, cancellationToken);
 
-            var dtos = items.Select(u =>
+            var targetCurrency = requestingUser?.PreferredCurrency ?? "USD";
+            var dtos = new List<FreelancerSearchResultDTO>();
+            
+            foreach (var u in items)
             {
                 double avgRating = 0.0;
                 int totalReviews = 0;
@@ -159,8 +166,25 @@ namespace ServiceImplementation.Implementations.ClientImplementation.DiscoveryCQ
 
                 bool isSaved = savedFreelancerIds.Contains(u.Id);
 
-                return u.Freelancer_To_FreelancerSearchResult(isSaved, avgRating, totalReviews, jobSuccessPercentage);
-            }).ToList();
+                var dto = u.Freelancer_To_FreelancerSearchResult(isSaved, avgRating, totalReviews, jobSuccessPercentage);
+                dto.OriginalCurrency = u.PreferredCurrency ?? "USD";
+                
+                if (dto.HourlyRate.HasValue)
+                {
+                    try
+                    {
+                        dto.ConvertedHourlyRate = await _currencyConverter.ConvertAsync(dto.HourlyRate.Value, dto.OriginalCurrency, targetCurrency);
+                        dto.ConvertedCurrency = targetCurrency;
+                    }
+                    catch
+                    {
+                        dto.ConvertedHourlyRate = dto.HourlyRate;
+                        dto.ConvertedCurrency = dto.OriginalCurrency;
+                    }
+                }
+                
+                dtos.Add(dto);
+            }
 
             return new Result<PagedResult<FreelancerSearchResultDTO>>
             {
@@ -179,10 +203,12 @@ namespace ServiceImplementation.Implementations.ClientImplementation.DiscoveryCQ
     public class GetSavedFreelancersQueryHandler : IRequestHandler<GetSavedFreelancersQuery, Result<PagedResult<FreelancerSearchResultDTO>>>
     {
         private readonly AppDbContext _context;
+        private readonly ICurrencyConverterService _currencyConverter;
 
-        public GetSavedFreelancersQueryHandler(AppDbContext context)
+        public GetSavedFreelancersQueryHandler(AppDbContext context, ICurrencyConverterService currencyConverter)
         {
             _context = context;
+            _currencyConverter = currencyConverter;
         }
 
         public async Task<Result<PagedResult<FreelancerSearchResultDTO>>> Handle(GetSavedFreelancersQuery request, CancellationToken cancellationToken)
@@ -239,33 +265,49 @@ namespace ServiceImplementation.Implementations.ClientImplementation.DiscoveryCQ
                 })
                 .ToDictionaryAsync(x => x.FreelancerId, x => x, cancellationToken);
 
-            // Note: f.User is the Entities.Users.User object that contains Freelancer_To_FreelancerSearchResult()
-            var dtos = savedItems
-                .Where(sf => sf.Freelancer != null && sf.Freelancer.User != null)
-                .Select(sf =>
+            var targetCurrency = requestingUser.PreferredCurrency ?? "USD";
+            var dtos = new List<FreelancerSearchResultDTO>();
+            
+            foreach (var sf in savedItems.Where(s => s.Freelancer != null && s.Freelancer.User != null))
+            {
+                var u = sf.Freelancer.User;
+                double avgRating = 0.0;
+                int totalReviews = 0;
+                if (reviewsData.TryGetValue(u.Id, out var reviewStats))
                 {
-                    var u = sf.Freelancer.User;
-                    double avgRating = 0.0;
-                    int totalReviews = 0;
-                    if (reviewsData.TryGetValue(u.Id, out var reviewStats))
-                    {
-                        avgRating = Math.Round(reviewStats.AverageRating, 1);
-                        totalReviews = reviewStats.TotalReviews;
-                    }
+                    avgRating = Math.Round(reviewStats.AverageRating, 1);
+                    totalReviews = reviewStats.TotalReviews;
+                }
 
-                    int jobSuccessPercentage = 100;
-                    if (contractsData.TryGetValue(u.Id, out var contractStats))
+                int jobSuccessPercentage = 100;
+                if (contractsData.TryGetValue(u.Id, out var contractStats))
+                {
+                    var totalEnded = contractStats.CompletedCount + contractStats.ClosedCount + contractStats.TerminatedCount;
+                    if (totalEnded > 0)
                     {
-                        var totalEnded = contractStats.CompletedCount + contractStats.ClosedCount + contractStats.TerminatedCount;
-                        if (totalEnded > 0)
-                        {
-                            jobSuccessPercentage = (int)Math.Round((double)contractStats.CompletedCount / totalEnded * 100);
-                        }
+                        jobSuccessPercentage = (int)Math.Round((double)contractStats.CompletedCount / totalEnded * 100);
                     }
+                }
 
-                    return u.Freelancer_To_FreelancerSearchResult(isSaved: true, averageRating: avgRating, totalReviews: totalReviews, jobSuccessPercentage: jobSuccessPercentage);
-                })
-                .ToList();
+                var dto = u.Freelancer_To_FreelancerSearchResult(isSaved: true, averageRating: avgRating, totalReviews: totalReviews, jobSuccessPercentage: jobSuccessPercentage);
+                dto.OriginalCurrency = u.PreferredCurrency ?? "USD";
+
+                if (dto.HourlyRate.HasValue)
+                {
+                    try
+                    {
+                        dto.ConvertedHourlyRate = await _currencyConverter.ConvertAsync(dto.HourlyRate.Value, dto.OriginalCurrency, targetCurrency);
+                        dto.ConvertedCurrency = targetCurrency;
+                    }
+                    catch
+                    {
+                        dto.ConvertedHourlyRate = dto.HourlyRate;
+                        dto.ConvertedCurrency = dto.OriginalCurrency;
+                    }
+                }
+                
+                dtos.Add(dto);
+            }
 
             return new Result<PagedResult<FreelancerSearchResultDTO>>
             {
