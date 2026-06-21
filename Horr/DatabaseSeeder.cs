@@ -24,6 +24,9 @@ namespace Horr
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
             var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
+            // Apply migrations automatically (this will also apply the HasData seeds in AppDbContext)
+            await context.Database.MigrateAsync();
+
             // 1. Seed Roles
             string[] roles = { "Admin", "Client", "Freelancer", "Specialist" };
             foreach (var role in roles)
