@@ -1,12 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using ServiceImplementation.Exceptions;
+using System.Net;
 using System.Text.Json;
 
 namespace Horr.Middleware
 {
     /// <summary>
     /// Global exception handler that converts domain exceptions into
-    /// RFC 7807 ProblemDetails responses, matching the project's error pattern.
+    /// a format matching the frontend's expectations.
     /// </summary>
     public class ExceptionMiddleware
     {
@@ -25,66 +26,69 @@ namespace Horr.Middleware
             {
                 await _next(context);
             }
-            catch (NotFoundException ex)
-            {
-                await WriteProblemDetails(context, StatusCodes.Status404NotFound, "Not Found", ex.Message);
-            }
-            catch (ValidationException ex)
-            {
-                // 400 Bad Request — includes field-level errors
-                var problem = new ValidationProblemDetails
-                {
-                    Status = StatusCodes.Status400BadRequest,
-                    Title = "Validation Failed",
-                    Detail = ex.Message
-                };
-                foreach (var error in ex.Errors)
-                {
-                    // Group errors under a generic "fields" key; individual field
-                    // names are embedded in the message strings by the handlers.
-                    problem.Errors[""] = problem.Errors.TryGetValue("", out var current)
-                        ? current.Append(error).ToArray()
-                        : new[] { error };
-                }
-                await WriteResponse(context, StatusCodes.Status400BadRequest, problem);
-            }
-            catch (ConflictException ex)
-            {
-                await WriteProblemDetails(context, StatusCodes.Status409Conflict, "Conflict", ex.Message);
-            }
-            catch (InvalidStateException ex)
-            {
-                await WriteProblemDetails(context, StatusCodes.Status422UnprocessableEntity, "Invalid State", ex.Message);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                await WriteProblemDetails(context, StatusCodes.Status403Forbidden, "Forbidden", ex.Message);
-            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unhandled exception");
-                await WriteProblemDetails(context, StatusCodes.Status500InternalServerError, "Server Error",
-                    ex.ToString());
+                if (ex is not ValidationException && ex is not UnauthorizedAccessException && ex is not ForbiddenException && ex is not NotFoundException && ex is not ConflictException && ex is not InvalidStateException)
+                {
+                    _logger.LogError(ex, "Unhandled exception");
+                }
+                
+                await HandleExceptionAsync(context, ex);
             }
         }
 
-        private static async Task WriteProblemDetails(HttpContext context, int status, string title, string detail)
+        private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
-            var problem = new ProblemDetails
-            {
-                Status = status,
-                Title = title,
-                Detail = detail
-            };
-            await WriteResponse(context, status, problem);
-        }
+            context.Response.ContentType = "application/json";
+            var response = context.Response;
+            object errorResponse;
 
-        private static async Task WriteResponse(HttpContext context, int status, object body)
-        {
-            context.Response.ContentType = "application/problem+json";
-            context.Response.StatusCode = status;
-            var json = JsonSerializer.Serialize(body, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
-            await context.Response.WriteAsync(json);
+            switch (exception)
+            {
+                case ValidationException valEx:
+                    response.StatusCode = (int)HttpStatusCode.BadRequest;
+                    // Standard ASP.NET Core Validation problem details format
+                    errorResponse = new
+                    {
+                        title = "One or more validation errors occurred.",
+                        status = response.StatusCode,
+                        errors = valEx.Errors
+                    };
+                    break;
+
+                case NotFoundException nfEx:
+                    response.StatusCode = (int)HttpStatusCode.NotFound;
+                    errorResponse = new { message = nfEx.Message, errorCode = "NOT_FOUND" };
+                    break;
+
+                case ConflictException cfEx:
+                    response.StatusCode = (int)HttpStatusCode.Conflict;
+                    errorResponse = new { message = cfEx.Message, errorCode = "CONFLICT" };
+                    break;
+
+                case InvalidStateException isEx:
+                    response.StatusCode = (int)HttpStatusCode.UnprocessableEntity;
+                    errorResponse = new { message = isEx.Message, errorCode = "INVALID_STATE" };
+                    break;
+
+                case ForbiddenException fbEx:
+                    response.StatusCode = (int)HttpStatusCode.Forbidden;
+                    errorResponse = new { message = fbEx.Message, errorCode = "FORBIDDEN" };
+                    break;
+
+                case UnauthorizedAccessException uaEx:
+                    response.StatusCode = (int)HttpStatusCode.Forbidden;
+                    errorResponse = new { message = uaEx.Message, errorCode = "UNAUTHORIZED" };
+                    break;
+
+                default:
+                    response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    errorResponse = new { message = "An internal server error occurred.", errorCode = "SERVER_ERROR", detail = exception.ToString() };
+                    break;
+            }
+
+            var result = JsonSerializer.Serialize(errorResponse, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+            await response.WriteAsync(result);
         }
     }
 }
