@@ -42,6 +42,9 @@ namespace ServiceContracts.DTOs.UserDTOs
         // Professional Details
         public string? Availability { get; set; }
         public decimal? HourlyRate { get; set; }
+        public decimal? ConvertedHourlyRate { get; set; }
+        public string? ConvertedCurrency { get; set; }
+        public string? OriginalCurrency { get; set; }
         public string? PortfolioUrl { get; set; }
         public List<LanguageReadDto> Languages { get; set; } = new List<LanguageReadDto>();
         public List<EducationReadDto> Education { get; set; } = new List<EducationReadDto>();
@@ -93,6 +96,7 @@ namespace ServiceContracts.DTOs.UserDTOs
                 UserIdHash = user.Id?.Length >= 8 ? user.Id.Substring(0, 8) : user.Id,
                 Availability = freelancer?.Availability,
                 HourlyRate = freelancer?.HourlyRate,
+                OriginalCurrency = user.PreferredCurrency,
                 PortfolioUrl = freelancer?.PortfolioUrl,
                 Languages = freelancer?.Languages?.Select(l => new LanguageReadDto { Id = l.Id, Name = l.Name, Level = l.Level }).ToList() ?? new List<LanguageReadDto>(),
                 Education = freelancer?.Education?.Select(e => new EducationReadDto { Id = e.Id, School = e.School, Degree = e.Degree, FieldOfStudy = e.FieldOfStudy, DateStart = e.DateStart, DateEnd = e.DateEnd }).ToList() ?? new List<EducationReadDto>(),

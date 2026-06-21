@@ -6,23 +6,28 @@ using ServiceImplementation.Mappings;
 using Entities.Enums;
 using ServiceContracts.DTOs.Responses;
 using ServiceImplementation.Helpers;
+using ServiceContracts.Currency;
+using Entities.Users;
 
 namespace ServiceImplementation.Implementations.JobManagement
 {
     public class SearchJobsQueryHandler : IRequestHandler<SearchJobsQuery, Result<SearchJobsQueryResponse>>
     {
         private readonly AppDbContext _context;
+        private readonly ICurrencyConverterService _currencyConverter;
 
-        public SearchJobsQueryHandler(AppDbContext context)
+        public SearchJobsQueryHandler(AppDbContext context, ICurrencyConverterService currencyConverter)
         {
             _context = context;
+            _currencyConverter = currencyConverter;
         }
 
         public async Task<Result<SearchJobsQueryResponse>> Handle(SearchJobsQuery request, CancellationToken cancellationToken)
         {
+            User? user = null;
             if (!string.IsNullOrEmpty(request.CurrentUserId))
             {
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.CurrentUserId, cancellationToken);
+                user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.CurrentUserId, cancellationToken);
                 if (user == null || user.IsDeleted)
                 {
                     return new Result<SearchJobsQueryResponse>
@@ -66,9 +71,26 @@ namespace ServiceImplementation.Implementations.JobManagement
                 .Take(request.PageSize)
                 .ToListAsync(cancellationToken);
 
+            var dtos = items.Select(j => j.ToSummaryDto(request.CurrentUserId)).ToList();
+
+            string targetCurrency = user?.PreferredCurrency ?? "USD";
+            foreach (var dto in dtos)
+            {
+                if (dto.BudgetCurrency != targetCurrency)
+                {
+                    dto.ConvertedBudget = await _currencyConverter.ConvertAsync(dto.Budget, dto.BudgetCurrency, targetCurrency);
+                    dto.ConvertedCurrency = targetCurrency;
+                }
+                else
+                {
+                    dto.ConvertedBudget = dto.Budget;
+                    dto.ConvertedCurrency = dto.BudgetCurrency;
+                }
+            }
+
             var response = new SearchJobsQueryResponse
             {
-                Items = items.Select(j => j.ToSummaryDto(request.CurrentUserId)).ToList(),
+                Items = dtos,
                 TotalCount = totalCount,
                 Page = request.Page,
                 PageSize = request.PageSize

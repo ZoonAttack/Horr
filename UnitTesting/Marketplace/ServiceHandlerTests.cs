@@ -12,6 +12,8 @@ using Entities;
 using Entities.Marketplace;
 using Entities.Enums;
 using Microsoft.EntityFrameworkCore;
+using Moq;
+using ServiceContracts.Currency;
 
 namespace UnitTesting.Marketplace
 {
@@ -170,7 +172,7 @@ namespace UnitTesting.Marketplace
             await context.SaveChangesAsync();
 
             var deleteHandler = new DeleteServiceCommandHandler(context);
-            var queryHandler = new GetMyServicesQueryHandler(context);
+            var queryHandler = new GetMyServicesQueryHandler(context, new Mock<ICurrencyConverterService>().Object);
 
             // ACT
             await deleteHandler.Handle(new DeleteServiceCommand(serviceId, freelancerId), CancellationToken.None);
@@ -202,7 +204,7 @@ namespace UnitTesting.Marketplace
             });
             await context.SaveChangesAsync();
 
-            var handler = new GetMyServicesQueryHandler(context);
+            var handler = new GetMyServicesQueryHandler(context, new Mock<ICurrencyConverterService>().Object);
 
             // ACT
             var result = await handler.Handle(new GetMyServicesQuery(f1), CancellationToken.None);
@@ -217,7 +219,7 @@ namespace UnitTesting.Marketplace
         {
             // ARRANGE
             var context = GetContext();
-            var handler = new GetServiceByIdQueryHandler(context);
+            var handler = new GetServiceByIdQueryHandler(context, new Mock<ICurrencyConverterService>().Object);
 
             // ACT
             var act = () => handler.Handle(new GetServiceByIdQuery("unknown", "f1"), CancellationToken.None);
@@ -240,7 +242,7 @@ namespace UnitTesting.Marketplace
             });
             await context.SaveChangesAsync();
 
-            var handler = new GetServiceByIdQueryHandler(context);
+            var handler = new GetServiceByIdQueryHandler(context, new Mock<ICurrencyConverterService>().Object);
 
             // ACT
             var act = () => handler.Handle(new GetServiceByIdQuery("s1", "other"), CancellationToken.None);

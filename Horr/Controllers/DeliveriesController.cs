@@ -41,8 +41,20 @@ namespace Horr.Controllers
         [Authorize(Roles = "Freelancer")]
         [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(List<AttachmentDto>), 200)]
-        public async Task<IActionResult> Upload(List<IFormFile> files, CancellationToken ct)
+        public async Task<IActionResult> Upload(List<IFormFile> files, [FromQuery] int? contractId, CancellationToken ct)
         {
+            if (contractId.HasValue && contractId.Value > 0)
+            {
+                var freelancerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!string.IsNullOrEmpty(freelancerId))
+                {
+                    var contractResult = await _mediator.Send(new GetContractByIdQuery(contractId.Value, freelancerId));
+                    if (contractResult.Succeeded && contractResult.Data != null && contractResult.Data.InDispute)
+                    {
+                        return StatusCode(StatusCodes.Status403Forbidden, "Cannot upload files while the contract is in dispute.");
+                    }
+                }
+            }
             if (files == null || files.Count == 0)
             {
                 return BadRequest("No files uploaded.");

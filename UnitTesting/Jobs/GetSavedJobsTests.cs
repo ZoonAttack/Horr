@@ -70,7 +70,7 @@ namespace UnitTesting.Jobs
 
             await context.SaveChangesAsync();
 
-            var handler = new GetSavedJobsQueryHandler(context);
+            var handler = new GetSavedJobsQueryHandler(context, new Moq.Mock<ServiceContracts.Currency.ICurrencyConverterService>().Object);
 
             // ACT
             var result = await handler.Handle(new GetSavedJobsQuery("free1"), CancellationToken.None);
@@ -101,7 +101,7 @@ namespace UnitTesting.Jobs
             context.Users.Add(freelancer);
             await context.SaveChangesAsync();
 
-            var handler = new GetSavedJobsQueryHandler(context);
+            var handler = new GetSavedJobsQueryHandler(context, new Moq.Mock<ServiceContracts.Currency.ICurrencyConverterService>().Object);
 
             // ACT
             var result = await handler.Handle(new GetSavedJobsQuery("free1"), CancellationToken.None);

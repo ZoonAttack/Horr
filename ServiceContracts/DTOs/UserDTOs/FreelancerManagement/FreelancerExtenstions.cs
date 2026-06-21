@@ -64,6 +64,7 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
                 Title = user.Freelancer?.Title,
                 Bio = user.Bio,
                 HourlyRate = user.Freelancer?.HourlyRate,
+                OriginalCurrency = user.PreferredCurrency ?? "USD",
                 Availability = user.Freelancer?.Availability,
                 YearsOfExperience = user.Freelancer?.YearsOfExperience,
                 PortfolioUrl = user.Freelancer?.PortfolioUrl
@@ -132,6 +133,7 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
                 TotalReviews = totalReviews,
                 JobSuccessPercentage = jobSuccessPercentage,
                 HourlyRate = user.Freelancer?.HourlyRate,
+                OriginalCurrency = user.PreferredCurrency ?? "USD",
                 TrustScore = user.TrustScore,
                 Availability = user.Freelancer?.Availability ?? string.Empty,
                 Bio = user.Bio,
@@ -289,6 +291,7 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
                 Title = user.Freelancer?.Title,
                 Bio = user.Bio,
                 HourlyRate = user.Freelancer?.HourlyRate,
+                OriginalCurrency = user.PreferredCurrency ?? "USD",
                 Availability = user.Freelancer?.Availability,
                 YearsOfExperience = user.Freelancer?.YearsOfExperience,
                 PortfolioUrl = user.Freelancer?.PortfolioUrl,

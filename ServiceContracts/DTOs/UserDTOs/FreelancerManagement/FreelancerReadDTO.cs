@@ -28,6 +28,9 @@ namespace ServiceContracts.DTOs.UserDTOs.FreelancerManagement
         public string? Title { get; set; }
         public string? Bio { get; set; }
         public decimal? HourlyRate { get; set; }
+        public string? OriginalCurrency { get; set; }
+        public decimal? ConvertedHourlyRate { get; set; }
+        public string? ConvertedCurrency { get; set; }
         public string Availability { get; set; }
         public int? YearsOfExperience { get; set; }
         public string PortfolioUrl { get; set; }

@@ -17,10 +17,12 @@ namespace ServiceImplementation.Implementations.Contracts
     public class GetMyContractsQueryHandler : IRequestHandler<GetMyContractsQuery, Result<Services.PagedResult<ContractReadDTO>>>
     {
         private readonly AppDbContext _context;
+        private readonly ServiceContracts.Currency.ICurrencyConverterService _currencyConverter;
 
-        public GetMyContractsQueryHandler(AppDbContext context)
+        public GetMyContractsQueryHandler(AppDbContext context, ServiceContracts.Currency.ICurrencyConverterService currencyConverter)
         {
             _context = context;
+            _currencyConverter = currencyConverter;
         }
 
         public async Task<Result<Services.PagedResult<ContractReadDTO>>> Handle(GetMyContractsQuery request, CancellationToken cancellationToken)
@@ -54,11 +56,11 @@ namespace ServiceImplementation.Implementations.Contracts
 
             var totalCount = await query.CountAsync(cancellationToken);
 
-            var items = await query
+            var dbItems = await query
                 .OrderByDescending(c => c.CreatedAt)
                 .Skip((request.Page - 1) * request.PageSize)
                 .Take(request.PageSize)
-                .Select(c => new ContractReadDTO
+                .Select(c => new 
                 {
                     Id = c.Id,
                     ProposalId = c.ProposalId,
@@ -68,6 +70,7 @@ namespace ServiceImplementation.Implementations.Contracts
                     Client_Name = c.Client.FullName,
                     Freelancer_Name = c.Freelancer.FullName,
                     AgreedRate = c.AgreedRate,
+                    OriginalCurrency = c.OriginalCurrency ?? "USD",
                     Status = c.Status,
                     StartedAt = c.StartedAt,
                     ClosedAt = c.ClosedAt,
@@ -83,6 +86,48 @@ namespace ServiceImplementation.Implementations.Contracts
                         .FirstOrDefault()
                 })
                 .ToListAsync(cancellationToken);
+
+            var preferredCurrency = user.PreferredCurrency ?? "USD";
+            var items = new List<ContractReadDTO>();
+
+            foreach (var c in dbItems)
+            {
+                decimal? convertedAgreedRate = null;
+                string? convertedCurrency = null;
+
+                try
+                {
+                    convertedAgreedRate = await _currencyConverter.ConvertAsync(c.AgreedRate, c.OriginalCurrency, preferredCurrency);
+                    convertedCurrency = preferredCurrency;
+                }
+                catch
+                {
+                    convertedAgreedRate = c.AgreedRate;
+                    convertedCurrency = c.OriginalCurrency;
+                }
+
+                items.Add(new ContractReadDTO
+                {
+                    Id = c.Id,
+                    ProposalId = c.ProposalId,
+                    ClientId = c.ClientId,
+                    FreelancerId = c.FreelancerId,
+                    Proposal_Title = c.Proposal_Title,
+                    Client_Name = c.Client_Name,
+                    Freelancer_Name = c.Freelancer_Name,
+                    AgreedRate = c.AgreedRate,
+                    OriginalCurrency = c.OriginalCurrency,
+                    ConvertedAgreedRate = convertedAgreedRate,
+                    ConvertedCurrency = convertedCurrency,
+                    Status = c.Status,
+                    StartedAt = c.StartedAt,
+                    ClosedAt = c.ClosedAt,
+                    CreatedAt = c.CreatedAt,
+                    DueDate = c.DueDate,
+                    MaxRevisions = c.MaxRevisions,
+                    LatestDeliverySummary = c.LatestDeliverySummary
+                });
+            }
 
             var pagedResult = new Services.PagedResult<ContractReadDTO>
             {

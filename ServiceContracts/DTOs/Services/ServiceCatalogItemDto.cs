@@ -11,6 +11,9 @@ namespace ServiceContracts.DTOs.Services
         public string Description { get; set; }
         public string? CoverImageUrl { get; set; }
         public decimal? Price { get; set; }
+        public string? OriginalCurrency { get; set; }
+        public decimal? ConvertedPrice { get; set; }
+        public string? ConvertedCurrency { get; set; }
         public string? DeliveryTime { get; set; }
         public bool IsActive { get; set; }
         public string Status { get; set; }

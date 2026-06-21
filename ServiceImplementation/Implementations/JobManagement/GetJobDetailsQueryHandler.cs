@@ -6,23 +6,28 @@ using ServiceImplementation.Mappings;
 using ServiceImplementation.Exceptions;
 using ServiceContracts.DTOs.Responses;
 using ServiceImplementation.Helpers;
+using ServiceContracts.Currency;
+using Entities.Users;
 
 namespace ServiceImplementation.Implementations.JobManagement
 {
     public class GetJobDetailsQueryHandler : IRequestHandler<GetJobDetailsQuery, Result<JobDetailsDto>>
     {
         private readonly AppDbContext _context;
+        private readonly ICurrencyConverterService _currencyConverter;
 
-        public GetJobDetailsQueryHandler(AppDbContext context)
+        public GetJobDetailsQueryHandler(AppDbContext context, ICurrencyConverterService currencyConverter)
         {
             _context = context;
+            _currencyConverter = currencyConverter;
         }
 
         public async Task<Result<JobDetailsDto>> Handle(GetJobDetailsQuery request, CancellationToken cancellationToken)
         {
+            User? user = null;
             if (!string.IsNullOrEmpty(request.CurrentUserId))
             {
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.CurrentUserId, cancellationToken);
+                user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.CurrentUserId, cancellationToken);
                 if (user == null || user.IsDeleted)
                 {
                     return new Result<JobDetailsDto>
@@ -55,6 +60,18 @@ namespace ServiceImplementation.Implementations.JobManagement
             var dto = job.ToDetailsDto(request.CurrentUserId);
             dto.HasApplied = !string.IsNullOrEmpty(request.CurrentUserId) &&
                              await _context.Proposals.AnyAsync(p => p.JobPostId == job.Id && p.FreelancerId == request.CurrentUserId, cancellationToken);
+
+            string targetCurrency = user?.PreferredCurrency ?? "USD";
+            if (dto.BudgetCurrency != targetCurrency)
+            {
+                dto.ConvertedBudget = await _currencyConverter.ConvertAsync(dto.Budget, dto.BudgetCurrency, targetCurrency);
+                dto.ConvertedCurrency = targetCurrency;
+            }
+            else
+            {
+                dto.ConvertedBudget = dto.Budget;
+                dto.ConvertedCurrency = dto.BudgetCurrency;
+            }
 
             // If the requester is the owner, populate stats
             if (request.CurrentUserId == job.ClientId)

@@ -18,10 +18,12 @@ namespace ServiceImplementation.Implementations.Contracts
     public class GetContractByIdQueryHandler : IRequestHandler<GetContractByIdQuery, Result<ContractReadDTO>>
     {
         private readonly AppDbContext _context;
+        private readonly ServiceContracts.Currency.ICurrencyConverterService _currencyConverter;
 
-        public GetContractByIdQueryHandler(AppDbContext context)
+        public GetContractByIdQueryHandler(AppDbContext context, ServiceContracts.Currency.ICurrencyConverterService currencyConverter)
         {
             _context = context;
+            _currencyConverter = currencyConverter;
         }
 
         public async Task<Result<ContractReadDTO>> Handle(GetContractByIdQuery request, CancellationToken cancellationToken)
@@ -63,6 +65,58 @@ namespace ServiceImplementation.Implementations.Contracts
             var hasActiveDispute = await _context.Disputes
                 .AnyAsync(d => d.ContractId == contract.Id && (d.Status == DisputeStatus.Open || d.Status == DisputeStatus.UnderReview), cancellationToken);
 
+            var requestingUser = request.UserId == contract.ClientId ? contract.Client : contract.Freelancer;
+            var preferredCurrency = requestingUser?.PreferredCurrency ?? "USD";
+            var originalCurrency = contract.OriginalCurrency ?? "USD";
+
+            decimal? convertedAgreedRate = null;
+            string? convertedCurrency = null;
+
+            try
+            {
+                convertedAgreedRate = await _currencyConverter.ConvertAsync(contract.AgreedRate, originalCurrency, preferredCurrency);
+                convertedCurrency = preferredCurrency;
+            }
+            catch
+            {
+                convertedAgreedRate = contract.AgreedRate;
+                convertedCurrency = originalCurrency;
+            }
+
+            var milestoneDtos = new List<ContractMilestoneDto>();
+            if (contract.ContractMilestones != null)
+            {
+                foreach (var m in contract.ContractMilestones.Where(x => !x.IsDeleted))
+                {
+                    decimal? mConvertedAmount = null;
+                    string? mConvertedCurrency = null;
+
+                    try
+                    {
+                        mConvertedAmount = await _currencyConverter.ConvertAsync(m.Amount, originalCurrency, preferredCurrency);
+                        mConvertedCurrency = preferredCurrency;
+                    }
+                    catch
+                    {
+                        mConvertedAmount = m.Amount;
+                        mConvertedCurrency = originalCurrency;
+                    }
+
+                    milestoneDtos.Add(new ContractMilestoneDto
+                    {
+                        Id = m.Id,
+                        Title = m.Title,
+                        Description = m.Description,
+                        Amount = m.Amount,
+                        OriginalCurrency = originalCurrency,
+                        ConvertedAmount = mConvertedAmount,
+                        ConvertedCurrency = mConvertedCurrency,
+                        DueDate = m.DueDate,
+                        Status = m.Status.ToString()
+                    });
+                }
+            }
+
             var dto = new ContractReadDTO
             {
                 Id = contract.Id,
@@ -73,6 +127,9 @@ namespace ServiceImplementation.Implementations.Contracts
                 Client_Name = contract.Client?.FullName,
                 Freelancer_Name = contract.Freelancer?.FullName,
                 AgreedRate = contract.AgreedRate,
+                OriginalCurrency = originalCurrency,
+                ConvertedAgreedRate = convertedAgreedRate,
+                ConvertedCurrency = convertedCurrency,
                 Status = contract.Status,
                 StartedAt = contract.StartedAt,
                 ClosedAt = contract.ClosedAt,
@@ -80,17 +137,7 @@ namespace ServiceImplementation.Implementations.Contracts
                 DueDate = contract.DueDate,
                 MaxRevisions = contract.MaxRevisions,
                 Description = contract.CustomJobDescription ?? contract.Proposal?.JobPost?.Description ?? string.Empty,
-                Milestones = contract.ContractMilestones?
-                    .Where(m => !m.IsDeleted)
-                    .Select(m => new ContractMilestoneDto
-                    {
-                        Id = m.Id,
-                        Title = m.Title,
-                        Description = m.Description,
-                        Amount = m.Amount,
-                        DueDate = m.DueDate,
-                        Status = m.Status.ToString()
-                    }).ToList() ?? new List<ContractMilestoneDto>(),
+                Milestones = milestoneDtos,
                 LatestDeliverySummary = contract.ContractDeliveries
                     .OrderByDescending(d => d.SubmittedAt)
                     .Select(d => d.DeliveryNote)

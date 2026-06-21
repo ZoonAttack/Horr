@@ -62,7 +62,7 @@ namespace UnitTesting.User
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            var handler = new GetJobDetailsQueryHandler(_context);
+            var handler = new GetJobDetailsQueryHandler(_context, null!);
             var query = new GetJobDetailsQuery("job-1", "deleted-user");
 
             // Act

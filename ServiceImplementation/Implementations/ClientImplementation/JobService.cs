@@ -18,10 +18,12 @@ namespace ServiceImplementation.Implementations.ClientImplementation
     public class JobService : IJobService
     {
         private readonly AppDbContext _db;
+        private readonly ServiceContracts.Currency.ICurrencyConverterService _currencyConverter;
 
-        public JobService(AppDbContext db)
+        public JobService(AppDbContext db, ServiceContracts.Currency.ICurrencyConverterService currencyConverter)
         {
             _db = db;
+            _currencyConverter = currencyConverter;
         }
 
         public async Task<Result<JobDetailsDto>> CreateJobAsync(string clientId, JobDetailsDto jobDetails)
@@ -459,24 +461,78 @@ namespace ServiceImplementation.Implementations.ClientImplementation
                 };
             }
 
-            var proposals = await _db.Proposals
+            var dbProposals = await _db.Proposals
                 .Where(p => p.JobPost.ClientId == clientId && !p.IsDeleted && !p.JobPost.IsDeleted)
                 .OrderByDescending(p => p.CreatedAt)
-                .Select(p => new ClientProposalSummaryDto
+                .Select(p => new
                 {
                     Id = p.Id,
                     FreelancerId = p.FreelancerId,
                     FreelancerName = p.Freelancer.User.FullName,
                     BidRate = p.BidRate,
+                    BidCurrency = p.BidCurrency ?? "USD",
                     CoverLetter = p.CoverLetter,
                     Status = p.Status,
                     CreatedAt = p.CreatedAt,
                     JobPostId = p.JobPostId,
                     JobPostTitle = p.JobPost.Title,
                     JobBudget = p.JobPost.Budget,
+                    JobCurrency = p.JobPost.BudgetCurrency ?? "USD",
                     JobType = p.JobPost.JobType
                 })
                 .ToListAsync();
+
+            var preferredCurrency = clientUser.PreferredCurrency ?? "USD";
+            var proposals = new List<ClientProposalSummaryDto>();
+
+            foreach (var p in dbProposals)
+            {
+                decimal? convertedBidRate = null;
+                decimal? convertedJobBudget = null;
+                string? convertedCurrency = null;
+
+                if (!string.Equals(p.BidCurrency, preferredCurrency, StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(p.JobCurrency, preferredCurrency, StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        if (!string.Equals(p.BidCurrency, preferredCurrency, StringComparison.OrdinalIgnoreCase))
+                        {
+                            convertedBidRate = await _currencyConverter.ConvertAsync(p.BidRate, p.BidCurrency, preferredCurrency);
+                        }
+
+                        if (!string.Equals(p.JobCurrency, preferredCurrency, StringComparison.OrdinalIgnoreCase))
+                        {
+                            convertedJobBudget = await _currencyConverter.ConvertAsync(p.JobBudget, p.JobCurrency, preferredCurrency);
+                        }
+                        
+                        convertedCurrency = preferredCurrency;
+                    }
+                    catch
+                    {
+                        // Ignore conversion errors
+                    }
+                }
+
+                proposals.Add(new ClientProposalSummaryDto
+                {
+                    Id = p.Id,
+                    FreelancerId = p.FreelancerId,
+                    FreelancerName = p.FreelancerName,
+                    BidRate = p.BidRate,
+                    BidCurrency = p.BidCurrency,
+                    ConvertedBidRate = convertedBidRate,
+                    ConvertedCurrency = convertedCurrency,
+                    CoverLetter = p.CoverLetter,
+                    Status = p.Status,
+                    CreatedAt = p.CreatedAt,
+                    JobPostId = p.JobPostId,
+                    JobPostTitle = p.JobPostTitle,
+                    JobBudget = p.JobBudget,
+                    ConvertedJobBudget = convertedJobBudget,
+                    JobType = p.JobType
+                });
+            }
 
             return new Result<List<ClientProposalSummaryDto>>
             {

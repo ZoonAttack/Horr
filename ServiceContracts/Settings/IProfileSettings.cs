@@ -12,7 +12,7 @@ namespace ServiceContracts.Settings
     public interface IProfileSettings
     {
         Task<Result<UserProfileDto>> GetProfileAsync(string userId);
-        Task<Result<PublicProfileDto>> GetPublicProfileAsync(string userIdHash);
+        Task<Result<PublicProfileDto>> GetPublicProfileAsync(string userIdHash, string targetCurrency = "USD");
         Task<Result<string>> UpdateFullNameAsync(string userId, string newName);
         Task<Result<string>> UpdateEmailAsync(string userId, string newEmail);
         Task<Result<string>> UpdateTitleAsync(string userId, string newTitle);
