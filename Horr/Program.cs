@@ -199,15 +199,13 @@ namespace Horr
             // 5. THE MIDDLEWARE PIPELINE (Order Matters!)
             // ==========================================
 
-            app.UseMiddleware<Horr.Middleware.ExceptionHandlingMiddleware>();
-
             if (app.Environment.IsDevelopment())
             {
                 app.UseOpenApi();
                 app.UseSwaggerUi();
             }
 
-            // B.0 Global exception → ProblemDetails
+            // B.0 Global exception
             app.UseMiddleware<ExceptionMiddleware>();
 
             app.UseHttpsRedirection();
