@@ -222,8 +222,16 @@ namespace Horr
 
             app.MapControllers();
             app.MapHub<ChatHub>("/hubs/chat");
-            await SeedRolesAsync(app.Services);
-            await DatabaseSeeder.SeedDataAsync(app.Services);
+            try
+            {
+                await SeedRolesAsync(app.Services);
+                await DatabaseSeeder.SeedDataAsync(app.Services);
+            }
+            catch (Exception ex)
+            {
+                var logger = app.Services.GetRequiredService<ILogger<Program>>();
+                logger.LogError(ex, "An error occurred while seeding the database.");
+            }
             app.Run();
         }
 
